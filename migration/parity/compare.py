@@ -27,11 +27,12 @@ file). With --families, every named family must also have at least one matched c
 Result ids that are not cases fail (`extra`). --ignore removes named top-level paths and is reported, so a
 partial comparison is never silent.
 
-`--plant` mutates the backend's results in one of six ways a regression could take and must be reported:
+`--plant` mutates the backend's results in one of seven ways a regression could take and must be reported:
 wrong-positive (an unknown becomes identified), missing-retraction (an invalidation becomes identified),
 wrong-port (a session's server port changes), dropped-event (one intermediate event disappears),
 boundary-shift (bytes_inspected / a shift boundary moves), supported-to-unsupported (an answered case
-becomes an unsupported answer with a plausible reason).
+becomes an unsupported answer with a plausible reason), bool-to-int (a JSON boolean becomes the integer
+Python's == calls equal to it, SEC-PAR-2).
 """
 import argparse
 import json
@@ -43,7 +44,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 
-PLANTS = ("wrong-positive", "missing-retraction", "wrong-port", "dropped-event", "boundary-shift", "supported-to-unsupported")
+PLANTS = ("wrong-positive", "missing-retraction", "wrong-port", "dropped-event", "boundary-shift", "supported-to-unsupported",
+          "bool-to-int")
 GAPS_SCHEMA = 1
 
 
@@ -84,8 +86,9 @@ def diff(expected, actual, path="$", out=None, limit=200):
             out.append((path + ".length", len(expected), len(actual)))
         for index, (e, a) in enumerate(zip(expected, actual)):
             diff(e, a, "%s[%d]" % (path, index), out, limit)
-    elif expected != actual or isinstance(expected, bool) != isinstance(actual, bool):
-        # Python has True == 1 and False == 0.0; JSON booleans and numbers are different values.
+    elif type(expected) is not type(actual) or expected != actual:
+        # Strict on the leaf type: Python has True == 1 == 1.0, but a JSON boolean, an integer and a
+        # fraction are different values (SEC-PAR-2), and an int/float swap is a schema change.
         out.append((path, expected, actual))
     return out
 
@@ -187,6 +190,18 @@ def compare(cases_doc, results_doc, deltas=None, families=(), ignored=(), gaps=N
     return report
 
 
+def _first_bool(value):
+    """(container, key) of the first JSON boolean leaf in a result, depth first, or None."""
+    items = value.items() if isinstance(value, dict) else enumerate(value) if isinstance(value, list) else ()
+    for key, child in items:
+        if isinstance(child, bool):
+            return value, key
+        found = _first_bool(child)
+        if found is not None:
+            return found
+    return None
+
+
 def plant(results, kind, cases_doc):
     """Apply one regression shape to a copy of the results; returns (mutated results, case id touched)."""
     results = json.loads(json.dumps(results))
@@ -223,6 +238,10 @@ def plant(results, kind, cases_doc):
     elif kind == "supported-to-unsupported":
         cid, result = first(lambda c, r: True)
         results[cid] = {"unsupported": "not ported in the Go backend: family " + family_of(cases[cid].get("label"))}
+    elif kind == "bool-to-int":
+        cid, result = first(lambda c, r: _first_bool(r) is not None)
+        parent, key = _first_bool(result)
+        parent[key] = int(parent[key])
     else:
         raise ValueError("unknown plant " + kind)
     return results, cid

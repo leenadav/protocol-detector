@@ -76,6 +76,13 @@ class ParityHarnessTests(unittest.TestCase):
                 self.assertTrue(compare.diff(expected, actual))
         self.assertEqual(compare.diff({"n": [1, True, "x"]}, {"n": [1, True, "x"]}), [])
 
+    def test_leaf_comparison_is_strict_on_type(self):
+        """SEC-PAR-2 (PRO-51): True, 1 and 1.0 compare equal in Python; each pair must be a difference."""
+        for expected, actual in ((1, 1.0), (1.0, 1), (True, 1.0), (0, 0.0), ({"m": {"n": 2}}, {"m": {"n": 2.0}})):
+            with self.subTest(expected=expected, actual=actual):
+                self.assertTrue(compare.diff(expected, actual))
+        self.assertEqual(compare.diff({"x": [1, 1.5, False, None]}, {"x": [1, 1.5, False, None]}), [])
+
     def test_committed_gap_list_names_existing_cases(self):
         gaps = compare.load_gaps(CASES.parent.parent / "parity" / "gaps.json")
         ids = {c["id"] for c in self.doc["cases"]}
