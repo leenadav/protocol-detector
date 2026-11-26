@@ -1,0 +1,1011 @@
+{
+ "comment": "SEC-SESS-1 (PRO-398, Lee's option B, 2026-11-25): the pinned Go-only divergences of the seeded random suites (seed 1, count 300). Each case passes only while Go and the frozen reference give exactly the pinned results (go_sha256, frozen_sha256); 'line', 'go' and 'frozen' show the first differing line. Rules in migration/parity/sec_sess1.py; context in migration/STATUS.md, 'Security review finding SEC-SESS-1'.",
+ "analyze": {
+  "seed1/capture-1-50.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 891,
+   "go": "   \"end\": 1700000305.304,",
+   "frozen": "   \"end\": 1700000306.704,",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "f4376af177b4f602a02949bf4710167b70cda99abfd99832e642ccada10bbced",
+   "frozen_sha256": "e39310e92dff8db706bf120daef1613ded7d0f95580d181a3737e8e1579533fc"
+  },
+  "seed1/capture-1-57.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 792,
+   "go": "   \"packets\": 1,",
+   "frozen": "   \"packets\": 7,",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "c67efec5c9bebcf4498bb248f00932198641d257f145229a07e0ac7e2c8b47ea",
+   "frozen_sha256": "90555e291c8cd422780f270705161bc8ec1f0590962b73281e7ff1e0b49994ad"
+  },
+  "seed1/capture-1-61.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--json --sessions --fingerprints --heuristics --observation asymmetric",
+   "line": 1,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.10\", 52000], \"server\": [\"198.51.100.20\", 8000], \"start\": 1699999995.0, \"end\": 1700000000.001, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\"...",
+   "frozen": "{\"frame\": 2, \"source\": [\"198.51.100.20\", 8000], \"destination\": [\"192.0.2.10\", 52000], \"message\": \"Tracking both directions (SYN/SYN-ACK observed)\", \"classification\": null, \"events\": []}",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "69c22b40da1349bf12828c6f41f5590b4dd7342500a47b64221b31d0f4581aed",
+   "frozen_sha256": "b4917796852bb3b140d1de3978810efeef300d600984bba27c52e98bc82c5d46"
+  },
+  "seed1/capture-1-85.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 15,
+   "go": "   \"packets\": 1,",
+   "frozen": "   \"packets\": 7,",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "11a48836a224ee215b0f682d555d232599cc15fceb13dd6b55258578c9d9337f",
+   "frozen_sha256": "864b9d3098f665c79aa3cae399e1fbd55712329dab69eac321cf3b3d0b7cf7cd"
+  },
+  "seed1/capture-1-101.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--json --events-only --sessions --fingerprints --certificates --observation handshake",
+   "line": 739,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.242\", 40241], \"server\": [\"198.51.100.2\", 22], \"start\": 1700004013.406, \"end\": 1700004072.416, \"packets\": 2, \"client_bytes\": 30, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"udp\", \"client\": [\"192.0.2.237\", 40236], \"server\": [\"198.51.100.3\", 22], \"start\": 1700003954.396, \"end\": 1700004072.416, \"packets\": 1, \"client_bytes\": 32, \"server_bytes\": 0, \"end_reason\": \"Idle timeout\", \"app\": \"ipfix\", \"category\": \"business-systems\", \"subcategory\": \"management\", \"technology\": \"client-server\", \"risk\": 1, \"characteristics\": [], \"base_app\": null, \"im...",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "7578b7a91ad3d0d07042f3fe20dec97e60f6710fa72832335061a28b1217fa7e",
+   "frozen_sha256": "838eaf21d6f5e971ed0b891819f33d663a5a07df433caf8c8df7139429b23cab"
+  },
+  "seed1/capture-1-101.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 10680,
+   "go": "   \"end\": 1700001272.45,",
+   "frozen": "   \"end\": 1700001273.451,",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "b2dd14a53af6706794c67ae6d8263e56ee6edc79a6b5c05e7fdfa51ef8b5616b",
+   "frozen_sha256": "50c03522ba8870bdcd25246a83287cf3914cb762c5fd433221b908297e64eddf"
+  },
+  "seed1/capture-1-127.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 14,
+   "go": "   \"end\": 1700000326.003,",
+   "frozen": "   \"end\": 1700000326.006,",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "07ffaf34836f3d186e9d94b429ddb8eda76ae298322e29a837ef490452482943",
+   "frozen_sha256": "c748097c6d541529729398ce3931148dbabe5aab90366e884d504c312c347c27"
+  },
+  "seed1/capture-1-131.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--json --events-only --sessions --observation midstream",
+   "line": 68,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.25\", 40024], \"server\": [\"198.51.100.1\", 1883], \"start\": 1700000125.579, \"end\": 1700000130.608, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics...",
+   "frozen": "{\"frame\": 81, \"source\": [\"192.0.2.35\", 40034], \"destination\": [\"198.51.100.2\", 22], \"message\": \"192.0.2.35:40034 -> 198.51.100.2:22 | contiguous=138 pending=0 | HTTP=NO_MATCH (Excluded by prefix dispatch); SSH=NO_MATCH (Excluded by prefix dispatch); TLS=NO_MATCH (Excluded by prefix dispatch); HTTP2=NO_MATCH (Excluded by prefix dispatch); SOCKS5=NO_MATCH (Excluded by prefix dispatch); SMTP=NO_MATCH...",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "f5223603192d7cf3ee467e1ce16202da11484c8320723f389607cc30fc1b4ebc",
+   "frozen_sha256": "1ff7f10f594582ebeb626b0e41c2de174469c34add96af7029f890ae9d2ab908"
+  },
+  "seed1/capture-1-131.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 3033,
+   "go": "    \"192.0.2.25\",",
+   "frozen": "    \"192.0.2.22\",",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "b183252860120f999f68da9c9ac8c1e9024ec285c01dc0d057a6220a287cd7fa",
+   "frozen_sha256": "2b1ebfd6b3201cf0e353c0c5de3e96f5b340604a8cfe54e9b5180f5d5ae256a6"
+  },
+  "seed1/capture-1-155.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (1 session record closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end; Go admits new SYNs by that eviction where the reference refuses them ('LIMIT: too many tracked connections': Go 1, reference 2).",
+   "options": "--json --sessions --certificates --checksums verify --policy <tmp>/policy.json",
+   "line": 417,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.84\", 40083], \"server\": [\"198.51.100.3\", 8080], \"start\": 1700000921.07, \"end\": 1700000926.098, \"packets\": 2, \"client_bytes\": 24, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics...",
+   "frozen": "{\"frame\": 225, \"source\": [\"192.0.2.94\", 40093], \"destination\": [\"198.51.100.1\", 8080], \"message\": \"UDP 192.0.2.94:40093 -> 198.51.100.1:8080 | IDENTIFIED | netbios-ns | NetBIOS name service registration framing validated; names, addresses and node status are never emitted\", \"classification\": {\"status\": \"identified\", \"transport\": \"udp\", \"encryption\": null, \"application_protocol\": \"netbios-ns\", \"app...",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    1,
+    0
+   ],
+   "refused": [
+    1,
+    2
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "7295e7d49445db9a168058729fd06766f570fe677b4e98171b733bdbc4ed9395",
+   "frozen_sha256": "b99006d85720b85428a3752a0cd2f1a63c1f371655cb188c0b1dee2c416e8cc5"
+  },
+  "seed1/capture-1-155.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 19362,
+   "go": "    \"192.0.2.124\",",
+   "frozen": "    \"192.0.2.122\",",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "7fa9e92d3e938ef511cd2451a0d12b0ad3105255e9b80ef1a326b3efa14ab32f",
+   "frozen_sha256": "7b633217d9e4b5fd9275ac158640697a7694f5be2ce303de58e2f97507855350"
+  },
+  "seed1/capture-1-182.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--json --events-only --sessions --fingerprints --heuristics --certificates --signatures <tmp>/signatures.json --policy <tmp>/policy.json",
+   "line": 472,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.153\", 40152], \"server\": [\"198.51.100.3\", 22], \"start\": 1700002131.263, \"end\": 1700002136.853, \"packets\": 2, \"client_bytes\": 92, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics...",
+   "frozen": "{\"frame\": 432, \"source\": [\"198.51.100.3\", 443], \"destination\": [\"192.0.2.177\", 40176], \"message\": \"UDP 198.51.100.3:443 -> 192.0.2.177:40176 | IDENTIFIED | onc-rpc/2 | ONC RPC v2 call header and authentication structures validated; arguments not decoded\", \"classification\": {\"status\": \"identified\", \"transport\": \"udp\", \"encryption\": null, \"application_protocol\": \"onc-rpc/2\", \"application\": null, \"ho...",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "7e61cd5aba6f9bc737f3d4e62476872e632b78fa4976713c0a94ac27167dcaee",
+   "frozen_sha256": "637474f14a659b5eabc5d8e9fc16ec44a52ca9f7531829573a680e574c466fdb"
+  },
+  "seed1/capture-1-182.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 23479,
+   "go": "    \"192.0.2.153\",",
+   "frozen": "    \"192.0.2.147\",",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "97801139267fc0bc5f47776fa26e7e28cd66412bfab54f2544fccee4d3b41489",
+   "frozen_sha256": "ee2918878013678c44e231655327af32226444748418f4fd7ac0380403498a4c"
+  },
+  "seed1/capture-1-209.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go admits a new SYN into a full table by evicting the oldest half-open TCP connection, where the frozen reference refuses it ('LIMIT: too many tracked connections': Go 6, reference 8; the first, frame 227, Go 'SYN: waiting for SYN-ACK').",
+   "options": "--json --observation asymmetric --crc32c-byte-limit 0 --content-version 2026.11.1",
+   "line": 305,
+   "go": "{\"frame\": 227, \"source\": [\"192.0.2.94\", 40093], \"destination\": [\"198.51.100.1\", 443], \"message\": \"SYN: waiting for SYN-ACK\", \"classification\": null, \"events\": []}",
+   "frozen": "{\"frame\": 227, \"source\": [\"192.0.2.94\", 40093], \"destination\": [\"198.51.100.1\", 443], \"message\": \"LIMIT: too many tracked connections\", \"classification\": null, \"events\": []}",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    6,
+    8
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "f590dfb6f6b2831f599eca8c400672e54a0237b26a9d50e4c519f1c6807d2a1f",
+   "frozen_sha256": "796d5d5983f57a21334840eafe0c2ddebc9c3aef2df7ab2ed9fe9322dba0ca30"
+  },
+  "seed1/capture-1-209.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 6,
+   "go": "    \"192.0.2.6\",",
+   "frozen": "    \"192.0.2.1\",",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "ec858a580d2a70eba513578d1aa883bb9017b95e40fe3dc774e4dc68bb70fb5c",
+   "frozen_sha256": "1108d1d6ed82d81a0e4fd596e11bf34be00c78da5e6811b9adf40290f13f20da"
+  },
+  "seed1/capture-1-212.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 31517,
+   "go": "    \"192.0.2.196\",",
+   "frozen": "    \"192.0.2.193\",",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "38bf6599d9985e27ae26cdcb10cfc6f5ac217a2277db727cd68f0f0ee6b3236b",
+   "frozen_sha256": "0470664ebf0b9fa4e0a563362341e23fd7a9ceefd938d74d0e690d984fd4dddf"
+  },
+  "seed1/capture-1-230.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--json --sessions --fingerprints --certificates --checksums audit --continuation 0",
+   "line": 360,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.5\", 40004], \"server\": [\"198.51.100.2\", 1883], \"start\": 1700000148.348002, \"end\": 1700000153.552002, \"packets\": 28, \"client_bytes\": 43371, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"chara...",
+   "frozen": "{\"frame\": 353, \"source\": [\"192.0.2.5\", 40004], \"destination\": [\"198.51.100.2\", 1883], \"message\": \"SKIP: SYN-ACK not observed\", \"classification\": null, \"events\": []}",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "d0ca521faffdb825fe83fa77d19549288c3d2c513c5d12e9b257234f9ca359e6",
+   "frozen_sha256": "2e3723756511876507f34c9bbf223fedbc996fbf4aa1bcd3c49526e445a72665"
+  },
+  "seed1/capture-1-230.pcap/present": {
+   "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
+   "options": "limits [20000, 500, 4000]",
+   "line": 715,
+   "go": "    \"192.0.2.5\",",
+   "frozen": "    \"192.0.2.6\",",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "d38eab0aa8f9f908931542349550b84ed727cd308266d8d3f45c08b3e834e2a9",
+   "frozen_sha256": "27bfeb80c1fbeb7540f737493ca45341ace5de0c5fca37a9ba26fc815318845b"
+  },
+  "seed1/capture-1-236.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--json --events-only --sessions --fingerprints --heuristics --certificates --observation asymmetric --continuation 4096",
+   "line": 135,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.42\", 40041], \"server\": [\"198.51.100.3\", 5432], \"start\": 1700000670.487, \"end\": 1700000675.556, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics...",
+   "frozen": "{\"frame\": 130, \"source\": [\"192.0.2.57\", 40056], \"destination\": [\"198.51.100.3\", 22], \"message\": \"UDP 192.0.2.57:40056 -> 198.51.100.3:22 | IDENTIFIED | snmp/2c | SNMP inform BER/PDU/OID framing validated; community and values unverified and never emitted\", \"classification\": {\"status\": \"identified\", \"transport\": \"udp\", \"encryption\": null, \"application_protocol\": \"snmp/2c\", \"application\": null, \"hos...",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "58d4ca7efbf6dcdc31caf2f1c1763b76940abbf5cdd448768246c7a853dde12e",
+   "frozen_sha256": "f622b855a745930badd80f1aa2f100d7a1aa31fb374f147cd1f5ac4a68164cd0"
+  },
+  "seed1/capture-1-284.pcap/analyze": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires an undecided UDP flow after HalfOpenTimeout (5 s) of silence (session record 'Idle timeout'), where the frozen reference keeps it for the whole idle timeout.",
+   "options": "--json --events-only --sessions --checksums audit --udp-hint stun --tcp-hint dns --crc32c-byte-limit 16 --policy <tmp>/policy.json",
+   "line": 6,
+   "go": "{\"type\": \"session\", \"transport\": \"udp\", \"client\": [\"192.0.2.1\", 40000], \"server\": [\"198.51.100.1\", 22], \"start\": 1700000000.0, \"end\": 1700000006.006, \"packets\": 3, \"client_bytes\": 160, \"server_bytes\": 69, \"end_reason\": \"Idle timeout\", \"app\": \"unknown-udp\", \"category\": \"unknown\", \"subcategory\": \"unknown\", \"technology\": \"unknown\", \"risk\": 5, \"characteristics\": [\"evasive\"], \"base_app\": null, \"implici...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"udp\", \"client\": [\"192.0.2.1\", 40000], \"server\": [\"198.51.100.1\", 22], \"start\": 1700000000.0, \"end\": 1700000128.309, \"packets\": 3, \"client_bytes\": 160, \"server_bytes\": 69, \"end_reason\": \"Idle timeout\", \"app\": \"unknown-udp\", \"category\": \"unknown\", \"subcategory\": \"unknown\", \"technology\": \"unknown\", \"risk\": 5, \"characteristics\": [\"evasive\"], \"base_app\": null, \"implici...",
+   "go_status": [
+    0,
+    ""
+   ],
+   "frozen_status": [
+    0,
+    ""
+   ],
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "e1f1d6d0734e2228c552084427b91bba456322cd7850d5d6c413f3982778b097",
+   "frozen_sha256": "370bfc41b6e62e9553ae104032031134904b3ce914b67aeb89827dc838ba0b14"
+  }
+ },
+ "live": {
+  "seed1/capture-53": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--duration 0.0 --max-packets 0 --stats-interval 1.0 --max-connections 128 --byte-limit 65536 --idle-timeout 15.0 --crc32c-byte-limit 16 --observation handshake --checksums ignore --continuation 64 --policy <tmp>/policy.json --json",
+   "line": 167,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.93\", 40092], \"server\": [\"198.51.100.3\", 1883], \"start\": 1700001035.108, \"end\": 1700001040.238, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics...",
+   "frozen": "{\"type\": \"classification\", \"timestamp\": 1700001040.238, \"source\": [\"192.0.2.118\", 40117], \"destination\": [\"198.51.100.1\", 5432], \"transport\": \"udp\", \"status\": \"identified\", \"protocol\": \"mdns\", \"app\": \"mdns\", \"risks\": [\"nonstandard-port\"], \"policy\": \"allow\", \"fingerprints\": null, \"certificate\": null, \"event\": \"datagram\", \"scope\": \"datagram\", \"candidate_hint\": null, \"reason\": \"Multicast DNS framing ...",
+   "go_status": 1,
+   "frozen_status": 1,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "0466128872bfa2df8e02059019ad3ab40e55b6d5f058b08742a704facf978b5e",
+   "frozen_sha256": "b0444017440debd8d736ef94ec1fe9830f1513838a91a2502f46666dc61f1658"
+  },
+  "seed1/capture-77": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--duration 0.0 --max-packets 0 --stats-interval 10.0 --max-connections 128 --byte-limit 64 --idle-timeout 60.0 --crc32c-byte-limit 4096 --observation handshake --checksums verify --continuation 0 --fingerprints",
+   "line": 1,
+   "go": "SESSION incomplete       192.0.2.1:40000 -> 198.51.100.1:9000 | unknown/session-outcome risk=1 port=unknown | client=- server=- | 33 pkts 45645+0 B | Idle timeout before initial message completed",
+   "frozen": "PROGRESS 1700000011.8s | packets=49 identified=0 skipped=47 truncated=0 limits=0 invalidated=0 incomplete=0 | no identifications",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "7bd33cfc0ea6d0db07234561d55eca8f74dc873a0083df957c9619f4f3b5aaca",
+   "frozen_sha256": "0c2bd77f7d6605375bfd27fcb3f52be080e47dbc96165d0021a171ae3b7a5068"
+  },
+  "seed1/capture-92": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--duration 0.0 --max-packets 0 --stats-interval 10.0 --max-connections 128 --byte-limit 1000 --idle-timeout 0.5 --crc32c-byte-limit 0 --observation handshake --checksums verify --continuation 0 --all-events --hostnames --fingerprints --policy <tmp>/policy.json --json",
+   "line": 908,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.28\", 40277], \"server\": [\"198.51.100.2\", 8080], \"start\": 1700004318.437, \"end\": 1700004318.937, \"packets\": 2, \"client_bytes\": 128, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristi...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"udp\", \"client\": [\"198.51.100.1\", 443], \"server\": [\"192.0.2.21\", 40270], \"start\": 1700004317.907, \"end\": 1700004318.937, \"packets\": 1, \"client_bytes\": 41, \"server_bytes\": 0, \"end_reason\": \"Idle timeout\", \"app\": \"snmp\", \"category\": \"networking\", \"subcategory\": \"infrastructure\", \"technology\": \"network-protocol\", \"risk\": 2, \"characteristics\": [\"has-known-vulnerabiliti...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "f48e9d51144e44473cde8d1cee8103a0fade0ee4ffa41c33a99b441270448945",
+   "frozen_sha256": "5fee3df98ec37a9e7dba1d92295ac63aca141d800ccdd4e64a5508c461ea8dfe"
+  },
+  "seed1/capture-206": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--duration 0.0 --max-packets 0 --stats-interval 1.0 --max-connections 128 --byte-limit 1000 --idle-timeout 15.0 --crc32c-byte-limit 4096 --observation handshake --checksums ignore --continuation 0 --all-events --hostnames --fingerprints --policy <tmp>/policy.json --json",
+   "line": 10,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.3\", 40002], \"server\": [\"198.51.100.3\", 5432], \"start\": 1700000008.708, \"end\": 1700000014.118, \"packets\": 48, \"client_bytes\": 60779, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteris...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.3\", 40002], \"server\": [\"198.51.100.3\", 5432], \"start\": 1700000008.708, \"end\": 1700000136.019, \"packets\": 54, \"client_bytes\": 65537, \"server_bytes\": 2037, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characte...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "c050d4b81924033611ebdb10a75dd5f6b6e347e55017954e4914e95b6e32f86f",
+   "frozen_sha256": "570fb5bfd767cddc1c629d8ce800e81ffb5f8c96f4df75ed888677c711dddddb"
+  },
+  "seed1/capture-266": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "--duration 0.0 --max-packets 0 --stats-interval 0.0 --max-connections 8 --byte-limit 1000 --idle-timeout 15.0 --crc32c-byte-limit 4096 --observation midstream --checksums audit --continuation 0 --all-events --certificates --json",
+   "line": 1,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.1\", 40000], \"server\": [\"198.51.100.1\", 9000], \"start\": 1700000000.0, \"end\": 1700000005.506, \"packets\": 23, \"client_bytes\": 312, \"server_bytes\": 28151, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteris...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.1\", 40000], \"server\": [\"198.51.100.1\", 9000], \"start\": 1700000000.0, \"end\": 1700000070.507, \"packets\": 40, \"client_bytes\": 312, \"server_bytes\": 67577, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteris...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "0c626ddcc31e700eed8fd31c2a1bddf769680457e1766c54cbda876fecbfe715",
+   "frozen_sha256": "cff62c0f812395ce3542978128f4c9da0581407cfb2417c0ad8fb30f533f387e"
+  },
+  "seed1/capture-270": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (1 session record closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end.",
+   "options": "--duration 0.0 --max-packets 40 --stats-interval 1.0 --max-connections 2 --byte-limit 64 --idle-timeout 60.0 --crc32c-byte-limit 16 --observation handshake --checksums audit --continuation 0 --hostnames --heuristics --json",
+   "line": 1,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.10\", 52000], \"server\": [\"198.51.100.20\", 8000], \"start\": 1700000002.006, \"end\": 1700000002.006, \"packets\": 3, \"client_bytes\": 8, \"server_bytes\": 0, \"end_reason\": \"Half-open budget full; oldest unestablished state evicted\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"ch...",
+   "frozen": "{\"type\": \"progress\", \"elapsed_seconds\": 1700000000.001, \"counts\": {\"packets\": 22, \"captured_bytes\": 1515, \"tcp\": 22, \"tcp_control_without_state\": 10, \"tcp_without_start\": 8, \"connection_limit\": 1}, \"protocols\": {}, \"apps\": {}, \"risks\": {}, \"policy\": {}, \"active_connections\": 2, \"active_udp_flows\": 0, \"capture_stats\": null, \"telemetry\": {\"counters\": {\"bytes.retained\": 0, \"queue.depth\": 0}, \"histogr...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    1,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "d5741344828a8a0c27eb5fe592ff765934374c846e05ee179f68920dab0167e7",
+   "frozen_sha256": "4fcec7f2f56731f456b5f53b5ab47632d45c17db2433d1bb41ff64e5e726dad9"
+  }
+ },
+ "live-decrypt": {
+  "seed1/script-4": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (11 session records closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end.",
+   "options": "",
+   "line": 13,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20047], \"server\": [\"198.51.100.20\", 443], \"start\": 161.01, \"end\": 161.01, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Half-open budget full; oldest unestablished state evicted\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": []...",
+   "frozen": "{\"type\": \"classification\", \"timestamp\": 1700001246.508392, \"source\": [\"192.0.2.10\", 51000], \"destination\": [\"198.51.100.20\", 443], \"transport\": \"tcp\", \"status\": \"identified\", \"protocol\": \"tls\", \"app\": \"ssl\", \"risks\": [], \"policy\": null, \"fingerprints\": null, \"certificate\": null, \"event\": \"updated\", \"scope\": \"initial_message\", \"candidate_hint\": null, \"reason\": \"ClientHello structure validated; SNI/...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    11,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "bc77d34a86c6c5940823764151bd2e4f2bd1032c4469b500e056bf857b9004be",
+   "frozen_sha256": "8c4db35ff8cccb64dcfa46d7b95b8a50b4be5f355f1dd4c0bc409918a509493d"
+  },
+  "seed1/script-19": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout; volatile: the script holds a real OpenSSL exchange, so numbers and hex runs are masked in the digests.",
+   "options": "",
+   "line": 0,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"#.#.#.#\", #], \"server\": [\"#.#.#.#\", #], \"start\": #.#, \"end\": #.#, \"packets\": #, \"client_bytes\": #, \"server_bytes\": #, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": #, \"characteristics\": [], \"base_app\": null, \"implicitly_...",
+   "frozen": "{\"type\": \"classification\", \"timestamp\": #.#, \"source\": [\"#.#.#.#\", #], \"destination\": [\"#.#.#.#\", #], \"transport\": \"tcp\", \"status\": \"identified\", \"protocol\": \"http/#.#\", \"app\": \"webdav\", \"risks\": [\"nonstandard-port\"], \"policy\": null, \"fingerprints\": null, \"certificate\": null, \"event\": \"updated\", \"scope\": \"initial_message\", \"candidate_hint\": null, \"reason\": \"HTTP start-line and headers validated; b...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "31e942322b802105ad93cfb9686eb3f076e25b4edd26f558742563bf3890d3b1",
+   "frozen_sha256": "96521ad7ccc692213df497afff22ab097fea577655cb8f9a03672fa725d97d04",
+   "volatile": true
+  },
+  "seed1/script-47": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (1 session record closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end.",
+   "options": "",
+   "line": 7,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20001], \"server\": [\"198.51.100.20\", 443], \"start\": 100.0, \"end\": 100.0, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Half-open budget full; oldest unestablished state evicted\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], ...",
+   "frozen": "{\"type\": \"capture_gap\", \"active_connections\": 51, \"scope\": \"active_connections\", \"reason\": \"Capture truncation; active stream observations invalidated\", \"session_ids\": [\"02ea0985ac53e98c\", \"03c5473cf808c8bd\", \"2e6b56c81ace9b74\", \"30cdb1132b5a47b4\", \"31e0d07e8e8cddef\", \"367af095c238a7e3\", \"390f7f4ceb5d34a9\", \"39aa89e2625d086a\", \"3f48c18e43bede9e\", \"411a6bc1d5c9112a\", \"4135c01d55ee2b95\", \"65b17776c2...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    1,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "e40669f45117a65f7b24f02ce83e7f9ad4816c5246e67bb86db7ea0323c70f5f",
+   "frozen_sha256": "a92b545bbc7287748a5037f2ce01b5a907a54734e51a02985819018014790ae0"
+  },
+  "seed1/script-88": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (15 session records closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end.",
+   "options": "",
+   "line": 4,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20021], \"server\": [\"198.51.100.20\", 443], \"start\": 100.0, \"end\": 100.0, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Half-open budget full; oldest unestablished state evicted\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], ...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.10\", 51000], \"server\": [\"198.51.100.20\", 6379], \"start\": 100.0, \"end\": 100.0, \"packets\": 8, \"client_bytes\": 428, \"server_bytes\": 956, \"end_reason\": \"Observed RST before initial message completed; reset not endpoint-validated\", \"app\": \"github\", \"category\": \"business-systems\", \"subcategory\": \"software-development\", \"technology\": \"browser-ba...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    15,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "1a2210c8e81e855bfcba64f011b246e68cb656cc32b71451e0bad81ceec52326",
+   "frozen_sha256": "2279bb64026ff4f2016aabab38a4c47237ab6a05dd5d60c334c18df2bb1645ae"
+  },
+  "seed1/script-129": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "",
+   "line": 0,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.10\", 51000], \"server\": [\"198.51.100.20\", 8443], \"start\": 100.0, \"end\": 120.0, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], \"base_app\"...",
+   "frozen": "{\"type\": \"classification\", \"timestamp\": 1700000000.0003, \"source\": [\"192.0.2.10\", 51000], \"destination\": [\"198.51.100.20\", 8443], \"transport\": \"tcp\", \"status\": \"identified\", \"protocol\": \"http/1.1\", \"app\": \"web-browsing\", \"risks\": [\"cleartext-credential-protocol\", \"nonstandard-port\"], \"policy\": null, \"fingerprints\": null, \"certificate\": null, \"event\": \"updated\", \"scope\": \"initial_message\", \"candida...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "cf33f1baf1752eecedb605b9e33fe148854a590bb2b95b6ebc3ff6396839143c",
+   "frozen_sha256": "7d2c194be1a58f6e82a2924ec14ec98fb6edc80886d5af6e76f752545a3eaab3"
+  },
+  "seed1/script-137": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "",
+   "line": 14,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20004], \"server\": [\"198.51.100.20\", 443], \"start\": 161.0, \"end\": 181.0, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], \"base_app\": ...",
+   "frozen": "{\"type\": \"progress\", \"elapsed_seconds\": 181.01, \"counts\": {\"packets\": 23, \"captured_bytes\": 2307, \"tcp\": 23, \"sessions\": 12, \"incomplete\": 2, \"tcp_without_start\": 2, \"tcp_control_without_state\": 1}, \"protocols\": {}, \"apps\": {\"incomplete\": 12}, \"risks\": {}, \"policy\": {}, \"active_connections\": 6, \"active_udp_flows\": 0, \"capture_stats\": null, \"telemetry\": {\"counters\": {\"keys.pending\": 0, \"queue.drain...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "ca06e5ddb436c6b888eb2532d68fbcf91003a369f5aeaa0ff2c58e293b2a8d2b",
+   "frozen_sha256": "7ae9bd6c9000b9b29cd4e6eb0e4ceaecb257fd41cbe16d2556fcaadef91daf43"
+  },
+  "seed1/script-154": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout; volatile: the script holds a real OpenSSL exchange, so numbers and hex runs are masked in the digests.",
+   "options": "",
+   "line": 2,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"#.#.#.#\", #], \"server\": [\"#.#.#.#\", #], \"start\": #.#, \"end\": #.#, \"packets\": #, \"client_bytes\": #, \"server_bytes\": #, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": #, \"characteristics\": [], \"base_app\": null, \"implicitly_...",
+   "frozen": "{\"type\": \"progress\", \"elapsed_seconds\": #.#, \"counts\": {\"packets\": #, \"captured_bytes\": #, \"tcp\": #, \"tcp_control_without_state\": #, \"tcp_without_start\": #}, \"protocols\": {}, \"apps\": {}, \"risks\": {}, \"policy\": {}, \"active_connections\": #, \"active_udp_flows\": #, \"capture_stats\": null, \"telemetry\": {\"counters\": {\"keys.pending\": #, \"queue.drained\": #, \"bytes.retained\": #, \"queue.depth\": #}, \"histogra...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "c92bf8c34766d45f8ca4c2e3e18fb88e02d0a4c4d95d1ee0a210dbf7191fb94d",
+   "frozen_sha256": "7ed1a582b2681e6158838f53fc849e8aaf5cfa8b11dd6d0e541fb9fe6dd0c242",
+   "volatile": true
+  },
+  "seed1/script-169": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (21 session records closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end; the script also carries the PRO-260 hybrid-group delta (Go identifies the ServerHello the reference reports unknown): on main 23bbc0c it was approved by the PRO-260 model, here it is pinned as a whole; volatile: the script holds a real OpenSSL exchange, so numbers and hex runs are masked in the digests.",
+   "options": "",
+   "line": 2,
+   "go": "{\"type\": \"classification\", \"timestamp\": #.#, \"source\": [\"#.#.#.#\", #], \"destination\": [\"#.#.#.#\", #], \"transport\": \"tcp\", \"status\": \"identified\", \"protocol\": \"tls\", \"app\": \"ssl\", \"risks\": [\"nonstandard-port\"], \"policy\": null, \"fingerprints\": null, \"certificate\": null, \"event\": \"updated\", \"scope\": \"server_hello\", \"candidate_hint\": null, \"reason\": \"ServerHello structure validated; server selections ...",
+   "frozen": "{\"type\": \"classification\", \"timestamp\": #.#, \"source\": [\"#.#.#.#\", #], \"destination\": [\"#.#.#.#\", #], \"transport\": \"tcp\", \"status\": \"unknown\", \"protocol\": null, \"app\": \"unknown-tcp\", \"risks\": [], \"policy\": null, \"fingerprints\": null, \"certificate\": null, \"event\": \"updated\", \"scope\": \"initial_message\", \"candidate_hint\": null, \"reason\": \"Server key share group outside supported profile\"}",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    21,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "25144975712cbc8f2086193ac5be20f4a17d4836ef7821390d6ee89a9d525727",
+   "frozen_sha256": "577443cc723a3e9ef94828285dae5f128047a5d01669bb87b792e7d759255c9c",
+   "volatile": true
+  },
+  "seed1/script-172": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (22 session records closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end.",
+   "options": "",
+   "line": 4,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20004], \"server\": [\"198.51.100.20\", 443], \"start\": 100.01, \"end\": 100.01, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Half-open budget full; oldest unestablished state evicted\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": []...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.10\", 51000], \"server\": [\"198.51.100.20\", 22], \"start\": 100.01, \"end\": 100.01, \"packets\": 19, \"client_bytes\": 20750, \"server_bytes\": 640, \"end_reason\": \"Both TCP directions closed with FIN\", \"app\": \"openai-chatgpt\", \"category\": \"business-systems\", \"subcategory\": \"generative-ai\", \"technology\": \"browser-based\", \"risk\": 3, \"characteristics\": ...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    22,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "510685816f814ca5c9c17d62a187b3e1abc8faace93f14668fb2328563e447ad",
+   "frozen_sha256": "38bd927b849e14fbe7b337836e02e67079362f83305e85d2d58e24bcf80ecb7e"
+  },
+  "seed1/script-179": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (22 session records closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end; volatile: the script holds a real OpenSSL exchange, so numbers and hex runs are masked in the digests.",
+   "options": "",
+   "line": 7,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"#.#.#.#\", #], \"server\": [\"#.#.#.#\", #], \"start\": #.#, \"end\": #.#, \"packets\": #, \"client_bytes\": #, \"server_bytes\": #, \"end_reason\": \"Half-open budget full; oldest unestablished state evicted\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": #, \"characteristics\": [], \"base_app\": null, ...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"#.#.#.#\", #], \"server\": [\"#.#.#.#\", #], \"start\": #.#, \"end\": #.#, \"packets\": #, \"client_bytes\": #, \"server_bytes\": #, \"end_reason\": \"Both TCP directions closed with FIN\", \"app\": \"github\", \"category\": \"business-systems\", \"subcategory\": \"software-development\", \"technology\": \"browser-based\", \"risk\": #, \"characteristics\": [\"widely-used\", \"transfers-f...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    22,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "e5bd0ab99d90af096f68b8877cd20648633f6bea45b87da3fce5233b7df57b5f",
+   "frozen_sha256": "c4137914d572246b0e8e16741b4b78418a5b0fa61f8a0a0d2c37d5ceff919e7e",
+   "volatile": true
+  },
+  "seed1/script-182": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "",
+   "line": 0,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20027], \"server\": [\"198.51.100.20\", 443], \"start\": 100.0, \"end\": 120.0, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], \"base_app\": ...",
+   "frozen": "{\"type\": \"classification\", \"timestamp\": 1700000461.503397, \"source\": [\"192.0.2.10\", 51000], \"destination\": [\"198.51.100.20\", 22], \"transport\": \"tcp\", \"status\": \"identified\", \"protocol\": \"tls\", \"app\": \"ssl\", \"risks\": [\"nonstandard-port\", \"tls-missing-sni\"], \"policy\": null, \"fingerprints\": null, \"certificate\": null, \"event\": \"updated\", \"scope\": \"initial_message\", \"candidate_hint\": null, \"reason\": \"C...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "72229f2f0cc038f0ba34fe070c13f3064a15a49059042813c2f1c1a19ba160d4",
+   "frozen_sha256": "7ffbb96827f0b1bf9dced640f62628d9e4c1181152aec0c5b9e7db2914b81863"
+  },
+  "seed1/script-245": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (22 session records closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end.",
+   "options": "",
+   "line": 4,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20043], \"server\": [\"198.51.100.20\", 443], \"start\": 100.01, \"end\": 100.01, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Half-open budget full; oldest unestablished state evicted\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": []...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20043], \"server\": [\"198.51.100.20\", 443], \"start\": 100.01, \"end\": 100.01, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Capture stopped before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], \"base_a...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    22,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "230ecd4e1953b3f159512b78b10310eb0a864ee36300cdc99375500ac47dd107",
+   "frozen_sha256": "c4df07093118b36c8887bbca176bdd93a15b1a439cf7cf6581cb9f3b117eeb2a"
+  },
+  "seed1/script-248": {
+   "reason": "SEC-SESS-1, PRO-398: Go evicts the oldest half-open TCP connection when the half-open budget or the table is full (8 session records closed 'Half-open budget full; oldest unestablished state evicted'); the frozen reference keeps every such connection until its idle timeout or the capture end.",
+   "options": "",
+   "line": 15,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20061], \"server\": [\"198.51.100.20\", 443], \"start\": 181.0, \"end\": 181.0, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Half-open budget full; oldest unestablished state evicted\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], ...",
+   "frozen": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.9\", 20061], \"server\": [\"198.51.100.20\", 443], \"start\": 181.0, \"end\": 242.0, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], \"base_app\": ...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    8,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "750e058eea38230d06e7237d2b096161aac1becbb8a13101f19fcb86352bbdd9",
+   "frozen_sha256": "dd9615ada3f9810b3dd5d1eceb0c865c3fd9ad06d091132fa6f67e94f77b5b40"
+  },
+  "seed1/script-296": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout; volatile: the script holds a real OpenSSL exchange, so numbers and hex runs are masked in the digests.",
+   "options": "",
+   "line": 0,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"#.#.#.#\", #], \"server\": [\"#.#.#.#\", #], \"start\": #.#, \"end\": #.#, \"packets\": #, \"client_bytes\": #, \"server_bytes\": #, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": #, \"characteristics\": [], \"base_app\": null, \"implicitly_...",
+   "frozen": "{\"type\": \"progress\", \"elapsed_seconds\": #.#, \"counts\": {\"packets\": #, \"captured_bytes\": #, \"tcp\": #}, \"protocols\": {}, \"apps\": {}, \"risks\": {}, \"policy\": {}, \"active_connections\": #, \"active_udp_flows\": #, \"capture_stats\": null, \"telemetry\": {\"counters\": {\"keys.pending\": #, \"queue.drained\": #, \"bytes.retained\": #, \"queue.depth\": #}, \"histograms\": {\"stage_seconds.packet\": {\"count\": #, \"sum\": null, ...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "583a732d3a7df342e374e04d019f9991a342d4c32a0450d4fc53635dba8e7462",
+   "frozen_sha256": "aae6ed8cf079434047596716acb22d3e65f21f0fd334d926c769dcd5d1c1013d",
+   "volatile": true
+  },
+  "seed1/script-297": {
+   "reason": "SEC-SESS-1, PRO-398: Go expires a half-open TCP connection HalfOpenTimeout (5 s) after its SYN and closes its session record 'Idle timeout before initial message completed', so later packets of that tuple are handled as new state; the frozen reference keeps the connection for the whole idle timeout.",
+   "options": "",
+   "line": 0,
+   "go": "{\"type\": \"session\", \"transport\": \"tcp\", \"client\": [\"192.0.2.10\", 51000], \"server\": [\"198.51.100.20\", 443], \"start\": 100.01, \"end\": 120.01, \"packets\": 1, \"client_bytes\": 0, \"server_bytes\": 0, \"end_reason\": \"Idle timeout before initial message completed\", \"app\": \"incomplete\", \"category\": \"unknown\", \"subcategory\": \"session-outcome\", \"technology\": \"unknown\", \"risk\": 1, \"characteristics\": [], \"base_app...",
+   "frozen": "{\"type\": \"classification\", \"timestamp\": 1700000061.0013, \"source\": [\"192.0.2.10\", 51000], \"destination\": [\"198.51.100.20\", 443], \"transport\": \"tcp\", \"status\": \"identified\", \"protocol\": \"tls\", \"app\": \"github\", \"risks\": [], \"policy\": null, \"fingerprints\": null, \"certificate\": null, \"event\": \"updated\", \"scope\": \"initial_message\", \"candidate_hint\": null, \"reason\": \"ClientHello structure validated; SNI...",
+   "go_status": 0,
+   "frozen_status": 0,
+   "evicted": [
+    0,
+    0
+   ],
+   "refused": [
+    0,
+    0
+   ],
+   "udp_refused": [
+    0,
+    0
+   ],
+   "go_sha256": "4b52f1090a0346b06f55d8fcb3ca0252469baf86fd90b1f0ccfbf79e9664e6f2",
+   "frozen_sha256": "b1ece9b8d98d03552b867bf8be5169d471345938bde86219e234bbca0d63f551"
+  }
+ }
+}

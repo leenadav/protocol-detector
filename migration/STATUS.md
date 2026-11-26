@@ -764,16 +764,32 @@ Tests: `go/internal/session/halfopen_test.go` (defaults and validation, SYN floo
 eviction, the retransmission loop, the timeout from the SYN, UDP flood, a real connection through a flood in
 handshake, asymmetric and midstream modes). Each fails when its mechanism is reverted.
 
-**Parity (open, waits on Lee's PRO-397 decision).** The committed replay cases do not reach these limits
-(`make parity-go`: 7,462 of 7,462). The seeded random suites do, and differ from the frozen Python reference only
-where Go now evicts or expires a half-open state (seed 1; all 0 on `main` `8945986`):
-`parity-analyze` 20 mismatches in 8 captures (`capture-1-50`, `-57`, `-61`, `-85`, `-101`, `-127`, `-131`, `-155`),
-`parity-live` 6 (`capture-53`, `-77`, `-92`, `-206`, `-266`, `-270`), `parity-live-decrypt` 15 event lines in 10
-scripts (4, 19, 47, 88, 129, 137, 154, 169, 172, 179).
-`parity-decrypt`, `parity-control` and `schema-go` are unchanged (0 mismatched, 0 problems). Option A ports the same
-rules to `protocol_adapters/analyze_pcap.py` (`_udp`, the SYN branch of `_tcp`, `expire`) as a new Frozen-Python
-exception; option B pins these cases as approved Go-only divergences, as PRO-260 did. Until then the branch is not
-mergeable: those three gates are red by design, and nothing is weakened to hide it.
+**Parity: pinned Go-only divergences (Lee's option B, 2026-11-25; PRO-432).** Lee decided on 2026-11-25 that the
+Python engine is being retired and gets no more fixes, so option A (the same rules in `analyze_pcap.py`) is gone and
+the PRO-397 question closed without an answer. The committed replay cases do not reach these limits (`make
+parity-go`: every case matches). The seeded random suites do: with Go built from `main` `23bbc0c` all three give 0
+mismatches, and with this branch they differ from the frozen reference exactly where Go now evicts or expires a
+half-open state (seed 1, count 300). The full lists (the 2026-11-25 text above showed only the first 10 lines each
+harness prints):
+
+| suite | pinned cases | approved divergences | unapproved |
+|---|---|---|---|
+| `parity-analyze` | 20 in 13 captures: `capture-1-61`, `-101`, `-131`, `-155`, `-182`, `-209`, `-230`, `-236`, `-284` (the `analyze` command) and `capture-1-50`, `-57`, `-85`, `-101`, `-127`, `-131`, `-155`, `-182`, `-209`, `-212`, `-230` (the presentation result) | 20 (SEC-SESS-1) | 0 |
+| `parity-live` | 6: `capture-53`, `-77`, `-92`, `-206`, `-266`, `-270` | 6 (SEC-SESS-1), 3 (PRO-189, unchanged) | 0 |
+| `parity-live-decrypt` | 15: scripts 4, 19, 47, 88, 129, 137, 154, 169, 172, 179, 182, 245, 248, 296, 297 | 15 (SEC-SESS-1), 40 (PRO-260; 41 on `main`: script 169 carries both deltas and is pinned as a whole) | 0 |
+
+Each case is pinned in `migration/parity/sec_sess1.json` in the PRO-260 form: the exact case id, the reason
+(`SEC-SESS-1, PRO-398: ...`), what Go returns against the frozen answer (the first differing line of each, the
+counts of eviction records and `LIMIT` refusals on each side) and the SHA-256 of each side's whole compared result
+(output and exit status). `migration/parity/sec_sess1.py` approves a mismatch only when its case is pinned and both
+digests are exactly the pinned ones; a pinned case that no longer differs fails the run as stale, and
+`--record-sec-sess1 PATH` writes observed divergences for review and always fails. The five live-decrypt scripts
+that contain a real OpenSSL exchange (19, 154, 169, 179, 296; fresh keys every run, so a byte count can move by one)
+are `volatile`: the harness, not the pin, marks them, and their digests mask numbers and hex runs of 8 or more
+characters only. All other counts are unchanged from `main` (analyze 14,540 rows, 4,755 identified, 201 completed
+presentation results; live 4,616 event lines; live decrypt 4,120 event lines). `parity-decrypt`, `parity-control`
+and `schema-go` are unchanged (0 mismatched, 0 problems). Regression tests: `test_parity_verdicts.SecSess1PinTests`
+and `sec_sess1.py --self-test`.
 
 ## Codex finding PRO-12 P2: the unknown buffer outlived the byte budget (PRO-189, 2026-11-22)
 
