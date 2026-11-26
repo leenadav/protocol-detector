@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "259ae8cc51e400b34ca9dce9c3e7e4169595303b",
-  "branch": "claude/platform-PRO-402-demo-go-serve",
-  "build_digest": "d78effaab84429de992965c068abb2f6ed7d1965d7e7e8d55d41141908d17e70",
+  "commit": "960299fc8337560c9319554bd0108f3823a61db5",
+  "branch": "claude/engine-PRO-448-udp-flow-limit",
+  "build_digest": "8d24d8d1b30f15d6e0437215229007df44b873006ef6617fb42dd86cb4bf45d5",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -640,12 +640,12 @@
     {
       "path": "schemas/offline-row.schema.json",
       "component": "schemas",
-      "sha256": "c46a5f74eea875f411d150c051f1b8f0d7f53f8212f3074b9c3133e357a76361"
+      "sha256": "49654e4b6adbf569c5c78409067d5804bfa80666a68593b65991d34236a94a7a"
     },
     {
       "path": "schemas/session.schema.json",
       "component": "schemas",
-      "sha256": "54c1cf06f9ce28e202197b1e95f09ad794e3f6fdc6faeeb38d4531b07c82707c"
+      "sha256": "e30694967c7d117c784f0989ed658fc0dfca431c85ab8a9f872182fa13cd6792"
     }
   ]
 }

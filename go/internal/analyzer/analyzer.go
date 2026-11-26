@@ -145,6 +145,8 @@ type Options struct {
 	Policy *policy.Policy
 	// Rows collects the adapter output in emission order (stream-end events and session records).
 	Rows bool
+	// DatagramOutcomes adds mixed_outcomes and datagram_outcomes to UDP session records (PRO-448, analyze).
+	DatagramOutcomes bool
 }
 
 // Row is one adapter output besides the per-packet row: a directional terminal event when tracking of its
@@ -574,12 +576,31 @@ func (a *Analyzer) record(transportName string, state *session.State, verdict *a
 		}
 		record["hostname"] = hostname
 	}
+	if transportName == "udp" && a.opts.DatagramOutcomes {
+		record["mixed_outcomes"], record["datagram_outcomes"] = datagramOutcomes(state)
+	}
 	a.Sessions++
 	if a.opts.Rows {
 		a.Rows = append(a.Rows, Row{Session: record, Order: order})
 		return
 	}
 	a.Records = append(a.Records, record)
+}
+
+// datagramOutcomes renders a UDP flow's distinct identified datagram results (PRO-448): the flow is mixed
+// when its identified datagrams carried more than one (protocol, application) label, so the first
+// identification, which names the session, is not the only one.
+func datagramOutcomes(state *session.State) (bool, map[string]interface{}) {
+	distinct := make([]interface{}, 0, len(state.Outcomes))
+	for _, o := range state.Outcomes {
+		var application interface{}
+		if o.Label.HasApp {
+			application = o.Label.Application
+		}
+		distinct = append(distinct, map[string]interface{}{"protocol": o.Label.Protocol, "application": application, "datagrams": o.Datagrams})
+	}
+	mixed := len(state.Outcomes) > 1 || state.OutcomesBeyond > 0
+	return mixed, map[string]interface{}{"distinct": distinct, "beyond_limit": state.OutcomesBeyond}
 }
 
 // compatFamilies is sessions.TCP_FAMILIES: the legacy display order followed by the remaining TCP families in
