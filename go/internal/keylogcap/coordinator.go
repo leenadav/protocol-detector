@@ -204,6 +204,12 @@ func (c *coordinator) noteSessions() {
 		name, _ := record["transport"].(string)
 		c.generations.Publish(sessionid.Identity(name, endpointOf(record["client"]), endpointOf(record["server"])))
 	}
+	// The key-log path reads analyzer records only here, to publish their generations: drop them once
+	// published, so a long capture does not retain one record per finished session (SEC-KEY-1). The array
+	// is cleared so the dropped maps are not reachable through its spare capacity.
+	clear(c.an.Records)
+	c.an.Records = c.an.Records[:0]
+	c.records = 0
 }
 
 func endpointOf(v interface{}) transport.Endpoint {
