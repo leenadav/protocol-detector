@@ -141,13 +141,19 @@ def _syn(source, destination, ports, sequence):
     return _frame(6, source, destination, struct.pack("!HHIIBBHHH", ports[0], ports[1], sequence, 0, 5 << 4, 0x02, 65535, 0, 0), b"")
 
 
+def _write_pcap(path, records):
+    """A classic little-endian PCAP of Ethernet frames (no import of analyze_diff, which imports this module)."""
+    with open(path, "wb") as capture:
+        capture.write(b"\xd4\xc3\xb2\xa1" + struct.pack("<HHIIII", 2, 4, 0, 0, 65535, 1))
+        for timestamp, data, _ in records:
+            seconds = int(timestamp)
+            capture.write(struct.pack("<IIII", seconds, int(round((timestamp - seconds) * 1000000)) % 1000000, len(data), len(data)) + data)
+
+
 def self_test():
     """The model is still needed (the reference prints neither addition), adds exactly the documented keys with
     the counts the Go tests expect, and leaves nothing patched behind."""
-    import random
     import tempfile
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    import analyze_diff                 # noqa: E402 - the harness's capture writer
     dns = bytes.fromhex("12340100000100000000000007" + "6578616d706c65" + "03636f6d0000010001")
     stun = bytes.fromhex("000100002112a442" + "0102030405060708090a0b0c")
     client, server = (198, 51, 100, 7), (192, 0, 2, 9)
@@ -164,7 +170,7 @@ def self_test():
         return output.getvalue().splitlines()
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / "capture.pcap"
-        analyze_diff.write_capture(random.Random(2), path, records)
+        _write_pcap(path, records)
         plain, model, text = run(path, False, True), run(path, True, True), run(path, True, False)
     if any("udp_flow_limit" in line or "mixed_outcomes" in line for line in plain):
         raise AssertionError("the reference now prints the PRO-448 keys; the model is stale")
