@@ -831,6 +831,35 @@ numbers and hex runs of 8 or more characters only. All other counts are unchange
 presentation results; live 4,616 event lines; live decrypt 4,461 / 4,120 event lines under OpenSSL 3.0 / 3.5). `parity-decrypt`, `parity-control`
 and `schema-go` are unchanged (0 mismatched, 0 problems). Regression tests: `test_parity_verdicts.SecSess1PinTests`
 and `sec_sess1.py --self-test`.
+## Security review finding SEC-QUIC-1 (budget): an over-budget merge forgot the connection (PRO-47, PRO-122, 2026-11-26)
+
+**The finding (Security Reviewer, PRO-47).** `Assembler.Add` (`go/internal/protocols/quicx/assembler.go`) removed
+a connection whose merge went over `MaxFragments` (8) or `MaxCrypto` (16,384 bytes) and answered `exhausted`. The
+next datagram of that connection started a fresh entry, so a ClientHello B contradicting the complete ClientHello A
+the connection had already assembled was taken as a first message: `complete`, no conflict, no retraction. The
+SEC-QUIC-3 name check only catches a B naming another server in a flow scope; a B with the same server name
+(another client random, ALPN or key share), or any B in the bare inspector's empty scope, went through. The Python
+reference has the same behaviour (`protocol_engine/quic.py`, `QuicAssembler.add`: the over-budget branch returns
+before `self.entries[key] = entry`).
+
+**The fix (Go only; Lee approved it on PRO-124, 21:20, relayed by Hermes on PRO-122).** The Python reference is
+unchanged and keeps forgetting the connection. In Go the entry stays as a sticky exhausted marker:
+- it keeps the bytes it held before the overflow (within the budget; the overflowing datagram's bytes are never
+  stored), so the memory bound per entry is unchanged and `MaxConnections` still bounds the store;
+- every later datagram of the connection answers `exhausted` (a budget error from `Validate`, counted in
+  `Counts["exhausted"]`) and is never merged or assembled, so nothing after the overflow becomes evidence;
+- a later datagram that contradicts the retained bytes (the PRO-201 contradiction check, which already runs before
+  the budget) turns the marker into the conflict marker, with the usual retraction and sticky invalidation;
+- it ends like every entry: `Reset(scope)`, `Clear`, idle expiry or LRU eviction.
+
+What Python does: A `complete`, overflow `exhausted` (entry gone), B `complete` (B's evidence accepted). What Go
+does now: A `complete`, overflow `exhausted` (marker kept), A again `exhausted`, B `conflict` (retracts).
+
+| item | state | evidence |
+|---|---|---|
+| Regression test | `TestCompleteThenExhaustedThenContradictionConflicts` (`quicx`) | Fails on `main` `23bbc0c` ("overflow: exhausted len 0": the connection was forgotten, and B then assembled as `complete`). After the fix: the marker is kept, A again is `exhausted`, B is `conflict` and sticky, counts are 1 conflict and 2 exhausted, `Reset` forgets it; through `Validate`, B retracts with no host name in a flow scope and in the bare inspector's scope. |
+| Updated expectations | `TestAssemblerScopesStickyConflictExpiryAndReset`, `TestContradictionOutranksExhaustion` | Their exhaustion steps asserted the entry was forgotten (`Len() == 0`); they now assert the kept marker (`Len() == 1`, not conflicted). The scanning oracle of `TestAssemblerMatchesTheScanningOracle` takes over the same rule, so the indexed assembler is still compared with it over 40 seeded sequences that include over-budget and contradicting adds. |
+| Parity | divergence recorded, 0 case changes | No committed case sends a datagram to a connection after its overflow: `make go-check` matches 7,474 of 7,474 (144 exempted, as before). The random differential (single datagrams) is unchanged: seed 1, 2,000 cases, 1,882 matched, 28 SEC-HTTP-1 and 90 SEC-QUIC-3 approved, 0 failures. |
 
 **In golden mode (PRO-458, 2026-11-26: `main` with #124 merged into PR #127).** The golden replay stays reference-free
 and its comparison is not loosened. The pins act at recording time: a `--record` run approves a mismatch only through

@@ -198,12 +198,12 @@ func TestAssemblerScopesStickyConflictExpiryAndReset(t *testing.T) {
 	if b.Len() != 1 || b.Counts["expired"] != 1 {
 		t.Fatalf("expiry: len %d counts %v", b.Len(), b.Counts)
 	}
-	// Over the fragment budget the connection is forgotten.
+	// Over the fragment budget the connection becomes a sticky exhausted marker (PRO-122; the reference forgets it).
 	c := NewAssembler(4, 10)
 	for i := 0; i < MaxFragments; i++ {
 		c.Add(dcid, []Fragment{{uint64(200 + i*2), []byte{byte(i)}}}, "A", V1, nil)
 	}
-	if s, _ := c.Add(dcid, []Fragment{{400, []byte{1}}}, "A", V1, nil); s != Exhausted || c.Len() != 0 {
+	if s, _ := c.Add(dcid, []Fragment{{400, []byte{1}}}, "A", V1, nil); s != Exhausted || c.Len() != 1 {
 		t.Fatalf("exhaustion: %s len %d", s, c.Len())
 	}
 }
@@ -296,12 +296,12 @@ func TestContradictionOutranksExhaustion(t *testing.T) {
 	if s, _ := b.Add(dcid, []Fragment{{0, make([]byte, MaxCrypto)}}, "A", V1, nil); s != Conflict || !b.Conflicted(dcid, "A", V1, nil) {
 		t.Fatalf("contradiction over the byte budget: got %s, want %s", s, Conflict)
 	}
-	// Without a contradiction the budget still forgets the connection.
+	// Without a contradiction the budget answers exhausted and keeps a sticky exhausted marker (PRO-122).
 	c := NewAssembler(4, 10)
 	c.Add(dcid, []Fragment{{0, []byte{1, 2, 3, 4}}}, "A", V1, nil)
 	big := make([]byte, MaxCrypto)
 	copy(big, []byte{1, 2, 3, 4})
-	if s, _ := c.Add(dcid, []Fragment{{0, big}}, "A", V1, nil); s != Exhausted || c.Len() != 0 {
+	if s, _ := c.Add(dcid, []Fragment{{0, big}}, "A", V1, nil); s != Exhausted || c.Len() != 1 || c.Conflicted(dcid, "A", V1, nil) {
 		t.Fatalf("exhaustion without contradiction: got %s len %d", s, c.Len())
 	}
 }
@@ -493,5 +493,62 @@ func TestShortClientInitialWithUnsupportedFrameIsMalformed(t *testing.T) {
 	full := testframes.QUICInitial(V1, dcid, nil, []byte{0x1e}, 2, nil, 1200)
 	if m, err := Validate(full, defaults, nil, "", nil); err != nil || fieldsOf(m)["initial_protection"] != "unverified" {
 		t.Fatalf("full-size Initial with an unsupported frame: %+v %v", m, err)
+	}
+}
+
+// SEC-QUIC-1 budget (PRO-47, PRO-122; a Go-only divergence Lee approved on PRO-124): an over-budget merge used to
+// forget the connection, so a ClientHello B contradicting the complete ClientHello A of the same connection was
+// assembled as a fresh first message, with no conflict and no retraction. The exhausted entry now stays as a
+// sticky marker holding A's bytes: B contradicts them and turns it into the conflict marker; a datagram that does
+// not contradict stays exhausted and is never assembled, so nothing after the overflow becomes evidence.
+func TestCompleteThenExhaustedThenContradictionConflicts(t *testing.T) {
+	hello := load(t, "rfc9001_client_hello.hex")
+	contradicting := append([]byte{}, hello...)
+	contradicting[10] ^= 0xff // the client random: same server name, so SEC-QUIC-3's name check cannot see it
+	overflow := make([]Fragment, MaxFragments)
+	for i := range overflow {
+		overflow[i] = Fragment{Offset: uint64(len(hello) + 2*i), Data: []byte{0}}
+	}
+	a := NewAssembler(4, 10)
+	if s, d := a.Add(dcid, []Fragment{{0, hello}}, "A", V1, nil); s != Complete || !bytes.Equal(d, hello) {
+		t.Fatalf("A: %s", s)
+	}
+	if s, _ := a.Add(dcid, overflow, "A", V1, nil); s != Exhausted || a.Len() != 1 || a.Conflicted(dcid, "A", V1, nil) {
+		t.Fatalf("overflow: %s len %d", s, a.Len())
+	}
+	if s, _ := a.Add(dcid, []Fragment{{0, hello}}, "A", V1, nil); s != Exhausted {
+		t.Fatalf("A again after the overflow: got %s, want %s (an exhausted connection assembles nothing)", s, Exhausted)
+	}
+	if s, d := a.Add(dcid, []Fragment{{0, contradicting}}, "A", V1, nil); s != Conflict || d != nil {
+		t.Fatalf("B after A and the overflow: got %s, want %s", s, Conflict)
+	}
+	if !a.Conflicted(dcid, "A", V1, nil) || a.Counts["conflicts"] != 1 || a.Counts["exhausted"] != 2 {
+		t.Fatalf("marker: len %d counts %v", a.Len(), a.Counts)
+	}
+	if s, _ := a.Add(dcid, []Fragment{{0, hello}}, "A", V1, nil); s != Conflict {
+		t.Fatalf("the conflict marker did not stick: %s", s)
+	}
+	// The exhausted marker ends like every entry: reset, expiry and eviction forget it.
+	a.Reset("A")
+	if s, _ := a.Add(dcid, []Fragment{{0, contradicting}}, "A", V1, nil); s != Complete {
+		t.Fatalf("after the reset: %s", s)
+	}
+
+	// Through Validate, in a flow scope and in the bare inspector's scope (which SEC-QUIC-3 never compares).
+	initial := func(h []byte) []byte {
+		return testframes.QUICInitial(V1, dcid, nil, testframes.CryptoFrames(h)[0], 2, nil, 1200)
+	}
+	for _, scope := range []string{"c>s", ""} {
+		v := NewAssembler(4, 60)
+		if m, err := Validate(initial(hello), defaults, v, scope, nil); err != nil || m.Retracts || m.Hostname != "example.com" {
+			t.Fatalf("%q: A: %+v %v", scope, m, err)
+		}
+		if s, _ := v.Add(dcid, overflow, scope, V1, nil); s != Exhausted {
+			t.Fatalf("%q: overflow: %s", scope, s)
+		}
+		m, err := Validate(initial(contradicting), defaults, v, scope, nil)
+		if err != nil || !m.Retracts || m.Hostname != "" {
+			t.Fatalf("%q: B after A and the overflow must retract: %+v %v", scope, m, err)
+		}
 	}
 }
