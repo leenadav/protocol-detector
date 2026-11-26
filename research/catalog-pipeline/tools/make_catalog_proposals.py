@@ -6,8 +6,23 @@ import json, os, re, shutil, subprocess, sys
 GIT = shutil.which("git") or "/usr/bin/git"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wikidata_candidates as W
+
+
+def _rd(path, **kw):
+    with open(path, **kw) as fh:
+        return fh.read()
+
+
+def _wj(obj, path, **kw):
+    with open(path, "w") as fh:
+        json.dump(obj, fh, **kw)
+
+
+def _wb(path, data):
+    with open(path, "wb") as fh:
+        fh.write(data)
 R = W.OUT; DATE = "2026-11-22"
-src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "make_b2.py")).read()
+src = _rd(os.path.join(os.path.dirname(os.path.abspath(__file__)), "make_b2.py"))
 EXTRA = set(re.findall(r'"([^"]+)"', re.search(r"EXTRA_SHARED = \{(.*?)\}", src, re.S).group(1)))
 BAD = set(re.findall(r'"([^"]+)"', re.search(r"BAD_CLASSES = \{(.*?)\}", src, re.S).group(1)))
 SHARED = W.SHARED_HOSTING | EXTRA
@@ -15,7 +30,7 @@ NOT_TRAFFIC = {"file format", "authority file", "brand", "project", "metaverse",
 INSTIT = re.compile(r"\.(edu|gov|int|mil)$|\.(ac|gov|gc)\.[a-z]{2}$|^canada\.ca$")
 def existing():
     repo = "/home/hermes/projects/protocol-detector"
-    doms, names = set(open(W.CATALOG).read().split()), set()
+    doms, names = set(_rd(W.CATALOG).split()), set()
     for f in ("protocol_engine/host_apps.py", "protocol_engine/applications.py"):
         try: s = subprocess.check_output([GIT, "-C", repo, "show", "origin/claude/app-research:" + f], text=True, stderr=subprocess.DEVNULL)  # noqa: S603 -- resolved git, argv only, no shell
         except Exception as e:
@@ -37,7 +52,7 @@ OVERRIDES = {  # PRO-259 review fixes: domain -> field changes
 def is_shared(d): return d in SHARED or d.endswith(tuple("." + s for s in SHARED))
 cand = []
 for fn in ("top1000-%s.jsonl" % DATE, "wikidata-%s-b2.jsonl" % DATE):
-    cand += [json.loads(l) for l in open(os.path.join(R, fn))]
+    cand += [json.loads(l) for l in _rd(os.path.join(R, fn)).splitlines()]
 cdoms, cnames = existing()
 out, skip, ids, usedd = [], [], set(), set()
 def sk(c, why): skip.append({"wikidata": c["wikidata"], "name": c["name"], "domain": (c["domains"] or [None])[0], "reason": why})
@@ -85,14 +100,14 @@ def name_ok(e):
     return bool(l) and (l in n or n in l or any(len(t) >= 3 and (t in l or l in t) for t in toks))
 mism = [e for e in out if not e["gaming_publisher_domain"] and not name_ok(e)]
 mid = {id(e) for e in mism}
-json.dump({"version": 1, "generated": DATE, "note": "HOLD: name does not match the domain (product/org name on a vendor or parent domain); needs a service/publisher name before use", "entries": mism}, open(os.path.join(od, "wikidata-1-3000-name-mismatch-hold.json"), "w"), ensure_ascii=False, indent=1)
+_wj({"version": 1, "generated": DATE, "note": "HOLD: name does not match the domain (product/org name on a vendor or parent domain); needs a service/publisher name before use", "entries": mism}, os.path.join(od, "wikidata-1-3000-name-mismatch-hold.json"), ensure_ascii=False, indent=1)
 main = [e for e in out if not e["gaming_publisher_domain"] and id(e) not in mid]; gam = [e for e in out if e["gaming_publisher_domain"]]
-json.dump({"version": 1, "generated": DATE, "source": "Wikidata CC0 candidates ranks 1-3000", "entries": main}, open(os.path.join(od, "wikidata-1-3000.json"), "w"), ensure_ascii=False, indent=1)
-json.dump({"version": 1, "generated": DATE, "note": "HOLD: gaming-publisher domains pending App Research triage; names are placeholders", "entries": gam}, open(os.path.join(od, "wikidata-1-3000-gaming-publishers-hold.json"), "w"), ensure_ascii=False, indent=1)
+_wj({"version": 1, "generated": DATE, "source": "Wikidata CC0 candidates ranks 1-3000", "entries": main}, os.path.join(od, "wikidata-1-3000.json"), ensure_ascii=False, indent=1)
+_wj({"version": 1, "generated": DATE, "note": "HOLD: gaming-publisher domains pending App Research triage; names are placeholders", "entries": gam}, os.path.join(od, "wikidata-1-3000-gaming-publishers-hold.json"), ensure_ascii=False, indent=1)
 with open(os.path.join(od, "wikidata-1-3000-skipped.jsonl"), "w") as f:
     for s in skip: f.write(json.dumps(s, ensure_ascii=False) + "\n")
 rc = {}
 for s in skip: rc[s["reason"]] = rc.get(s["reason"], 0) + 1
 st = {"candidates": len(cand), "entries": len(out), "main_entries": len(main), "gaming_hold": len(gam), "name_mismatch_hold": len(mism), "entries_by_kind": dict(Counter(e["entry_kind"] for e in out)), "skipped": len(skip), "skipped_by_reason": rc, "entries_by_category": dict(Counter(e["category"] for e in out)), "gaming_publisher_domain": len(gam)}
-json.dump(st, open(os.path.join(od, "wikidata-1-3000-stats.json"), "w"), indent=1)
+_wj(st, os.path.join(od, "wikidata-1-3000-stats.json"), indent=1)
 print(json.dumps(st, indent=1))

@@ -8,6 +8,21 @@ research/candidates/top1000-<date>.jsonl, research/candidates/stats-<date>.json
 import argparse, json, os, re, socket, ssl, sys, time, concurrent.futures as cf
 import http.client, urllib.parse, urllib.request
 
+
+def _rd(path, **kw):
+    with open(path, **kw) as fh:
+        return fh.read()
+
+
+def _wj(obj, path, **kw):
+    with open(path, "w") as fh:
+        json.dump(obj, fh, **kw)
+
+
+def _wb(path, data):
+    with open(path, "wb") as fh:
+        fh.write(data)
+
 UA = "ProtocolDetectorResearch/0.1 (research-lab; passive catalog candidate pipeline; CC0 data only)"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, ".cache")
@@ -92,7 +107,7 @@ def fetch(refresh=False):
         for lo, hi in BANDS:
             f = os.path.join(CACHE, f"sparql-{root}-{lo}-{hi}.json")
             if os.path.exists(f) and not refresh:
-                data = json.load(open(f))
+                data = json.loads(_rd(f))
             else:
                 flt = f"?sl>={lo}" + (f" && ?sl<{hi}" if hi else "")
                 q = f"""SELECT ?i ?l ?w ?sl ?cl ?dl WHERE {{
@@ -104,7 +119,7 @@ def fetch(refresh=False):
                 log(f"fetch {rl} sitelinks[{lo},{hi})")
                 try: data = sparql(q)
                 except Exception as e: log("  skipped:", e); continue
-                json.dump(data, open(f, "w")); time.sleep(SLEEP)
+                _wj(data, f); time.sleep(SLEEP)
             for b in data["results"]["bindings"]:
                 rows.append((root, b))
             log(f"  {rl} [{lo},{hi}) rows so far {len(rows)}")
@@ -116,9 +131,9 @@ def load_psl():
     if not os.path.exists(f):
         os.makedirs(CACHE, exist_ok=True)
         req = urllib.request.Request("https://publicsuffix.org/list/public_suffix_list.dat", headers={"User-Agent": UA})
-        open(f, "wb").write(urllib.request.urlopen(req, timeout=30).read())  # noqa: S310 -- fixed https:// URL
+        _wb(f, urllib.request.urlopen(req, timeout=30).read())  # noqa: S310 -- fixed https:// URL
     icann, private, section = set(), set(), None
-    for line in open(f, encoding="utf-8"):
+    for line in _rd(f, encoding="utf-8").splitlines():
         line = line.strip()
         if "BEGIN ICANN" in line: section = icann
         elif "BEGIN PRIVATE" in line: section = private
@@ -155,7 +170,7 @@ def category_for(rootq, classes):
 
 def normalise(rows):
     icann, private = load_psl()
-    catalog = set(open(CATALOG).read().split())
+    catalog = set(_rd(CATALOG).split())
     stats = {"wikidata_rows": len(rows)}
     items = {}
     for root, b in rows:
@@ -201,6 +216,7 @@ def normalise(rows):
 
 # ---------------- checks ----------------
 CTX = ssl.create_default_context()
+CTX.minimum_version = ssl.TLSVersion.TLSv1_2
 def check_one(rec):
     res = {"dns": False, "tls": False, "tls_name_ok": False, "http_status": None, "final_host": None,
            "final_registrable": None, "redirect_offsite": False, "parked": False, "error": None}
@@ -298,12 +314,12 @@ def main():
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     if a.stage == "rerank":   # reuse checked output, only rebuild top list + stats
-        cands = [json.loads(l) for l in open(f"{OUT}/wikidata-{a.date}.jsonl")]
-        stats = json.load(open(f"{OUT}/stats-{a.date}.json"))
+        cands = [json.loads(l) for l in _rd(f"{OUT}/wikidata-{a.date}.jsonl").splitlines()]
+        stats = json.loads(_rd(f"{OUT}/stats-{a.date}.json"))
         hi = write_top(cands, a.date)
         stats.update({"high_confidence": sum(1 for r in cands if r["high_confidence"]),
                       "high_confidence_appish": len(hi), "top_written": min(1000, len(hi))})
-        json.dump(stats, open(f"{OUT}/stats-{a.date}.json", "w"), indent=1); print(json.dumps(stats, indent=1)); return
+        _wj(stats, f"{OUT}/stats-{a.date}.json", indent=1); print(json.dumps(stats, indent=1)); return
     rows = fetch(a.refresh)
     cands, stats = normalise(rows)
     cands.sort(key=lambda r: -r["sitelinks"])
@@ -319,6 +335,6 @@ def main():
                   "http_ok": sum(1 for r in cands if r["checks"]["http_status"] and r["checks"]["http_status"] < 400),
                   "redirect_offsite": c("redirect_offsite"), "parked": c("parked"), "high_confidence": len(hi),
                   "top_written": min(1000, len(hi))})
-    json.dump(stats, open(f"{OUT}/stats-{a.date}.json", "w"), indent=1)
+    _wj(stats, f"{OUT}/stats-{a.date}.json", indent=1)
     print(json.dumps(stats, indent=1))
 if __name__ == "__main__": main()

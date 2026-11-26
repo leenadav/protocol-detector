@@ -9,14 +9,30 @@ GIT = shutil.which("git") or "/usr/bin/git"
 import http.client, urllib.parse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wikidata_candidates as W
+
+
+def _rd(path, **kw):
+    with open(path, **kw) as fh:
+        return fh.read()
+
+
+def _wj(obj, path, **kw):
+    with open(path, "w") as fh:
+        json.dump(obj, fh, **kw)
+
+
+def _wb(path, data):
+    with open(path, "wb") as fh:
+        fh.write(data)
 ROOT = W.ROOT; UA = W.UA
 CTX = ssl.create_default_context()
+CTX.minimum_version = ssl.TLSVersion.TLSv1_2
 PSL = W.load_psl()
 
 def existing_catalog():
     """Domains + names of the current content (origin/claude/app-research host_apps.py + applications.py), via git show."""
     repo = "/home/hermes/projects/protocol-detector"
-    doms, names = set(open(W.CATALOG).read().split()), set()
+    doms, names = set(_rd(W.CATALOG).split()), set()
     for f in ("protocol_engine/host_apps.py", "protocol_engine/applications.py"):
         try: src = subprocess.check_output([GIT, "-C", repo, "show", "origin/claude/app-research:" + f], text=True)  # noqa: S603 -- resolved git, argv only, no shell
         except Exception as e:
@@ -84,10 +100,10 @@ def slug(dom):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--n", type=int, default=200); ap.add_argument("--date", default="2026-11-22"); ap.add_argument("--src", default="top1000-{date}.jsonl"); ap.add_argument("--tag", default="b1"); ap.add_argument("--strict", action="store_true", help="identity + publisher/institution filters (batch 2+)"); ap.add_argument("--exclude", nargs="*", default=[])
     a = ap.parse_args()
-    cand = [json.loads(l) for l in open(os.path.join(W.OUT, a.src.format(date=a.date)))]
+    cand = [json.loads(l) for l in _rd(os.path.join(W.OUT, a.src.format(date=a.date))).splitlines()]
     cdoms, cnames = existing_catalog()
     for ex in a.exclude:
-        for l in open(ex):
+        for l in _rd(ex).splitlines():
             o = json.loads(l); cdoms.update(o.get("domains") or [o.get("domain")]); cnames.add(o.get("name"))
     stage = {"candidates": len(cand)}; rej = []; pool = []
     for c in cand:
@@ -137,7 +153,7 @@ def main():
     rc = {}
     for c, why in rej: rc[why.split(":")[0]] = rc.get(why.split(":")[0], 0) + 1
     stage.update(verified=len(ver), rejected=len(rej), rejected_by_reason=rc)
-    json.dump(stage, open(os.path.join(od, "stats-%s-%s.json" % (a.tag, a.date)), "w"), indent=1)
+    _wj(stage, os.path.join(od, "stats-%s-%s.json" % (a.tag, a.date)), indent=1)
     with open(os.path.join(od, "sample20-%s-%s.md" % (a.tag, a.date)), "w") as f:
         f.write("| # | entry | wikidata | domain | category | tls cert | final host |\n|---|---|---|---|---|---|---|\n")
         for i, (c, k) in enumerate(ver[:20], 1):
