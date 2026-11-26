@@ -20,9 +20,11 @@ Answers are compared as the status line, the headers (Server and Date aside) and
 compared after replacing what differs by construction: tokens, run, job and instance ids (by order of
 appearance), monotonic times, the lease countdown, wall-clock durations of a run or an analysis, the
 measurements of telemetry duration histograms (their keys, sample counts and every counter are compared;
-Normalizer.histogram), and the "python" field of the health report (the Go service runs no interpreter). The demo capture and showcase are
-random in the reference itself, and the Go service makes them with its own embedded capture and TLS stack
-(PRO-402): their answers are compared by shape. Python 3.13 texts are the reference.
+Normalizer.histogram), and the "python" field of the health report (the Go service runs no interpreter). On a golden
+replay, the build identity of /api/health and /api/catalog (commit, branch, build_digest) is masked on both sides, and
+Go's is held to the tree's presentation/SOURCE.json by a separate check (PRO-431, BUILD_IDENTITY). The demo capture and showcase are
+random in the reference itself, and the Go service makes its showcase with crypto/tls where the reference used
+OpenSSL (PRO-401): their answers are compared by shape. Python 3.13 texts are the reference.
 """
 import argparse
 import base64
@@ -44,6 +46,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import analyze_diff  # noqa: E402
 import control_diff  # noqa: E402
+import golden  # noqa: E402
 
 FAKE_TCPDUMP = """#!/bin/sh
 # Stand-in for tcpdump in the server differential: plays a generated capture; never opens an interface.
@@ -133,8 +136,21 @@ def measured(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+# A non-loopback interface of the host running the comparison (PRO-401): the synthetic-scope refusal it probes needs an
+# interface that exists, and which ones exist depends on the machine, not on the service under test.
+HOST_NIC = "<a non-loopback interface of this host>"
+
+
+def host_interfaces():
+    """The interface list the reference's LiveManager.interfaces() gives on this host (stdlib only): the names of
+    socket.if_nameindex() that fit its pattern. It depends on the machine, so an answer is compared with it here,
+    on the machine that runs the comparison, and not with the one a golden file was recorded on (PRO-401)."""
+    return [name for _, name in socket.if_nameindex() if re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", name)]
+
+
 class Normalizer:
-    """Per-service replacement of ids by order of appearance, and of times by a marker."""
+    """Per-service replacement of ids by order of appearance, and of times by a marker. An interface list equal to
+    this host's (host_interfaces) becomes a marker; any other list is compared as it is."""
 
     def __init__(self):
         self.ids = {}
@@ -152,6 +168,8 @@ class Normalizer:
             return "<lease>"
         if key == "python":
             return "<interpreter>"
+        if key == "interfaces" and isinstance(value, list) and value == host_interfaces():
+            return "<this host's interfaces>"
         if key == "histograms" and isinstance(value, dict):
             return OrderedDict((name, self.histogram(name, h)) for name, h in value.items())
         return self.walk(value)
@@ -198,10 +216,6 @@ def observed(response, normalizer, shape_only=False):
         if shape_only:
             document = shape(document)
         return "\n".join(lines) + "\n" + json.dumps(normalizer.walk(document))
-    if shape_only:
-        # A body compared by shape has no length to compare either: the reference's demo capture grows with the
-        # local OpenSSL's ClientHello, and the Go service answers its embedded snapshot (PRO-402).
-        lines = [line for line in lines if not line.lower().startswith("content-length:")]
     return "\n".join(lines) + "\n" + (body.decode("latin-1") if not shape_only else "<{} bytes>".format(bool(body)))
 
 
@@ -211,18 +225,102 @@ def shape(value):
     return type(value).__name__
 
 
+# The build identity of presentation/SOURCE.json (PRO-431): /api/health carries it at the top level and /api/catalog
+# under "source". It changes on every SOURCE.json refresh (PR #123 refreshed it after the server golden was recorded),
+# so a golden replay compares both answers with these fields masked on each side, and build_identity_problems holds
+# Go's values to the SOURCE.json of the tree under test instead. Every other field (version, repository, components,
+# the catalog itself) and the status line and headers are compared in full. These answers carry no ETag, and
+# Content-Length is never compared for a JSON body (observed), so nothing else derives from the identity.
+BUILD_IDENTITY = ("commit", "branch", "build_digest")
+BUILD_IDENTITY_AT = {"GET '/api/health'": ((), ("commit", "build_digest")),
+                     "GET '/api/catalog'": (("source",), ("commit", "branch", "build_digest"))}
+BUILD_IDENTITY_MARK = "<build identity>"
+
+
+def answer_document(answer):
+    """An observed answer's head lines and its JSON body (the last line, json.dumps output), or None for the body."""
+    head, _, body = answer.rpartition("\n")
+    try:
+        return head, json.loads(body, object_pairs_hook=OrderedDict)
+    except ValueError:
+        return head, None
+
+
+def identity_holder(document, path):
+    for key in path:
+        document = document.get(key) if isinstance(document, dict) else None
+    return document if isinstance(document, dict) else None
+
+
+def mask_build_identity(label, answer):
+    """The observed answer with its build identity masked: only a string value of one of BUILD_IDENTITY at the
+    label's location becomes the marker, so a missing, null or mistyped field still differs from a recorded one."""
+    if label not in BUILD_IDENTITY_AT:
+        return answer
+    head, document = answer_document(answer)
+    holder = identity_holder(document, BUILD_IDENTITY_AT[label][0])
+    if holder is None:
+        return answer
+    for key in BUILD_IDENTITY:
+        if isinstance(holder.get(key), str):
+            holder[key] = BUILD_IDENTITY_MARK
+    return head + "\n" + json.dumps(document)
+
+
+def build_identity_problems(label, answer, source):
+    """Go's build identity in an observed /api/health or /api/catalog answer against `source` (the tree's
+    presentation/SOURCE.json): each field the answer must carry is present and equal to a non-empty string there."""
+    if label not in BUILD_IDENTITY_AT:
+        return []
+    path, keys = BUILD_IDENTITY_AT[label]
+    holder = identity_holder(answer_document(answer)[1], path)
+    if holder is None:
+        return ["{}: no build identity object in the answer".format(label)]
+    problems = []
+    for key in keys:
+        want = source.get(key) if isinstance(source, dict) else None
+        if not isinstance(want, str) or not want:
+            problems.append("{}: SOURCE.json has no {} (got {!r})".format(label, key, want))
+        elif holder.get(key, None) != want:
+            problems.append("{}: {} is {!r}, SOURCE.json has {!r}".format(label, key, holder.get(key), want))
+    return problems
+
+
 class Run:
-    def __init__(self, services):
+    """The script's exchanges. With a reference service, each answer is compared with the reference's (and, when
+    `recording` is a list, the reference's normalized answer is appended to it); on a golden replay (`replay` is
+    the recorded list) the one service is Go and each answer is compared with the next recorded one, whose label
+    must be the same exchange."""
+
+    def __init__(self, services, recording=None, replay=None, source=None):
         self.services = services
         self.normalizers = {s.name: Normalizer() for s in services}
         self.failures, self.compared = [], 0
+        self.recording, self.replay = recording, replay
+        self.source = source                     # the tree's presentation/SOURCE.json, for build_identity_problems
+        self.identity_checked, self.identity_failures = 0, []
 
     def same(self, label, action, shape_only=False):
         """Run action(service) on each service and compare what each answered."""
         answers = []
         for service in self.services:
             answers.append(observed(action(service), self.normalizers[service.name], shape_only))
+        if self.replay is not None:
+            entry = self.replay.pop(0) if self.replay else None
+            if entry is None or entry["label"] != label or entry["shape"] != shape_only:
+                self.failures.append("{}: the golden file has {} here: the script changed since it was recorded; record it again".format(
+                    label, "nothing" if entry is None else repr(entry["label"])))
+                self.replay = []
+                return answers[0]
+            answers.insert(0, entry["answer"])
         self.compared += 1
+        if self.recording is not None:
+            self.recording.append({"label": label, "shape": shape_only, "answer": answers[0]})
+        if label in BUILD_IDENTITY_AT and self.source is not None:
+            self.identity_checked += 1
+            self.identity_failures.extend(build_identity_problems(label, answers[-1], self.source))   # the Go answer
+        if self.replay is not None:
+            answers = [mask_build_identity(label, answer) for answer in answers]
         if answers[0] != answers[1]:
             at = next((i for i, (x, y) in enumerate(zip(*answers)) if x != y), min(map(len, answers)))
             self.failures.append("{} (at {}):\n  reference: {!r}\n  go:        {!r}".format(
@@ -357,14 +455,18 @@ def live_control_refusals(run, rng):
     options = [{}, {"interface": None}, {"interface": "nope0"}, {"interface": 5}, {"interface": "lo", "duration": True},
                {"interface": "lo", "duration": 4}, {"interface": "lo", "duration": 601}, {"interface": "lo", "duration": 30.0},
                {"interface": "lo", "duration": "30"}, {"interface": "lo", "duration": 10 ** 30}, {"interface": "lo", "scope": "x"},
-               {"interface": "lo", "scope": None}, {"interface": "eth0", "scope": "synthetic"},
+               {"interface": "lo", "scope": None}, {"interface": HOST_NIC, "scope": "synthetic"},
                {"interface": "lo", "scope": "synthetic", "keylog_path": "relative"},
                {"interface": "lo", "scope": "synthetic", "keylog_path": 5},
                {"interface": "lo", "scope": "synthetic", "keylog_path": "/" + "k" * 1024},
                {"interface": "lo", "scope": "synthetic", "keylog_path": "/absolute/keys.log", "duration": 121}, [], "x", 5]
+    nic = next((name for name in host_interfaces() if not name.startswith("lo")), "eth0")
     for option in options:
+        label = "start " + json.dumps(option)[:80]           # HOST_NIC stays a placeholder in the label
+        if isinstance(option, dict) and option.get("interface") == HOST_NIC:
+            option = dict(option, interface=nic)
         body = json.dumps(option).encode()
-        run.same("start " + body.decode()[:80], post("/api/live/start", body))
+        run.same(label, post("/api/live/start", body))
     for body in (b'{"run_id": null}', b'{"run_id": "x"}', b'{"run_id": 5}', b"{}", b""):
         for path in ("/api/live/stop", "/api/live/heartbeat", "/api/live/reset"):
             run.same("idle {} {!r}".format(path, body), post(path, body))
@@ -410,25 +512,30 @@ def live_runs(run, fake):
     run.same("finished state", lambda s: s.request("GET", "/api/live/state"))
 
 
-def analyses(run, rng, sessions, folder, count):
-    import decrypt_diff
-    generator = decrypt_diff.Generator(rng.randint(1, 10 ** 6))
-
+def analyses(run, rng, sessions, folder, count, inputs=None, recorded=None):
+    """Analysis and decryption exchanges on generated captures, or on a golden file's `inputs` (then nothing is
+    generated); `recorded`, when a list, receives each generated input."""
     def post(path, body, headers=(), token=True):
         return lambda s: s.request("POST", path, headers=list(headers), body=body, token=token)
 
-    for index in range(count):
-        path = folder / "analysis-{}".format(index)
-        analyze_diff.write_capture(rng, path, analyze_diff.stress_records(rng) if index % 3 == 2 else analyze_diff.records_for(rng, sessions))
-        data = path.read_bytes()
-        if index % 4 == 1:
-            data = data[: rng.randint(1, len(data))]             # truncated captures are refused in the reference's words
+    def generated():
+        import decrypt_diff
+        generator = decrypt_diff.Generator(rng.randint(1, 10 ** 6))
+        for index in range(count):
+            path = folder / "analysis-{}".format(index)
+            analyze_diff.write_capture(rng, path, analyze_diff.stress_records(rng) if index % 3 == 2 else analyze_diff.records_for(rng, sessions))
+            data = path.read_bytes()
+            if index % 4 == 1:
+                data = data[: rng.randint(1, len(data))]             # truncated captures are refused in the reference's words
+            capture, keylog = generator.capture()
+            yield data, json.dumps({"capture": base64.b64encode(capture).decode(), "keylog": keylog}).encode()
+
+    items = ((golden.unb64(item["analyze"]), golden.unb64(item["decrypt"])) for item in inputs) if inputs is not None else generated()
+    for index, (data, body) in enumerate(items):
+        if recorded is not None:
+            recorded.append({"analyze": golden.b64(data), "decrypt": golden.b64(body)})
         run.same("analyze {}".format(index), post("/api/analyze", data, token=False))
-        capture, keylog = generator.capture()
-        body = json.dumps({"capture": base64.b64encode(capture).decode(), "keylog": keylog}).encode()
         run.same("decrypt {}".format(index), post("/api/decrypt", body))
-        for service in run.services:
-            pass
         run.same("decrypt job {}".format(index), lambda s, b=body: poll_job(s, json.loads(split(
             s.request("POST", "/api/jobs?kind=decrypt", body=b, token=True))[1])["id"]))
         run.same("analyze job {}".format(index), lambda s, d=data: poll_job(s, json.loads(split(
@@ -445,7 +552,8 @@ def analyses(run, rng, sessions, folder, count):
                                 (["Content-Length: -1"], b"x", "/api/analyze"), (["Content-Length: 5"], b"x", "/api/analyze"),
                                 ([], b"\x00" * 24, "/api/analyze"), ([], b"x", "/api/decrypt/demo?x"),
                                 (["Content-Length: 13000000"], b"x", "/api/decrypt"), (["Transfer-Encoding: x"], b"x", "/api/decrypt")):
-        # The decryption showcase is made by each service's own TLS stack (PRO-402): compared by shape, as below.
+        # The showcase behind /api/decrypt/demo is made fresh by each service (PRO-401: Go's crypto/tls, the reference's
+        # OpenSSL), so the negotiated TLS 1.3 suite and record count differ by construction: compared by shape.
         run.same("{} {} {!r}".format(path, headers, body[:20]), post(path, body, headers), shape_only=path.startswith("/api/decrypt/demo"))
     for headers, path, body in ((["X-Live-Token: no"], "/api/jobs", b"x"), ([], "/api/jobs?kind=nope", b"x"), ([], "/api/jobs", b"x"),
                                 ([], "/api/jobs?kind=analyze", b""), (["X-Job-Kind: decrypt"], "/api/jobs?kind=analyze&x=1", b"x"),
@@ -459,7 +567,7 @@ def analyses(run, rng, sessions, folder, count):
 
 def admission(run):
     submitted = {}
-    for service in run.services:                         # seven submissions in a row: two run, four queue, one refused
+    for service in run.services:                         # demo jobs run the reference worker: slow enough to queue
         answers = []
         for _ in range(7):
             answers.append(service.request("POST", "/api/jobs?kind=demo", body=b"", token=True))
@@ -502,16 +610,24 @@ def main(argv=None):
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
     parser.add_argument("--count", type=int, default=12, help="generated captures for analysis and decryption")
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record", help="also write the reference's normalized answers and the generated inputs to this golden file")
+    parser.add_argument("--golden", help="run only `protodetect serve` and compare its answers with this golden file's; the reference is not started")
     args = parser.parse_args(argv)
-    try:
-        import cryptography  # noqa: F401
-    except ImportError:
-        print("server parity FAILED: the decryption cases need the `cryptography` package "
-              "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
-        return 1
+    document = golden.read(args.golden, "server") if args.golden else None
+    if document:
+        args.seed, args.count = document["seed"], document["count"]
+    else:
+        try:
+            import cryptography  # noqa: F401
+        except ImportError:
+            print("server parity FAILED: the decryption cases need the `cryptography` package "
+                  "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
+            return 1
     binary = str(Path(args.binary).resolve())
     rng = random.Random(args.seed)
-    sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
+    sessions = [] if document else [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"]
+                                    if case["kind"] == "session"]
+    recording, inputs = ([], []) if args.record else (None, None)
     with tempfile.TemporaryDirectory() as folder:
         folder = Path(folder)
         fake = folder / "fake"
@@ -519,23 +635,31 @@ def main(argv=None):
         tcpdump = fake / "tcpdump"
         tcpdump.write_text(FAKE_TCPDUMP)
         tcpdump.chmod(tcpdump.stat().st_mode | stat.S_IXUSR)
-        analyze_diff.write_capture(rng, fake / "capture.pcap", analyze_diff.records_for(rng, sessions))
+        if document:
+            (fake / "capture.pcap").write_bytes(golden.unb64(document["live_capture"]))
+            version, state, gauss = document["rng_state"]
+            rng.setstate((version, tuple(state), gauss))      # where the recording's generator stood after that capture
+        else:
+            analyze_diff.write_capture(rng, fake / "capture.pcap", analyze_diff.records_for(rng, sessions))
+        rng_state = rng.getstate()
         (fake / "mode").write_text("finish")
         env = dict(os.environ, PATH=str(fake) + os.pathsep + os.environ.get("PATH", ""), PROTODETECT_GO_BINARY=binary,
                    PROTODETECT_FAKE_DIR=str(fake))
         env.pop("PROTODETECT_BACKEND", None)
-        services = [Service("reference", [sys.executable, "-B", str(ROOT / "presentation/server.py"), "--port", "0"], env),
-                    Service("go", [binary, "serve", "--port", "0", "--root", str(ROOT / "presentation")], env)]
+        go = Service("go", [binary, "serve", "--port", "0", "--root", str(ROOT / "presentation")], env)
+        services = [go] if document else [Service("reference", [sys.executable, "-B", str(ROOT / "presentation/server.py"), "--port", "0"], env), go]
         probe_failures = []
         try:
             for service in services:
                 service.token = json.loads(split(service.request("GET", "/api/live/interfaces"))[1])["token"]
                 service.json("GET", "/api/live/interfaces")
-            run = Run(services)
+            source = json.loads((ROOT / "presentation/SOURCE.json").read_text(encoding="utf-8"))
+            run = Run(services, recording=recording, replay=list(document["entries"]) if document else None, source=source)
             for service in services:
                 run.normalizers[service.name].walk({"token": service.token})
             for stage in (lambda: static_and_reads(run, rng), lambda: framing(run), lambda: live_control_refusals(run, rng),
-                          lambda: live_runs(run, fake), lambda: analyses(run, rng, sessions, folder, args.count),
+                          lambda: live_runs(run, fake),
+                          lambda: analyses(run, rng, sessions, folder, args.count, document["inputs"] if document else None, inputs),
                           lambda: admission(run), lambda: handler_pool(run)):
                 try:
                     stage()
@@ -544,14 +668,30 @@ def main(argv=None):
         finally:
             for service in services:
                 service.stop()
+        live_capture = (fake / "capture.pcap").read_bytes()
+    if document and run.replay:
+        run.failures.append("{} recorded answers were never asked for (first {!r}): the script changed; record it again".format(
+            len(run.replay), run.replay[0]["label"]))
     for failure in probe_failures:
         print("server parity FAILED:", failure)
     for failure in run.failures[:int(os.environ.get("SERVER_DIFF_SHOW", "8"))]:
         print("server mismatch:", failure)
-    print("server parity: {} exchanges compared, {} mismatched, {} probes failed (seed {})".format(
-        run.compared, len(run.failures), len(probe_failures), args.seed))
-    return 1 if run.failures or probe_failures else 0
-
+    for failure in run.identity_failures:
+        print("server build identity FAILED:", failure)
+    if run.identity_checked != len(BUILD_IDENTITY_AT):
+        run.identity_failures.append("{} build identity answers checked, expected {}".format(run.identity_checked, len(BUILD_IDENTITY_AT)))
+        print("server build identity FAILED:", run.identity_failures[-1])
+    print("server build identity: {} answers checked against presentation/SOURCE.json, {} problems".format(
+        run.identity_checked, len(run.identity_failures)))
+    print("server parity{}: {} exchanges compared, {} mismatched, {} probes failed (seed {})".format(
+        " (golden {})".format(Path(args.golden).name) if document else "", run.compared, len(run.failures), len(probe_failures), args.seed))
+    if args.record:
+        recorder = golden.recorder(args.record, "server", {"seed": args.seed, "count": args.count, "inputs": inputs,
+                                                           "live_capture": golden.b64(live_capture),
+                                                           "rng_state": [rng_state[0], list(rng_state[1]), rng_state[2]]})
+        recorder.entries = recording
+        recorder.finish(run.failures or probe_failures or run.identity_failures)
+    return 1 if run.failures or probe_failures or run.identity_failures else 0
 
 if __name__ == "__main__":
     sys.exit(main())

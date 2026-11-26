@@ -11,14 +11,14 @@ venv/
 *.jsonl
 # Captures may contain private traffic. Keep only explicit synthetic fixtures.
 *.pcap
-# PRO-402: the Go demo server embeds this synthetic capture (go/internal/serve/assets/README.md).
-!go/internal/serve/assets/demo.pcap
 *.pcapng
 !sample.pcap
 !sample-expanded.pcap
 !sample-mysql.pcap
 !sample-mongodb.pcap
 !sample-radius.pcap
+# The service's frozen synthetic demo capture (PRO-401: once presentation/server.py demo_bytes(), now embedded in Go)
+!go/internal/serve/demo.pcap
 # Packaging output
 build/
 dist/

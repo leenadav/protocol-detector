@@ -23,6 +23,12 @@ On a commit without the Go content pack (main before the migration lands: none o
 job passes and says so; `make content`, the Python content gate, still runs there inside `make check`. A
 commit with only part of the pack fails. Nothing here is detection logic; the checks read data only.
 
+Without the Python reference (PRO-401, Lee 2026-11-25: neither protocol_engine/content.py nor its lock exists)
+checks 1 and 2, which compare the Python content with the pack, have nothing to compare and are reported as not
+run; checks 3 to 5 still run, and check 5 (the Go side recomputing every component and release digest of the pack
+and of each earlier release) is then the digest gate. Only part of the reference (the content tables without
+their lock, or the lock alone) fails.
+
     content_gate.py [--summary FILE]
     content_gate.py --self-test
 Standard library only; Python 3.9 syntax.
@@ -41,6 +47,7 @@ PACK_FILES = (Path("migration/content_history.py"), Path("go/internal/content/hi
               Path("go/internal/content/pack.json"))
 EXPORT = Path("migration/fixtures/content.json")
 LOCK = Path("protocol_engine/content_lock.json")
+REFERENCE = Path("protocol_engine/content.py")
 TARGETS = ("content", "content-pack")
 DOMAIN = re.compile(r"^(?=.{1,253}$)([a-z0-9_]([a-z0-9_-]{0,61}[a-z0-9_])?\.)*[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
 
@@ -122,7 +129,7 @@ def scan_pack(pack, history, lock):
     current = (pack.get("release") or {}).get("version")
     if history.get("current") != current:
         problems.append("history: current release {} is not the pack's {}".format(history.get("current"), current))
-    if lock.get("version") != current or lock.get("digest") != (pack.get("release") or {}).get("digest"):
+    if lock is not None and (lock.get("version") != current or lock.get("digest") != (pack.get("release") or {}).get("digest")):
         problems.append("lock: release {} digest {} is not the pack's {} {}".format(
             lock.get("version"), lock.get("digest"), current, (pack.get("release") or {}).get("digest")))
     for version, release in sorted((history.get("releases") or {}).items()):
@@ -139,7 +146,8 @@ def survey():
     present = [path for path in PACK_FILES if path.is_file()]
     makefile = go_ci.read("Makefile") or ""
     return {"present": present, "missing": [path for path in PACK_FILES if path not in present],
-            "targets": [target for target in TARGETS if re.search(r"^{}\s*:".format(re.escape(target)), makefile, re.M)]}
+            "targets": [target for target in TARGETS if re.search(r"^{}\s*:".format(re.escape(target)), makefile, re.M)],
+            "reference": [path for path in (REFERENCE, LOCK) if path.is_file()]}
 
 
 def decide(tree):
@@ -150,7 +158,11 @@ def decide(tree):
     if tree["missing"]:
         problems.append("the content pack is partial: {} present but {} missing".format(
             ", ".join(map(str, tree["present"])), ", ".join(map(str, tree["missing"]))))
-    for target in TARGETS:
+    reference = tree.get("reference", [REFERENCE, LOCK])
+    if len(reference) == 1:
+        problems.append("the Python content reference is partial: {} present but {} missing".format(
+            reference[0], ({REFERENCE, LOCK} - set(reference)).pop()))
+    for target in TARGETS if reference else ():
         if target not in tree["targets"]:
             problems.append("Makefile has no `{}` target".format(target))
     return ("fail", problems) if problems else ("run", [])
@@ -168,10 +180,14 @@ def run(summary):
         go_ci.summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
         return 1
     lines, failed = [title, ""], 0
-    for target in TARGETS:
+    reference = LOCK.is_file()
+    for target in TARGETS if reference else ():
         code = subprocess.run(["make", target], check=False).returncode  # noqa: S603,S607
         lines.append("- `make {}`: exit {}".format(target, code))
         failed += code != 0
+    if not reference:
+        lines.append("- `make content`, `make content-pack`: not run, the Python content reference is removed (PRO-401); "
+                     "the Go content parity below recomputes every digest")
     pack_text = PACK_FILES[2].read_bytes()
     if pack_text != EXPORT.read_bytes():
         lines.append("- FAILED: {} differs from {}".format(PACK_FILES[2], EXPORT))
@@ -179,7 +195,7 @@ def run(summary):
     try:
         found = scan_pack(strict_load(pack_text.decode("utf-8"), str(PACK_FILES[2])),
                           strict_load(PACK_FILES[1].read_text(encoding="utf-8"), str(PACK_FILES[1])),
-                          strict_load(LOCK.read_text(encoding="utf-8"), str(LOCK)))
+                          strict_load(LOCK.read_text(encoding="utf-8"), str(LOCK)) if reference else None)
     except (OSError, ValueError) as error:
         found = [str(error)]
     lines += ["- FAILED: " + problem for problem in found] or ["- identifiers: no duplicate or conflicting id"]
@@ -267,7 +283,14 @@ def self_test():
     assert action == "fail" and "partial" in problems[0], problems
     action, problems = decide({"present": list(PACK_FILES), "missing": [], "targets": ["content"]})
     assert action == "fail" and "`content-pack`" in problems[0], problems
-    print("content_gate self-test: ok ({} identifier refusals, duplicate keys, 4 tree decisions)".format(len(cases)))
+    # PRO-401: without the reference the Python targets are not required; half a reference fails.
+    assert decide({"present": list(PACK_FILES), "missing": [], "targets": [], "reference": []}) == ("run", [])
+    action, problems = decide({"present": list(PACK_FILES), "missing": [], "targets": list(TARGETS), "reference": [REFERENCE]})
+    assert action == "fail" and "reference is partial" in problems[0], problems
+    action, problems = decide({"present": list(PACK_FILES), "missing": [], "targets": [], "reference": [REFERENCE, LOCK]})
+    assert action == "fail" and "`content`" in problems[0], problems
+    assert scan_pack(pack, history, None) == [], "no lock to compare without the reference"
+    print("content_gate self-test: ok ({} identifier refusals, duplicate keys, 7 tree decisions)".format(len(cases)))
     return 0
 
 

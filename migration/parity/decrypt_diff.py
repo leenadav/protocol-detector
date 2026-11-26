@@ -12,6 +12,7 @@ The reference (presentation/poc_decryption/capture.py analyze_capture_reference)
 same capture and key log on standard input. Reports must be equal as JSON text, refusals in class, message
 and reason code. Nothing is written to disk and no secret is printed. Needs the `cryptography` package (the
 reference decrypts with it): presentation/requirements-decryption.lock.txt.
+Since PRO-401 the gate replays a golden file instead (--golden; --record writes one): migration/parity/golden.py.
 """
 import argparse
 import hashlib
@@ -360,7 +361,7 @@ def reference(capture, keylog):
         return 3, json.dumps({"error_type": "CaptureError", "error": str(error), "code": ""})
 
 
-def approved_divergence(capture, keylog, status, actual):
+def approved_model(capture, keylog, status, actual):
     """PRO-260 (Lee, 2026-11-23; migration/STATUS.md "Frozen-Python exceptions"): Go recognises a ServerHello whose
     key_share selects a post-quantum hybrid group, which the frozen reference reports as unknown; the OpenSSL-made
     exchanges negotiate X25519MLKEM768 by default (OpenSSL 3.5 and later). A report that differs from the
@@ -369,7 +370,12 @@ def approved_divergence(capture, keylog, status, actual):
     import pro260
     with pro260.with_hybrid_groups():
         model_status, model = reference(capture, keylog)
-    return model_status == status and model == actual
+    return (model_status, model) if model_status == status and model == actual else None
+
+
+def approved_divergence(capture, keylog, status, actual):
+    """Whether a differing report is the approved PRO-260 divergence (approved_model, as a verdict)."""
+    return approved_model(capture, keylog, status, actual) is not None
 
 
 def shortfall(captures, kinds, applications):
@@ -386,38 +392,57 @@ def shortfall(captures, kinds, applications):
     return problems
 
 
+def count_rows(expected, kinds, applications):
+    result = json.loads(expected)
+    for row in result.get("connections", ()):
+        label = row["status"] if row["status"] != "unavailable" else "unavailable/" + row["reason_code"]
+        kinds[label] = kinds.get(label, 0) + 1
+        if row.get("application"):
+            applications.add(row["application"])
+    if "error" in result:
+        kinds["refused"] = kinds.get("refused", 0) + 1
+
+
+def run_go(binary, capture, keylog):
+    done = subprocess.run([binary, "decrypt-capture"], input=struct.pack(">Q", len(capture)) + capture + keylog.encode("utf-8"),  # noqa: S603
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
+    return done.returncode, done.stdout.decode("utf-8").rstrip("\n")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
     parser.add_argument("--count", type=int, default=300)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record", help="also write the inputs and the reference's answers to this golden file (migration/parity/golden.py)")
+    parser.add_argument("--golden", help="compare Go with this golden file's answers; the reference is not run")
     args = parser.parse_args(argv)
+    if args.golden:
+        return replay_golden(args)
     try:
         generator = Generator(args.seed)
     except ImportError:
         print("decrypt parity FAILED: the reference needs the `cryptography` package "
               "(python3 -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt)")
         return 1
+    import golden
+    recorder = golden.recorder(args.record, "decrypt", {"seed": args.seed, "count": args.count})
     failures, kinds, applications, approved = [], {}, set(), 0
     for index in range(args.count):
         capture, keylog = generator.capture()
         status, expected = reference(capture, keylog)
-        done = subprocess.run([args.binary, "decrypt-capture"], input=struct.pack(">Q", len(capture)) + capture + keylog.encode("utf-8"),  # noqa: S603
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
-        actual = done.stdout.decode("utf-8").rstrip("\n")
-        result = json.loads(expected)
-        for row in result.get("connections", ()):
-            label = row["status"] if row["status"] != "unavailable" else "unavailable/" + row["reason_code"]
-            kinds[label] = kinds.get(label, 0) + 1
-            if row.get("application"):
-                applications.add(row["application"])
-        if "error" in result:
-            kinds["refused"] = kinds.get("refused", 0) + 1
-        if actual != expected and approved_divergence(capture, keylog, done.returncode, actual):
+        returncode, actual = run_go(args.binary, capture, keylog)
+        count_rows(expected, kinds, applications)
+        judged = (status, expected)
+        model = approved_model(capture, keylog, returncode, actual) if actual != expected else None
+        if model:
             approved += 1
-        elif done.returncode != status or actual != expected:
+            judged = model
+        elif returncode != status or actual != expected:
             failures.append("case {} (seed {}): exit status {} (expected {}); reports {}".format(
-                index, args.seed, done.returncode, status, "differ" if actual != expected else "equal"))
+                index, args.seed, returncode, status, "differ" if actual != expected else "equal"))
+        if recorder:
+            recorder.add({"capture": golden.b64(capture), "keylog": keylog, "status": judged[0], "expected": judged[1], "approved": bool(model)})
     for line in failures[:10]:
         print("decrypt mismatch:", line)
     problems = shortfall(args.count, kinds, applications)
@@ -426,8 +451,33 @@ def main(argv=None):
     print("decrypt parity: {} captures, {} mismatched, {} approved divergences (PRO-260) (seed {}); rows by status: {}; inner applications: {}".format(
         args.count, len(failures), approved, args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds)),
         ", ".join(sorted(applications)) or "none"))
+    if recorder:
+        recorder.finish(failures or problems)
     return 1 if failures or problems else 0
 
+
+def replay_golden(args):
+    """The gate without the reference (and without the `cryptography` package): the recorded captures and key logs,
+    Go's reports against the recorded ones (an approved PRO-260 divergence is recorded as the modelled report)."""
+    import golden
+    document = golden.read(args.golden, "decrypt")
+    failures, kinds, applications, approved = [], {}, set(), 0
+    for index, entry in enumerate(document["entries"]):
+        returncode, actual = run_go(args.binary, golden.unb64(entry["capture"]), entry["keylog"])
+        count_rows(entry["expected"], kinds, applications)
+        approved += bool(entry.get("approved"))
+        if returncode != entry["status"] or actual != entry["expected"]:
+            failures.append("case {}: exit status {} (expected {}); reports {}".format(
+                index, returncode, entry["status"], "differ" if actual != entry["expected"] else "equal"))
+    for line in failures[:10]:
+        print("decrypt mismatch:", line)
+    problems = shortfall(len(document["entries"]), kinds, applications)
+    for line in problems:
+        print("decrypt parity FAILED:", line)
+    print("decrypt parity (golden {}): {} captures, {} mismatched, {} recorded approved divergences (PRO-260) (recorded with seed {}); rows by status: {}; inner applications: {}".format(
+        Path(args.golden).name, len(document["entries"]), len(failures), approved, document.get("seed"),
+        ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds)), ", ".join(sorted(applications)) or "none"))
+    return 1 if failures or problems else 0
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -2,19 +2,21 @@ package serve
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	_ "embed"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"math/big"
 	"net"
-	"strings"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -24,13 +26,68 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/testframes"
 )
 
-// The decryption showcase (presentation/poc_decryption/demo.py showcase()): three TLS exchanges made in memory
-// by this process's own TLS stack, recorded as a capture with their key log, and decrypted by the key-log
-// adapter. Nothing is sent on a network; the throwaway key, certificate and secrets live only in this process.
+// The three answers the service used to take from the Python reference (PRO-401, Lee 2026-11-25: the reference is
+// removed). Each is now the service's own:
+//
+//   - the catalog (/api/catalog): the protocol descriptors, the applications and the evidence-limited outcomes,
+//     frozen from the reference's catalog_data() into catalog.json, with the build source read from SOURCE.json and
+//     the service's limits, as the reference assembled them;
+//   - the demo capture (/api/sample and the "demo" job): one capture the reference's demo_bytes() generated, frozen
+//     into demo.pcap (synthetic fixtures on documentation addresses; the reference drew a fresh TLS random per call,
+//     which is the only thing that varied);
+//   - the decryption showcase (the "decrypt-demo" job): three real TLS exchanges made in memory with crypto/tls
+//     (TLS 1.3, TLS 1.2 with ECDHE-RSA-AES128-GCM-SHA256 carrying HTTP, TLS 1.2 with ECDHE-RSA-AES256-GCM-SHA384
+//     carrying RESP), as poc_decryption/demo.py's showcase() made them with OpenSSL, framed into captures and
+//     decrypted by this engine. Nothing leaves the process; the keys are thrown away with it.
 
+//go:embed catalog.json
+var catalogJSON []byte
+
+//go:embed demo.pcap
+var demoCapture []byte
+
+// DemoCapture is the frozen synthetic demo capture (a copy).
+func DemoCapture() []byte { return append([]byte(nil), demoCapture...) }
+
+// catalog is catalog_data(): {source, protocols, applications, outcomes, limits}.
+func catalog(root string) (*ojson.Object, error) {
+	frozen, err := ojson.Decode(catalogJSON)
+	if err != nil {
+		return nil, err
+	}
+	pieces, ok := frozen.(*ojson.Object)
+	if !ok {
+		return nil, errors.New("catalog.json is not an object")
+	}
+	data, err := os.ReadFile(filepath.Join(root, "SOURCE.json"))
+	if err != nil {
+		return nil, err
+	}
+	v, err := ojson.Decode(data)
+	if err != nil {
+		return nil, err
+	}
+	source, ok := v.(*ojson.Object)
+	if !ok {
+		return nil, errors.New("SOURCE.json is not an object")
+	}
+	subset := ojson.NewObject()
+	for _, key := range []string{"version", "branch", "commit", "repository", "build_digest", "components"} {
+		value, _ := source.Get(key) // source.get(k): a missing key is null
+		subset.Set(key, value)
+	}
+	part := func(key string) ojson.Value { value, _ := pieces.Get(key); return value }
+	limits := ojson.NewObject("upload_mb", ojson.FromInt(8), "frames", ojson.FromInt(MaxFrames), "sessions", ojson.FromInt(MaxSessions),
+		"worker_seconds", ojson.FromInt(WorkerSeconds))
+	return ojson.NewObject("source", subset, "protocols", part("protocols"), "applications", part("applications"),
+		"outcomes", part("outcomes"), "limits", limits), nil
+}
+
+// showcaseCase is one exchange of the showcase: the TLS version, the one cipher suite of a TLS 1.2 exchange, and
+// the application bytes each side sends once the handshake is done.
 type showcaseCase struct {
 	version           uint16
-	cipher            uint16 // 0: the stack's choice (TLS 1.3)
+	cipher            uint16
 	request, response []byte
 }
 
@@ -45,24 +102,236 @@ var showcaseCases = []showcaseCase{
 		request: []byte("*1\r\n$4\r\nPING\r\n"), response: []byte("+PONG\r\n")},
 }
 
-// Showcase is showcase(): the merged decryption report of the three exchanges, with "synthetic": true.
-func Showcase(ctx context.Context) (*ojson.Object, error) {
+// memEnd is one end of an in-memory, buffered duplex connection (a write never waits for the reader, unlike
+// net.Pipe, so neither TLS side can block the other while both write a flight); it keeps every byte its side wrote.
+type memEnd struct {
+	in, out *memQueue
+	written bytes.Buffer
+}
+
+type memQueue struct {
+	mu     sync.Mutex
+	cond   *sync.Cond
+	data   bytes.Buffer
+	closed bool
+}
+
+func newQueue() *memQueue {
+	q := &memQueue{}
+	q.cond = sync.NewCond(&q.mu)
+	return q
+}
+
+func memPair() (*memEnd, *memEnd) {
+	a, b := newQueue(), newQueue()
+	return &memEnd{in: a, out: b}, &memEnd{in: b, out: a}
+}
+
+func (e *memEnd) Read(p []byte) (int, error) {
+	q := e.in
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	for q.data.Len() == 0 && !q.closed {
+		q.cond.Wait()
+	}
+	if q.data.Len() == 0 {
+		return 0, io.EOF
+	}
+	return q.data.Read(p)
+}
+
+func (e *memEnd) Write(p []byte) (int, error) {
+	q := e.out
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if q.closed {
+		return 0, io.ErrClosedPipe
+	}
+	q.data.Write(p)
+	e.written.Write(p) // only this end's goroutine writes, under the queue's lock
+	q.cond.Broadcast()
+	return len(p), nil
+}
+
+// Close ends both directions: a blocked reader on either end sees EOF.
+func (e *memEnd) Close() error {
+	for _, q := range []*memQueue{e.in, e.out} {
+		q.mu.Lock()
+		q.closed = true
+		q.cond.Broadcast()
+		q.mu.Unlock()
+	}
+	return nil
+}
+
+func (e *memEnd) bytes() []byte {
+	e.out.mu.Lock()
+	defer e.out.mu.Unlock()
+	return append([]byte(nil), e.written.Bytes()...)
+}
+
+type memAddr struct{}
+
+func (memAddr) Network() string { return "memory" }
+func (memAddr) String() string  { return "memory" }
+
+func (e *memEnd) LocalAddr() net.Addr              { return memAddr{} }
+func (e *memEnd) RemoteAddr() net.Addr             { return memAddr{} }
+func (e *memEnd) SetDeadline(time.Time) error      { return nil }
+func (e *memEnd) SetReadDeadline(time.Time) error  { return nil }
+func (e *memEnd) SetWriteDeadline(time.Time) error { return nil }
+
+// selfSigned is a throwaway RSA certificate for demo.invalid (the reference's fixture used RSA 2048 too: the TLS 1.2
+// suites are ECDHE-RSA).
+func selfSigned() (tls.Certificate, *x509.Certificate, error) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return tls.Certificate{}, nil, err
+	}
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 64))
+	if err != nil {
+		return tls.Certificate{}, nil, err
+	}
+	now := time.Now().UTC()
+	template := &x509.Certificate{SerialNumber: serial, Subject: pkix.Name{CommonName: "demo.invalid"},
+		Issuer: pkix.Name{CommonName: "demo.invalid"}, DNSNames: []string{"demo.invalid"},
+		NotBefore: now.Add(-time.Minute), NotAfter: now.Add(24 * time.Hour),
+		KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	if err != nil {
+		return tls.Certificate{}, nil, err
+	}
+	leaf, err := x509.ParseCertificate(der)
+	if err != nil {
+		return tls.Certificate{}, nil, err
+	}
+	return tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key, Leaf: leaf}, leaf, nil
+}
+
+// exchange runs one TLS exchange in memory: (client bytes, server bytes, the client's NSS key log).
+func exchange(c showcaseCase, certificate tls.Certificate, leaf *x509.Certificate) ([]byte, []byte, string, error) {
+	client, server := memPair()
+	defer func() { _ = client.Close() }()
+	pool := x509.NewCertPool()
+	pool.AddCert(leaf)
+	var keys bytes.Buffer
+	clientConfig := &tls.Config{ServerName: "demo.invalid", RootCAs: pool, MinVersion: c.version, MaxVersion: c.version, KeyLogWriter: &keys}
+	serverConfig := &tls.Config{Certificates: []tls.Certificate{certificate}, MinVersion: c.version, MaxVersion: c.version}
+	if c.cipher != 0 {
+		clientConfig.CipherSuites = []uint16{c.cipher}
+		serverConfig.CipherSuites = []uint16{c.cipher}
+	}
+	tlsClient, tlsServer := tls.Client(client, clientConfig), tls.Server(server, serverConfig)
+	served := make(chan error, 1)
+	go func() {
+		served <- func() error {
+			if err := tlsServer.Handshake(); err != nil {
+				return err
+			}
+			request := make([]byte, len(c.request))
+			if _, err := io.ReadFull(tlsServer, request); err != nil {
+				return err
+			}
+			_, err := tlsServer.Write(c.response)
+			return err
+		}()
+	}()
+	fail := func(err error) ([]byte, []byte, string, error) {
+		_ = client.Close() // unblocks the server's goroutine, which then ends with its own error (or none)
+		return nil, nil, "", errors.Join(err, <-served)
+	}
+	if err := tlsClient.Handshake(); err != nil {
+		return fail(err)
+	}
+	if _, err := tlsClient.Write(c.request); err != nil {
+		return fail(err)
+	}
+	response := make([]byte, len(c.response))
+	if _, err := io.ReadFull(tlsClient, response); err != nil {
+		return fail(err)
+	}
+	if err := <-served; err != nil {
+		return nil, nil, "", err
+	}
+	if !bytes.Equal(response, c.response) {
+		return nil, nil, "", errors.New("synthetic TLS exchange returned other bytes")
+	}
+	return client.bytes(), server.bytes(), keys.String(), nil
+}
+
+// u32 is a length, offset or time of the showcase's own small captures as a PCAP field; nothing it frames comes near
+// 2^32, and a value outside the range would be a bug here, framed as 0 rather than wrapped.
+func u32(n int) uint32 {
+	if n < 0 || n > math.MaxUint32 {
+		return 0
+	}
+	return uint32(n)
+}
+
+// showcaseCapture frames one exchange as the reference's fixture() did: SYN and SYN-ACK, each direction cut into
+// 700-byte segments sent in reverse order (record reassembly must not depend on packet boundaries), then each
+// side's FIN; classic PCAP, one second apart.
+func showcaseCapture(clientPort uint16, clientBytes, serverBytes []byte) []byte {
+	const clientAddr, serverAddr = "192.0.2.10", "198.51.100.20"
+	frames := [][]byte{
+		testframes.TCP(clientAddr, clientPort, serverAddr, 443, 999, 0, 0x02, nil),
+		testframes.TCP(serverAddr, 443, clientAddr, clientPort, 8999, 1000, 0x12, nil),
+	}
+	for _, side := range []struct {
+		fromAddr, toAddr string
+		fromPort, toPort uint16
+		seq              uint32
+		data             []byte
+	}{{clientAddr, serverAddr, clientPort, 443, 1000, clientBytes}, {serverAddr, clientAddr, 443, clientPort, 9000, serverBytes}} {
+		var pieces [][]byte
+		var offsets []uint32
+		for offset := 0; offset < len(side.data); offset += 700 {
+			end := min(offset+700, len(side.data))
+			pieces, offsets = append(pieces, side.data[offset:end]), append(offsets, u32(offset))
+		}
+		for i := len(pieces) - 1; i >= 0; i-- {
+			frames = append(frames, testframes.TCP(side.fromAddr, side.fromPort, side.toAddr, side.toPort, side.seq+offsets[i], 0, 0x18, pieces[i]))
+		}
+		frames = append(frames, testframes.TCP(side.fromAddr, side.fromPort, side.toAddr, side.toPort, side.seq+u32(len(side.data)), 0, 0x11, nil))
+	}
+	var out bytes.Buffer
+	header := make([]byte, 24)
+	binary.LittleEndian.PutUint32(header[0:], 0xa1b2c3d4)
+	binary.LittleEndian.PutUint16(header[4:], 2)
+	binary.LittleEndian.PutUint16(header[6:], 4)
+	binary.LittleEndian.PutUint32(header[16:], 65535)
+	binary.LittleEndian.PutUint32(header[20:], 1)
+	_, _ = out.Write(header) // a bytes.Buffer write never fails
+	for index, frame := range frames {
+		record := make([]byte, 16)
+		binary.LittleEndian.PutUint32(record[0:], u32(1700000000+index))
+		binary.LittleEndian.PutUint32(record[8:], u32(len(frame)))
+		binary.LittleEndian.PutUint32(record[12:], u32(len(frame)))
+		_, _ = out.Write(record)
+		_, _ = out.Write(frame)
+	}
+	return out.Bytes()
+}
+
+// Showcase is showcase(): the three exchanges, each decrypted by this engine, their connections concatenated and
+// their frame, decrypted and skipped counts summed; "synthetic" is true.
+func Showcase() (*ojson.Object, error) {
 	pack, err := content.Embedded()
 	if err != nil {
 		return nil, err
 	}
-	certificate, err := throwawayCertificate()
+	certificate, leaf, err := selfSigned()
 	if err != nil {
 		return nil, err
 	}
 	connections := []ojson.Value{}
 	totals := map[string]int64{}
 	for index, c := range showcaseCases {
-		capture, keylog, err := showcaseFixture(ctx, certificate, c, uint16(51000+index))
+		clientBytes, serverBytes, keylog, err := exchange(c, certificate, leaf)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("synthetic TLS handshake did not finish: %w", err)
 		}
-		text, err := keylogcap.Analyze(capture, keylog, pack)
+		text, err := keylogcap.Analyze(showcaseCapture(uint16(51000+index), clientBytes, serverBytes), keylog, pack)
 		if err != nil {
 			return nil, err
 		}
@@ -72,226 +341,30 @@ func Showcase(ctx context.Context) (*ojson.Object, error) {
 		}
 		report, ok := v.(*ojson.Object)
 		if !ok {
-			return nil, errors.New("the decryption report is not an object")
+			return nil, errors.New("decryption report is not an object")
 		}
-		if list, ok := report.Get("connections"); ok {
-			if items, ok := list.([]ojson.Value); ok {
-				connections = append(connections, items...)
+		if rows, ok := report.Get("connections"); ok {
+			if list, ok := rows.([]ojson.Value); ok {
+				connections = append(connections, list...)
 			}
 		}
 		for _, field := range []string{"frames", "decrypted", "skipped"} {
 			value, _ := report.Get(field)
-			n, ok := ojson.IntValue(value)
-			if !ok {
-				return nil, errors.New("the decryption report has no " + field + " count")
-			}
+			n, _ := ojson.IntValue(value)
 			totals[field] += n
 		}
 	}
-	return ojson.NewObject("connections", connections, "frames", ojson.FromInt(totals["frames"]),
-		"decrypted", ojson.FromInt(totals["decrypted"]), "skipped", ojson.FromInt(totals["skipped"]), "synthetic", true), nil
+	return ojson.NewObject("connections", connections, "frames", ojson.FromInt(totals["frames"]), "decrypted", ojson.FromInt(totals["decrypted"]),
+		"skipped", ojson.FromInt(totals["skipped"]), "synthetic", true), nil
 }
 
-// throwawayCertificate is a self-signed RSA-2048 certificate for demo.invalid, valid from a minute ago for a day.
-func throwawayCertificate() (tls.Certificate, error) {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+// DecryptDemoWorker is `server.py --decrypt-worker --demo`: the showcase report on standard output, or
+// {"error": ...} when it could not be made.
+func DecryptDemoWorker(stdout io.Writer) int {
+	limitCPU(22)
+	report, err := Showcase()
 	if err != nil {
-		return tls.Certificate{}, err
+		return emit(stdout, ojson.NewObject("error", runeTruncate(err.Error(), 240)))
 	}
-	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 127))
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-	now := time.Now().UTC()
-	template := &x509.Certificate{SerialNumber: serial, Subject: pkix.Name{CommonName: "demo.invalid"},
-		DNSNames: []string{"demo.invalid"}, NotBefore: now.Add(-time.Minute), NotAfter: now.Add(24 * time.Hour),
-		KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}
-	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-	leaf, err := x509.ParseCertificate(der)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-	return tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key, Leaf: leaf}, nil
-}
-
-// showcaseFixture is fixture(): one exchange (handshake, one request, one response) and its capture and key log.
-func showcaseFixture(ctx context.Context, certificate tls.Certificate, c showcaseCase, clientPort uint16) ([]byte, string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	toServer, toClient := newMemPipe(), newMemPipe()
-	var sent [2]bytes.Buffer // what the client and the server wrote, in order
-	clientConn := &memConn{in: toClient, out: toServer, record: &sent[0]}
-	serverConn := &memConn{in: toServer, out: toClient, record: &sent[1]}
-	stop := context.AfterFunc(ctx, func() { toServer.close(); toClient.close() })
-	defer stop()
-
-	roots := x509.NewCertPool()
-	roots.AddCert(certificate.Leaf)
-	var keylog bytes.Buffer
-	clientConfig := &tls.Config{ServerName: "demo.invalid", RootCAs: roots, MinVersion: c.version, MaxVersion: c.version,
-		KeyLogWriter: &keylog, CurvePreferences: []tls.CurveID{tls.X25519}}
-	serverConfig := &tls.Config{Certificates: []tls.Certificate{certificate}, MinVersion: c.version, MaxVersion: c.version,
-		CurvePreferences: []tls.CurveID{tls.X25519}}
-	if c.cipher != 0 {
-		clientConfig.CipherSuites = []uint16{c.cipher}
-		serverConfig.CipherSuites = []uint16{c.cipher}
-	}
-	client, server := tls.Client(clientConn, clientConfig), tls.Server(serverConn, serverConfig)
-
-	serverDone := make(chan error, 1)
-	go func() {
-		serverDone <- func() error {
-			if err := server.HandshakeContext(ctx); err != nil {
-				return err
-			}
-			if _, err := io.ReadFull(server, make([]byte, len(c.request))); err != nil {
-				return err
-			}
-			_, err := server.Write(c.response)
-			return err
-		}()
-	}()
-	clientErr := func() error {
-		if err := client.HandshakeContext(ctx); err != nil {
-			return err
-		}
-		if _, err := client.Write(c.request); err != nil {
-			return err
-		}
-		_, err := io.ReadFull(client, make([]byte, len(c.response)))
-		return err
-	}()
-	if clientErr != nil {
-		toServer.close()
-		toClient.close()
-		serverErr := <-serverDone // the server side fails too once its pipes are closed
-		return nil, "", errors.Join(errHandshake, clientErr, serverErr)
-	}
-	if err := <-serverDone; err != nil {
-		return nil, "", errors.Join(errHandshake, err)
-	}
-
-	const clientAddr, serverAddr = "192.0.2.10", "198.51.100.20"
-	frames := [][]byte{testframes.TCP(clientAddr, clientPort, serverAddr, 443, 999, 0, 2, nil),
-		testframes.TCP(serverAddr, 443, clientAddr, clientPort, 8999, 1000, 18, nil)}
-	for side, data := range [][]byte{sent[0].Bytes(), sent[1].Bytes()} {
-		srcAddr, srcPort, dstAddr, dstPort, seq := clientAddr, clientPort, serverAddr, uint16(443), uint32(1000)
-		if side == 1 {
-			srcAddr, srcPort, dstAddr, dstPort, seq = serverAddr, 443, clientAddr, clientPort, 9000
-		}
-		// Reversed segments prove record reconstruction is independent of packet boundaries.
-		var pieces [][]byte
-		for offset := 0; offset < len(data); offset += 700 {
-			pieces = append(pieces, testframes.TCP(srcAddr, srcPort, dstAddr, dstPort, seq+u32(offset), 0, 24, data[offset:min(offset+700, len(data))]))
-		}
-		for i := len(pieces) - 1; i >= 0; i-- {
-			frames = append(frames, pieces[i])
-		}
-		frames = append(frames, testframes.TCP(srcAddr, srcPort, dstAddr, dstPort, seq+u32(len(data)), 0, 17, nil))
-	}
-	return pcapBytes(frames), keylog.String(), nil
-}
-
-// u32 is n as a pcap or TCP field; the showcase's few small frames never come near the bound.
-func u32(n int) uint32 {
-	if n < 0 || n > math.MaxUint32 {
-		return math.MaxUint32
-	}
-	return uint32(n)
-}
-
-// pcapBytes is make_sample_pcap.pcap_bytes: a little-endian microsecond pcap, one frame per second.
-func pcapBytes(frames [][]byte) []byte {
-	out := binary.LittleEndian.AppendUint32(nil, 0xa1b2c3d4)
-	out = binary.LittleEndian.AppendUint16(out, 2)
-	out = binary.LittleEndian.AppendUint16(out, 4)
-	for _, v := range []uint32{0, 0, 65535, 1} {
-		out = binary.LittleEndian.AppendUint32(out, v)
-	}
-	for index, frame := range frames {
-		for _, v := range []uint32{1700000000 + u32(index), 0, u32(len(frame)), u32(len(frame))} {
-			out = binary.LittleEndian.AppendUint32(out, v)
-		}
-		out = append(out, frame...)
-	}
-	return out
-}
-
-// memPipe is one direction of an in-memory connection: writes never block, reads wait for bytes or close.
-type memPipe struct {
-	mu     sync.Mutex
-	ready  *sync.Cond
-	buf    bytes.Buffer
-	closed bool
-}
-
-func newMemPipe() *memPipe {
-	p := &memPipe{}
-	p.ready = sync.NewCond(&p.mu)
-	return p
-}
-
-func (p *memPipe) close() {
-	p.mu.Lock()
-	p.closed = true
-	p.mu.Unlock()
-	p.ready.Broadcast()
-}
-
-// memConn is the net.Conn the TLS stack runs over; record keeps every byte it writes.
-type memConn struct {
-	in, out *memPipe
-	record  *bytes.Buffer
-}
-
-func (c *memConn) Read(b []byte) (int, error) {
-	c.in.mu.Lock()
-	defer c.in.mu.Unlock()
-	for c.in.buf.Len() == 0 && !c.in.closed {
-		c.in.ready.Wait()
-	}
-	if c.in.buf.Len() == 0 {
-		return 0, io.EOF
-	}
-	return c.in.buf.Read(b)
-}
-
-func (c *memConn) Write(b []byte) (int, error) {
-	c.out.mu.Lock()
-	if c.out.closed {
-		c.out.mu.Unlock()
-		return 0, net.ErrClosed
-	}
-	c.out.buf.Write(b)
-	c.record.Write(b) // written only by this side's goroutine
-	c.out.mu.Unlock()
-	c.out.ready.Broadcast()
-	return len(b), nil
-}
-
-func (c *memConn) Close() error                     { c.out.close(); return nil }
-func (c *memConn) LocalAddr() net.Addr              { return memAddr{} }
-func (c *memConn) RemoteAddr() net.Addr             { return memAddr{} }
-func (c *memConn) SetDeadline(time.Time) error      { return nil }
-func (c *memConn) SetReadDeadline(time.Time) error  { return nil }
-func (c *memConn) SetWriteDeadline(time.Time) error { return nil }
-
-type memAddr struct{}
-
-func (memAddr) Network() string { return "memory" }
-func (memAddr) String() string  { return "memory" }
-
-// errHandshake is fixture()'s RuntimeError: an exchange that did not complete.
-var errHandshake = errors.New("synthetic TLS handshake did not finish")
-
-// showcaseError is the worker's message for a failed showcase (str(error)[:240] in the reference, whose text
-// for an unfinished exchange is "Synthetic TLS handshake did not finish.").
-func showcaseError(err error) string {
-	if errors.Is(err, errHandshake) {
-		return "Synthetic TLS handshake did not finish."
-	}
-	return runeTruncate(strings.TrimSpace(err.Error()), 240)
+	return emit(stdout, report)
 }

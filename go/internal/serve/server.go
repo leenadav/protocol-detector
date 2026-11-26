@@ -3,9 +3,9 @@
 // analysis and decryption jobs, and the static page. Every answer is the reference's: status, body text and
 // the headers it sets (Server and Date name this implementation and the time).
 //
-// The service runs no interpreter. The synthetic demo capture (/api/sample, the "demo" job) and the catalog
-// tables (/api/catalog) are embedded (assets.go); the decryption showcase (the "decrypt-demo" job) is made in
-// memory by this binary's own TLS stack (showcase.go).
+// The synthetic demo capture (/api/sample, the "demo" job), the decryption showcase (the "decrypt-demo" job) and
+// the catalog export (/api/catalog) used to be answered by the reference's own code run as a Python worker; since
+// PRO-401 they are this service's own (showcase.go), and the service runs no interpreter.
 package serve
 
 import (
@@ -89,7 +89,7 @@ func (s *Server) workerCommand(kind string, payload []byte) ([]string, []byte, e
 	case "decrypt":
 		return []string{s.Self, "serve-worker", "decrypt"}, payload, nil
 	case "demo":
-		return []string{s.Self, "serve-worker", "demo"}, nil, nil
+		return []string{s.Self, "serve-worker", "analyze"}, DemoCapture(), nil
 	case "decrypt-demo":
 		return []string{s.Self, "serve-worker", "decrypt-demo"}, nil, nil
 	}
@@ -289,7 +289,7 @@ func (s *Server) doGet(r *request) {
 	case path == "/api/catalog":
 		body, err := s.catalogBody()
 		if err != nil {
-			r.version = "dropped" // catalog_data() raises in the reference (SOURCE.json unreadable): no answer
+			r.version = "dropped" // catalog_data() raises in the reference (no SOURCE.json): no answer
 			return
 		}
 		s.respond(r, 200, body, "")
@@ -320,11 +320,11 @@ func (s *Server) catalogBody() (string, error) {
 	if s.catalog.body != "" {
 		return s.catalog.body, nil // the catalog is fixed for the life of the process
 	}
-	data, err := catalogData(s.Root)
+	value, err := catalog(s.Root)
 	if err != nil {
 		return "", err
 	}
-	body, err := ojson.Dumps(data)
+	body, err := ojson.Dumps(value)
 	if err != nil {
 		return "", err
 	}
