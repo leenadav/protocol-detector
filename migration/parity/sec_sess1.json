@@ -70,11 +70,11 @@
     0
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "69c22b40da1349bf12828c6f41f5590b4dd7342500a47b64221b31d0f4581aed",
-   "frozen_sha256": "b4917796852bb3b140d1de3978810efeef300d600984bba27c52e98bc82c5d46"
+   "go_sha256": "c9cfdfbfeff881db77f03af482d86ccefd036aa863443096351166b2a42f4594",
+   "frozen_sha256": "c6cb5ae6ce83bed17d58269e0a42f482b1e56958d55fbe8f5db8f08448e68268"
   },
   "seed1/capture-1-85.pcap/present": {
    "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
@@ -122,11 +122,11 @@
     0
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "7578b7a91ad3d0d07042f3fe20dec97e60f6710fa72832335061a28b1217fa7e",
-   "frozen_sha256": "838eaf21d6f5e971ed0b891819f33d663a5a07df433caf8c8df7139429b23cab"
+   "go_sha256": "abf5f1c78bf3f0452bcc42061d73a5460db5136775e3347fc371e8d0b3830ffa",
+   "frozen_sha256": "ac93633dbf5883cf8b3a4b413bd177b47aa19e4e25914c95e32b565bb31b79ac"
   },
   "seed1/capture-1-101.pcap/present": {
    "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
@@ -197,11 +197,11 @@
     0
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "f5223603192d7cf3ee467e1ce16202da11484c8320723f389607cc30fc1b4ebc",
-   "frozen_sha256": "1ff7f10f594582ebeb626b0e41c2de174469c34add96af7029f890ae9d2ab908"
+   "go_sha256": "45adbc7bc33fa623173810c3886c901d1cef09d6dde8067009da090598738859",
+   "frozen_sha256": "a65cd2e7c148c9ba23eb3243ec50e1a539bda2c403446e82ed13d3aae06a3339"
   },
   "seed1/capture-1-131.pcap/present": {
    "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
@@ -249,11 +249,11 @@
     2
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "7295e7d49445db9a168058729fd06766f570fe677b4e98171b733bdbc4ed9395",
-   "frozen_sha256": "b99006d85720b85428a3752a0cd2f1a63c1f371655cb188c0b1dee2c416e8cc5"
+   "go_sha256": "352cc8fbbcddd2bc9c80bf5f8ff3d094f50c4a3162cab0703ebd5022c72a71a9",
+   "frozen_sha256": "f5b9cedb3420e550d40c3826a6908d7daad88ef465873b8affb3e00d9ab90d22"
   },
   "seed1/capture-1-155.pcap/present": {
    "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
@@ -301,11 +301,11 @@
     0
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "7e61cd5aba6f9bc737f3d4e62476872e632b78fa4976713c0a94ac27167dcaee",
-   "frozen_sha256": "637474f14a659b5eabc5d8e9fc16ec44a52ca9f7531829573a680e574c466fdb"
+   "go_sha256": "a99ef0c3e36d4d6949dc15c5bdd6394b4fbcf31d992f32ce8e3b92130426299b",
+   "frozen_sha256": "5c8144f97f01d5f54bc9af27f6be80e0c31fde2b3f49e7f77224011541910194"
   },
   "seed1/capture-1-182.pcap/present": {
    "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
@@ -353,11 +353,11 @@
     8
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "f590dfb6f6b2831f599eca8c400672e54a0237b26a9d50e4c519f1c6807d2a1f",
-   "frozen_sha256": "796d5d5983f57a21334840eafe0c2ddebc9c3aef2df7ab2ed9fe9322dba0ca30"
+   "go_sha256": "4a7fab2ff06068c4c5920de6cf1b4dc53a2188a511fc77c88519fab78d95fab3",
+   "frozen_sha256": "3cae39bab1724fafbcd87e908a8f8fecc4bdda126cee3b24315462dca03ef27d"
   },
   "seed1/capture-1-209.pcap/present": {
    "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
@@ -428,11 +428,11 @@
     0
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "d0ca521faffdb825fe83fa77d19549288c3d2c513c5d12e9b257234f9ca359e6",
-   "frozen_sha256": "2e3723756511876507f34c9bbf223fedbc996fbf4aa1bcd3c49526e445a72665"
+   "go_sha256": "798d5cf1c555022deaa9de502f6b40830e02d2c1e23a72de427925802633aaf1",
+   "frozen_sha256": "964fb554b370ecf855e38ba14c56f1459290ddcee16ab18f64f54dbd5fb2d7fd"
   },
   "seed1/capture-1-230.pcap/present": {
    "reason": "SEC-SESS-1, PRO-398: the presentation result of this capture (Go present against presentation/server.py): Go's half-open expiry (HalfOpenTimeout, 5 s after the SYN; 5 s of silence for an undecided UDP flow) and oldest-first eviction when the half-open budget is full change its sessions, end times, packet counts and order, where the frozen reference keeps half-open state for the whole idle timeout.",
@@ -480,11 +480,11 @@
     0
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "58d4ca7efbf6dcdc31caf2f1c1763b76940abbf5cdd448768246c7a853dde12e",
-   "frozen_sha256": "f622b855a745930badd80f1aa2f100d7a1aa31fb374f147cd1f5ac4a68164cd0"
+   "go_sha256": "47d1b35e9b21526fa990254f531106b57e93658fb68ca1ebaf03d4ddfd6e5eb1",
+   "frozen_sha256": "0d1d6be8c199205c2f101296748c92b74c5f9e4f7c22c7076b483e9f440ddd13"
   },
   "seed1/capture-1-284.pcap/analyze": {
    "reason": "SEC-SESS-1, PRO-398: Go expires an undecided UDP flow after HalfOpenTimeout (5 s) of silence (session record 'Idle timeout'), where the frozen reference keeps it for the whole idle timeout.",
@@ -509,11 +509,11 @@
     0
    ],
    "udp_refused": [
-    0,
-    0
+    2,
+    2
    ],
-   "go_sha256": "e1f1d6d0734e2228c552084427b91bba456322cd7850d5d6c413f3982778b097",
-   "frozen_sha256": "370bfc41b6e62e9553ae104032031134904b3ce914b67aeb89827dc838ba0b14"
+   "go_sha256": "92afa6191840f77a815a94c37eae0316d541819c1e9455413c50a35dee698c78",
+   "frozen_sha256": "74d26aaeb22180d65faceae425e7748ffd4810b51b4baf97f4d3f514275ea0d3"
   }
  },
  "live": {

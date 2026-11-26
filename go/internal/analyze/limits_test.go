@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
+	"github.com/leenadav/protocol-detector/go/internal/session"
 )
 
 // ipv4Frame is an Ethernet II frame carrying one IPv4 packet (valid header checksum, transport checksum 0).
@@ -40,14 +41,20 @@ func udpFrame(src, dst [4]byte, sport, dport uint16, payload []byte) []byte {
 	return ipv4Frame(17, src, dst, header, payload)
 }
 
-func tcpSYN(src, dst [4]byte, sport, dport uint16, sequence uint32) []byte {
+// tcpSegment is a TCP segment with no payload and the given flags (0x02 SYN, 0x10 ACK, 0x12 SYN-ACK).
+func tcpSegment(src, dst [4]byte, sport, dport uint16, sequence, ack uint32, flags byte) []byte {
 	header := make([]byte, 20)
 	binary.BigEndian.PutUint16(header[0:], sport)
 	binary.BigEndian.PutUint16(header[2:], dport)
 	binary.BigEndian.PutUint32(header[4:], sequence)
-	header[12], header[13] = 5<<4, 0x02
+	binary.BigEndian.PutUint32(header[8:], ack)
+	header[12], header[13] = 5<<4, flags
 	binary.BigEndian.PutUint16(header[14:], 65535)
 	return ipv4Frame(6, src, dst, header, nil)
+}
+
+func tcpSYN(src, dst [4]byte, sport, dport uint16, sequence uint32) []byte {
+	return tcpSegment(src, dst, sport, dport, sequence, 0, 0x02)
 }
 
 // dnsQuery is a standard query for example.com/A.
@@ -116,8 +123,13 @@ func summaryOf(t *testing.T, rows []map[string]interface{}) (map[string]interfac
 }
 
 // PRO-448: 800 UDP flows against analyze's table of 32 (MaxUDPFlows follows MaxConnections). Every datagram
-// is still inspected, but only 32 flows get a session record; the 768 datagrams turned away are reported in
-// the summary and the input quality instead of disappearing.
+// is still inspected, but only the flows in the table get a session record; the datagrams turned away are
+// reported in the summary and the input quality instead of disappearing.
+//
+// With SEC-SESS-1 (PRO-398) a flow with no decision yet is half-open and is evicted, not kept, when the table is
+// full. Every query here is identified as DNS but query 9, whose competing candidate exhausts its budget, so that
+// flow alone stays half-open: flow 33 evicts it (one "Half-open budget full" record) and takes its slot, and the
+// 767 later flows find a table of decided flows and are turned away. Records plus refusals are the 800 flows.
 func TestUDPFlowLimitIsReported(t *testing.T) {
 	var frames [][]byte
 	for i := 0; i < 800; i++ {
@@ -126,23 +138,26 @@ func TestUDPFlowLimitIsReported(t *testing.T) {
 	}
 	rows := runCapture(t, Options{JSON: true, Sessions: true, EventsOnly: true}, frames...)
 	summary, quality := summaryOf(t, rows)
-	if summary["udp_flow_limit"] != float64(768) || summary["tcp_connection_limit"] != float64(0) || summary["sessions"] != float64(32) {
+	if summary["udp_flow_limit"] != float64(767) || summary["tcp_connection_limit"] != float64(0) || summary["sessions"] != float64(33) {
 		t.Fatalf("summary %v", summary)
 	}
-	if quality["udp_flow_limit"] != float64(768) || quality["tcp_connection_limit"] != float64(0) {
+	if quality["udp_flow_limit"] != float64(767) || quality["tcp_connection_limit"] != float64(0) {
 		t.Fatalf("input quality %v", quality)
 	}
-	sessions := 0
+	sessions, evicted := 0, 0
 	for _, row := range rows {
 		if row["type"] == "session" {
 			sessions++
+			if row["end_reason"] == session.ReasonHalfOpenEvicted {
+				evicted++
+			}
 		}
 	}
-	if sessions != 32 {
-		t.Fatalf("%d session records", sessions)
+	if sessions != 33 || evicted != 1 || sessions+767 != len(frames) {
+		t.Fatalf("%d session records, %d evicted", sessions, evicted)
 	}
 	text := runCapture(t, Options{}, frames...)
-	if last := text[len(text)-1]["text"]; !strings.HasSuffix(last.(string), "; sessions: 0; udp_flow_limit: 768") {
+	if last := text[len(text)-1]["text"]; !strings.HasSuffix(last.(string), "; sessions: 0; udp_flow_limit: 767") {
 		t.Fatalf("text summary %q", last)
 	}
 }
@@ -162,15 +177,49 @@ func TestFlowLimitCountersAlwaysPresent(t *testing.T) {
 	}
 }
 
-// The TCP equivalent: connection openings turned away by a full table (the "LIMIT" rows) are counted.
+// The TCP equivalent: connection openings turned away by a full table (the "LIMIT" rows) are counted. Under
+// SEC-SESS-1 only established connections fill the table for good (a half-open one is evicted for a new SYN),
+// so 32 completed handshakes come first and the 8 SYNs after them are refused.
 func TestTCPConnectionLimitIsReported(t *testing.T) {
+	server := [4]byte{192, 0, 2, 80}
 	var frames [][]byte
 	for i := 0; i < 40; i++ {
-		frames = append(frames, tcpSYN([4]byte{198, 51, 100, byte(1 + i)}, [4]byte{192, 0, 2, 80}, uint16(40000+i), 80, uint32(1000*i+1)))
+		client, port, isn := [4]byte{198, 51, 100, byte(1 + i)}, uint16(40000+i), uint32(1000*i+1)
+		frames = append(frames, tcpSYN(client, server, port, 80, isn))
+		if i < 32 {
+			frames = append(frames, tcpSegment(server, client, 80, port, 7000, isn+1, 0x12),
+				tcpSegment(client, server, port, 80, isn+1, 7001, 0x10))
+		}
 	}
 	summary, quality := summaryOf(t, runCapture(t, Options{JSON: true}, frames...))
 	if summary["tcp_connection_limit"] != float64(8) || quality["tcp_connection_limit"] != float64(8) || summary["udp_flow_limit"] != float64(0) {
 		t.Fatalf("summary %v, quality %v", summary, quality)
+	}
+}
+
+// 40 bare SYNs are all half-open: from the 25th on (the half-open budget of 24) each evicts the oldest instead of
+// being refused, so nothing counts as tcp_connection_limit and all 40 get a session record, 16 (40 - 24) of them evicted.
+func TestHalfOpenSYNsAreEvictedNotCountedAsLimit(t *testing.T) {
+	var frames [][]byte
+	for i := 0; i < 40; i++ {
+		frames = append(frames, tcpSYN([4]byte{198, 51, 100, byte(1 + i)}, [4]byte{192, 0, 2, 80}, uint16(40000+i), 80, uint32(1000*i+1)))
+	}
+	rows := runCapture(t, Options{JSON: true, Sessions: true, EventsOnly: true}, frames...)
+	summary, quality := summaryOf(t, rows)
+	if summary["tcp_connection_limit"] != float64(0) || quality["tcp_connection_limit"] != float64(0) {
+		t.Fatalf("summary %v, quality %v", summary, quality)
+	}
+	sessions, evicted := 0, 0
+	for _, row := range rows {
+		if row["type"] == "session" {
+			sessions++
+			if row["end_reason"] == session.ReasonHalfOpenEvicted {
+				evicted++
+			}
+		}
+	}
+	if sessions != 40 || evicted != 16 {
+		t.Fatalf("%d session records, %d evicted", sessions, evicted)
 	}
 }
 
