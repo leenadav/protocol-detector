@@ -193,7 +193,7 @@ PRO-291 (against `d10c007`, PR #107's head): `5b48d91` (fix and tests), the docu
 
 PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the documentation commit after it.
 
-PRO-448 (PR #148, against `main` `23bbc0c`): `81b331d` (fix and tests), `0c51e26` (the pro448 self-test fix), and `b45979c` (PRO-459: main merged in, keeping both the pro448 reference model and the SEC-SESS-1 pins in `analyze_diff.py`), and `bbb274a` (PRO-460: the 9 SEC-SESS-1 analyze pins refreshed for the PRO-448 counters, and limits_test.go set to the half-open budget), with the documentation commits after them.
+PRO-448 (PR #148, against `main` `23bbc0c`): `81b331d` (fix and tests), `0c51e26` (the pro448 self-test fix), and `b45979c` (PRO-459: main merged in, keeping both the pro448 reference model and the SEC-SESS-1 pins in `analyze_diff.py`), and `dcd932b` (PRO-460: the 9 SEC-SESS-1 analyze pins refreshed for the PRO-448 counters, and limits_test.go set to the half-open budget), with the documentation commits after them.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
