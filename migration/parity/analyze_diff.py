@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 import pro448  # noqa: E402
+import sec_sess1  # noqa: E402
 from protocol_adapters.packets import CaptureError  # noqa: E402
 from protocol_engine import SignatureSet  # noqa: E402
 from protocol_engine.policy import Policy, PolicyError  # noqa: E402
@@ -320,19 +321,23 @@ def present_reference(server, data, limits):
 
 def present_problem(server, binary, rng, data):
     """Compare the Go `present` command with the reference on one capture (text of the result but the timing):
-    (problem or None, whether the reference completed the analysis rather than refusing it)."""
+    (problem or None, whether the reference completed the analysis rather than refusing it, and for a differing
+    result the two sides for sec_sess1.Pins.approve, else None)."""
     limits = (20000, 500, 4000) if rng.random() < 0.7 else (rng.choice([0, 3, 20000]), rng.choice([0, 1, 2, 500]), rng.choice([0, 2, 9, 4000]))
     expected = present_reference(server, data, limits)
     done = subprocess.run([binary, "present", "--max-frames", str(limits[0]), "--max-sessions", str(limits[1]), "--max-events", str(limits[2])],  # noqa: S603
                           input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120)
     if done.returncode != (3 if "error" in expected else 0):
-        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200]), False
+        return "present exit status {} for {!r}: {}".format(done.returncode, expected.get("error"), done.stderr.decode("utf-8", "replace")[:200]), False, None
     actual = json.loads(done.stdout)
     if "meta" in actual:
         actual["meta"]["processing_ms"] = 0
     if json.dumps(actual) != json.dumps(expected):
-        return "present result differs (limits {})".format(limits), False
-    return None, "error" not in expected
+        # The sides as indented JSON, for the SEC-SESS-1 pins: (Go, Go status, reference, reference status, limits).
+        sides = (json.dumps(actual, indent=1), done.returncode, json.dumps(expected, indent=1), 3 if "error" in expected else 0,
+                 "limits {}".format(list(limits)))
+        return "present result differs (limits {})".format(limits), "error" not in expected, sides
+    return None, "error" not in expected, None
 
 
 def main(argv=None):
@@ -341,8 +346,11 @@ def main(argv=None):
     parser.add_argument("--count", type=int, default=300)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--keep", help="write the captures here instead of a temporary directory")
+    parser.add_argument("--record-sec-sess1", metavar="PATH", help="write every divergence to PATH for review; the run then fails")
     args = parser.parse_args(argv)
     pro448.self_test()
+    sec_sess1.self_test()
+    pins = sec_sess1.Pins("analyze", args.seed, record=args.record_sec_sess1)
     rng = random.Random(args.seed)
     sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
     with contextlib.ExitStack() as stack:
@@ -364,21 +372,27 @@ def main(argv=None):
             rows += expected[0].count("\n")
             python_positive += positive_rows(expected[0])
             go_positive += positive_rows(done.stdout.decode("utf-8", "replace"))
-            problem = compare(expected, (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8")))
-            if problem:
+            go_result = (done.stdout.decode("utf-8"), done.returncode, done.stderr.decode("utf-8"))
+            problem = compare(expected, go_result)
+            pins.cover(capture.name + "/analyze")
+            # SEC-SESS-1 (PRO-398): a mismatch passes only when this exact case is pinned with both exact results.
+            if problem and not pins.approve(capture.name + "/analyze", go_result[0], list(go_result[1:]), expected[0], list(expected[1:]),
+                                            " ".join(options).replace(str(folder), "<tmp>")):
                 failures.append("{} {}: {}".format(capture.name, " ".join(options), problem))
-            problem, finished = present_problem(server, args.binary, rng, capture.read_bytes())
+            problem, finished, sides = present_problem(server, args.binary, rng, capture.read_bytes())
             presented += 1
             completed += finished
-            if problem:
+            pins.cover(capture.name + "/present")
+            if problem and not (sides and pins.approve(capture.name + "/present", *sides)):
                 failures.append("{}: {}".format(capture.name, problem))
         for line in failures[:10]:
             print("analyze mismatch:", line)
-        problems = shortfall(args.count, python_positive, go_positive, completed)
+        problems = shortfall(args.count, python_positive, go_positive, completed) + pins.finish()
         for line in problems:
             print("analyze parity FAILED:", line)
-        print("analyze parity: {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched (seed {})".format(
-            args.count, rows, python_positive, presented, completed, len(failures), args.seed))
+        print("analyze parity: {} captures, {} rows ({} identified), {} presentation results ({} completed), {} mismatched, "
+              "{} approved divergences ({}) (seed {})".format(args.count, rows, python_positive, presented, completed, len(failures),
+                                                             len(pins.approved), sec_sess1.LABEL, args.seed))
         return 1 if failures or problems else 0
 
 

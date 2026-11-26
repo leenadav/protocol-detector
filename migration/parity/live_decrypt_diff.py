@@ -131,9 +131,13 @@ def main(argv=None):
     parser.add_argument("--binary", required=True, help="the Go protodetect binary")
     parser.add_argument("--count", type=int, default=300)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--record-sec-sess1", metavar="PATH", help="write every divergence to PATH for review; the run then fails")
     args = parser.parse_args(argv)
     import decrypt_diff
     import live_diff
+    import sec_sess1
+    sec_sess1.self_test()
+    pins = sec_sess1.Pins("live-decrypt", args.seed, record=args.record_sec_sess1)
     try:
         generator = decrypt_diff.Generator(args.seed)
     except ImportError:
@@ -142,8 +146,19 @@ def main(argv=None):
         return 1
     rng = random.Random(args.seed * 7919 + 1)
     failures, events, kinds, approved = [], 0, {}, 0
+    openssl, used = generator.openssl, []
+    # The scripts depend on the OpenSSL that Python links (the real exchanges' lengths drive later random draws; 3.5
+    # also offers hybrid groups), so a SEC-SESS-1 pin names the OpenSSL line as part of its case id.
+    environment = sec_sess1.openssl_line()
+
+    def counted():                                  # a real OpenSSL exchange differs between runs (sec_sess1 `volatile`)
+        used.append(True)
+        return openssl()
+    generator.openssl = counted
     for index in range(args.count):
+        del used[:]
         operations = script_for(rng, generator)
+        volatile = bool(used)
         expected, status = reference(operations)
         script = b"".join(kind.encode("ascii") + struct.pack(">dI", now, len(data)) + data for kind, now, data in operations)
         done = subprocess.run([args.binary, "live-decrypt", "--replay", "--capture-id", CAPTURE_ID], input=script, stdout=subprocess.PIPE,  # noqa: S603
@@ -161,8 +176,12 @@ def main(argv=None):
                 label = "error/" + event["code"]
             kinds[label] = kinds.get(label, 0) + 1
         a, b = live_diff.normalized(actual, True), live_diff.normalized(expected, True)
+        case = "{}/script-{}".format(environment, index)
+        pins.cover(case)
         if (done.returncode != status or a != b) and approved_divergence(operations, done.returncode, a):
             approved += 1
+        elif (done.returncode != status or a != b) and pins.approve(case, a, done.returncode, b, status, volatile=volatile):
+            pass                                    # SEC-SESS-1 (PRO-398): this exact script, both exact results pinned
         elif done.returncode != status:
             failures.append("script {} (seed {}): exit status {} (expected {})".format(index, args.seed, done.returncode, status))
         elif a != b:
@@ -171,9 +190,13 @@ def main(argv=None):
             failures.append("script {} (seed {}): event {} differs ({} lines, expected {})".format(index, args.seed, at, len(x), len(y)))
     for line in failures[:10]:
         print("live decrypt mismatch:", line)
-    print("live decrypt parity: {} scripts, {} event lines, {} mismatched, {} approved divergences (PRO-260) (seed {}); events: {}".format(
-        args.count, events, len(failures), approved, args.seed, ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
-    return 1 if failures else 0
+    problems = pins.finish()
+    for line in problems:
+        print("live decrypt parity FAILED:", line)
+    print("live decrypt parity: {} scripts, {} event lines, {} mismatched, {} approved divergences (PRO-260), {} approved divergences ({}) "
+          "(seed {}); events: {}".format(args.count, events, len(failures), approved, len(pins.approved), sec_sess1.LABEL, args.seed,
+                                         ", ".join("{} {}".format(name, kinds[name]) for name in sorted(kinds))))
+    return 1 if failures or problems else 0
 
 
 if __name__ == "__main__":
