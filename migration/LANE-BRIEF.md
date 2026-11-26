@@ -162,6 +162,7 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
+| A2 second run (PRO-119): SEC-QUIC-2, a QUIC conflict marker refreshes its idle time but not its LRU place, so 1024 newer connections evict it; SEC-DEC-1, records after a close_notify or fatal alert are still decrypted | an approved parity delta each (Hermes/Lee, as for PRO-122/PRO-123). The Python reference behaves the same way (`quic.py` `conflicted`, `poc_decryption/engine.py` and `tls12.py`), so a Go-only fix would move parity. `migration/notes/PRO-119.md` |
 | D09 dataset (ISCX VPN-nonVPN 2016) | nothing. It is for internal research evaluation only; commercial use is UNVERIFIED, and its data is never committed. |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -288,3 +289,7 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
   `go test -count=30 -cpu=1,2,4`.
 - **`bytes_inspected` is chunk-granular by contract** (the whole chunk in which a parser fails is counted, as in
   `engine.py`), and a parser's consumed count after a fault is discarded. Compare them against budgets, not across splits.
+- **A reslice keeps its whole backing array alive** (SEC-DEC-1, PRO-119). `buf = buf[n:]` and `q = q[1:]` keep the
+  consumed prefix reachable, even at length 0. Before you keep a tail or pop from a queue for a long-lived object,
+  copy the tail into a new buffer, clear the popped slot and drop an emptied slice. Prove the fix with a heap test
+  (`runtime.ReadMemStats` after two `runtime.GC()` calls; `go/detector/ownership_test.go`).
