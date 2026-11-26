@@ -1115,14 +1115,18 @@ pattern search), charged before the work runs. The allowance is `max(MaxSignatur
 so a flow that arrives in one or two segments is evaluated exactly as by the reference, and the bound does not
 depend on how the peer splits its bytes. An exhausted budget ends the direction as `budget_exhausted` ("Signature
 work budget exhausted") and no later byte is evaluated; it is never a match. The reference has no such bound:
-this is a Go-only divergence for flows past the allowance, pending approval (Hermes/Lee, PRO-332).
+this is a Go-only divergence for flows past the allowance, pending approval (Hermes/Lee, PRO-332). Since PRO-370
+the allowance is capped at `MaxSignatureWorkCeiling` = 2^28 units (below), so the divergence also covers a flow whose
+two full evaluations exceed 2^28, even when it arrives in one or two segments. Hermes approved the 2^28 value on
+PRO-375 (2026-11-25); PRO-446 ported the ceiling to `main` (it had merged only into
+`claude/engine-PRO-51-sig-compile-cost` through PR #122).
 
 | item | state | evidence |
 |---|---|---|
 | Upper bound | `TestEstimateBoundsTheCompiledProgram`, `FuzzEstimateBoundsProgram` (in `GO_FUZZ_SMOKE`) | the estimate is >= `len(prog.Inst)` of the real compile for every corpus pattern, with and without IGNORECASE; 257,877 fuzz executions, no counterexample |
 | Caps | `TestPatternInstructionCap`, `TestSetInstructionCap`, `TestHostileDocumentLoadIsBounded` | the PRO-170 shape is refused; 12 patterns of 8,202 load, the 13th is refused; reference rule errors win over the cap |
 | Flow cost | `TestUnknownPayloadSignatureWorkIsBounded`, `TestExhaustedSignatureWorkNeverMatches`, `TestSignatureWorkBelowTheBudgetKeepsTheReferenceVerdict`, `TestWorkStopsBeforeTheSearchAndNeverMatches` | PRO-170 1-byte `.{0,4096}` flow: `budget_exhausted` after 80 updates within its allowance; early matches, full single segments and the test set's 1-byte flow (2.0 M units) keep the reference verdict |
-| Parity | divergence pending approval, 0 case changes | no committed case carries a signature set (gate numbers in the lane brief and the PR) |
+| Parity | divergence pending approval, including the PRO-370 ceiling (2^28 per direction, value approved by Hermes on PRO-375), 0 case changes | no committed case carries a signature set (gate numbers in the lane brief and the PR) |
 
 Load times (4 vCPU Xeon 2.3 GHz; `BenchmarkHostileDocumentLoad` in `go/internal/signatures`, 10 iterations each):
 
