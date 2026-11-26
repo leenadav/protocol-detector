@@ -275,6 +275,14 @@ func (d *tls13Direction) record(r record) ([]byte, *Error) {
 					return nil, fail("Unexpected Finished message.", UnsupportedProfile)
 				}
 				d.phase, d.sequence = phaseApplication, 0
+				// SEC-KEY-1 (PRO-119, ported from #147): the handshake epoch is over, so its secret and IV are
+				// overwritten and dropped now, not when the connection ends. Both are derived copies, never the
+				// KeyProvider's bytes.
+				clear(d.secrets[phaseHandshake])
+				clear(d.ivs[phaseHandshake])
+				delete(d.secrets, phaseHandshake)
+				delete(d.ivs, phaseHandshake)
+				delete(d.ciphers, phaseHandshake)
 			}
 		}
 		return nil, nil
@@ -578,6 +586,7 @@ func (c *Connection) negotiate() *Error {
 			c.queued[side] = append(append([]record{}, c.hellos[side].records...), c.queued[side]...)
 			c.hellos[side].records = nil // now queued: no second reference (SEC-DEC-1)
 		}
+		c.dropHellos(34) // the key expansion reads the server random, sh[2:34]
 		return nil
 	}
 	if _, ok := suites13[suiteID]; !ok {
@@ -599,7 +608,21 @@ func (c *Connection) negotiate() *Error {
 	c.Version, c.Suite = "TLS 1.3", suiteID
 	// TLS 1.3 directions start after the hellos, so their records are never read again (SEC-DEC-1).
 	c.hellos[0].records, c.hellos[1].records = nil, nil
+	c.dropHellos(0)
 	return nil
+}
+
+// dropHellos releases the negotiated hellos' buffers, each up to MaxStream bytes (SEC-DEC-1, PRO-119, ported from
+// #147): only the done and trailing flags are read afterwards, and the first keep bytes of the ServerHello body,
+// copied into a buffer of their own (TLS 1.2 reads its random). The client random is already a copy.
+func (c *Connection) dropHellos(keep int) {
+	server := c.hellos[1].body
+	for _, h := range c.hellos {
+		h.data, h.body = nil, nil
+	}
+	if keep > 0 {
+		c.hellos[1].body = append([]byte(nil), server[:keep]...)
+	}
 }
 
 // startDirections derives both directions' keys; false while the secrets are not there yet.
