@@ -9,7 +9,9 @@ garbage). Every third capture instead holds conversations built for bounded-pref
 Each capture is analyzed with a seeded option set (JSON or text rows, events only, sessions,
 hostnames, fingerprints, heuristics, certificates, observation modes, checksum policies, continuation, hints,
 custom signatures, a policy) by the Python reference in process and by the Go binary. Standard output is
-compared byte for byte in both forms (JSON rows and text), and the exit status and error text too. The same
+compared byte for byte in both forms (JSON rows and text), and the exit status and error text too. The reference
+runs with the Go-only PRO-448 additions modelled (migration/parity/pro448.py: the flow-limit counters in the
+summary and the datagram outcomes of UDP session records); nothing else about it changes. The same
 capture then goes through the presentation service's analysis (presentation/server.py analyze_bytes_reference
 against the Go `present` command, with seeded frame, session and event limits): results and refusals must be
 equal but for the measured processing time. Synthetic bytes only.
@@ -28,7 +30,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import analyze_pcap  # noqa: E402
+import pro448  # noqa: E402
 from protocol_adapters.packets import CaptureError  # noqa: E402
 from protocol_engine import SignatureSet  # noqa: E402
 from protocol_engine.policy import Policy, PolicyError  # noqa: E402
@@ -255,7 +257,7 @@ def reference(path, options):
         if "--policy" in options:
             arguments["policy"] = Policy.from_path(value("--policy"))
         with contextlib.redirect_stdout(output):
-            analyze_pcap.analyze(str(path), **arguments)
+            pro448.analyze(str(path), **arguments)
     except (OSError, CaptureError, ValueError, PolicyError) as failure:
         status, error = 1, "Capture error: {}\n".format(failure)
     finally:
@@ -340,6 +342,7 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--keep", help="write the captures here instead of a temporary directory")
     args = parser.parse_args(argv)
+    pro448.self_test()
     rng = random.Random(args.seed)
     sessions = [case for case in json.loads((ROOT / "migration/fixtures/cases.json").read_text(encoding="utf-8"))["cases"] if case["kind"] == "session"]
     with contextlib.ExitStack() as stack:

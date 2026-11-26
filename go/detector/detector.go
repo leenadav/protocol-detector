@@ -88,6 +88,7 @@ type Engine struct {
 	admitted      atomic.Int64
 	refused       atomic.Int64
 	refusedMemory atomic.Int64
+	refusedLimit  atomic.Int64
 	panics        atomic.Int64
 	retained      atomic.Int64
 
@@ -166,6 +167,10 @@ type Stats struct {
 	Disabled                          bool
 	// RefusedMemory counts the refusals (included in Refused) caused by the engine allowance.
 	RefusedMemory int64
+	// RefusedFlowLimit counts the refusals (included in Refused) caused by Config.MaxFlows: flows the host
+	// relays without inspection because the table was full. It is this API's form of the offline analyze
+	// counters udp_flow_limit and tcp_connection_limit (PRO-448).
+	RefusedFlowLimit int64
 	// FlowAllowance and EngineAllowance are the configured limits, in bytes.
 	FlowAllowance, EngineAllowance int64
 	// ReservedBytes is the sum of the flow allowances of the admitted flows: Active x FlowAllowance once
@@ -181,7 +186,8 @@ type Stats struct {
 func (e *Engine) Stats() Stats {
 	return Stats{Active: e.active.Load(), Admitted: e.admitted.Load(), Refused: e.refused.Load(),
 		Panics: e.panics.Load(), Disabled: e.disabled(), RefusedMemory: e.refusedMemory.Load(),
-		FlowAllowance: int64(e.flowAllowance), EngineAllowance: int64(e.account.Limit()),
+		RefusedFlowLimit: e.refusedLimit.Load(),
+		FlowAllowance:    int64(e.flowAllowance), EngineAllowance: int64(e.account.Limit()),
 		ReservedBytes: int64(e.account.Used()), RetainedBytes: e.retained.Load()}
 }
 
@@ -201,6 +207,7 @@ func (e *Engine) NewFlow(id string) (*Flow, error) {
 		n := e.active.Load()
 		if n >= e.maxFlows {
 			e.refused.Add(1)
+			e.refusedLimit.Add(1)
 			return nil, ErrAdmission
 		}
 		if e.active.CompareAndSwap(n, n+1) {

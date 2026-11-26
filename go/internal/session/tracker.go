@@ -57,9 +57,39 @@ type State struct {
 	// UDP flows: the flow's observation and the first identified (or latest) observation per direction.
 	Observation  *contracts.Observation
 	Observations map[transport.Endpoint]*contracts.Observation
+	// Outcomes are the flow's distinct identified datagram labels in first-seen order, with their datagram
+	// counts, at most MaxDatagramOutcomes; OutcomesBeyond counts the identified datagrams whose label did not
+	// fit (PRO-448). The first identification still names the flow; these show what it hid.
+	Outcomes       []Outcome
+	OutcomesBeyond int
 	// order is the table insertion order: the reference walks its tables in insertion order when several
 	// states expire or finish together, so records come out in that order.
 	order uint64
+}
+
+// Outcome is one distinct identified result of a UDP flow's datagrams and how many datagrams carried it.
+type Outcome struct {
+	Label     Label
+	Datagrams int
+}
+
+// MaxDatagramOutcomes bounds the distinct outcomes a UDP flow keeps (PRO-448): a flow cannot grow its record
+// by alternating labels; the identified datagrams beyond it are only counted.
+const MaxDatagramOutcomes = 8
+
+// noteOutcome counts one identified datagram of a UDP flow under its label.
+func noteOutcome(state *State, label Label) {
+	for i := range state.Outcomes {
+		if state.Outcomes[i].Label == label {
+			state.Outcomes[i].Datagrams++
+			return
+		}
+	}
+	if len(state.Outcomes) >= MaxDatagramOutcomes {
+		state.OutcomesBeyond++
+		return
+	}
+	state.Outcomes = append(state.Outcomes, Outcome{Label: label, Datagrams: 1})
 }
 
 // inOrder returns the keys of a state table in insertion order.
@@ -377,7 +407,7 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP, obs *contracts
 	flow := t.udpFlows[key]
 	if flow == nil {
 		if len(t.udpFlows) >= t.opts.MaxUDPFlows {
-			t.Counts["udp_flow_limit"]++
+			t.Counts["udp_flow_limit"]++ // the datagram is inspected, but the flow gets no record (PRO-448)
 		} else {
 			flow = &State{Transport: "udp", Client: p.Source, Server: p.Destination, Start: t.now, Time: t.now, Ready: true,
 				Bytes: map[transport.Endpoint]int{}, Mode: "", Observation: obs, Observations: map[transport.Endpoint]*contracts.Observation{}}
@@ -426,6 +456,7 @@ func (t *Tracker) ProcessUDP(timestamp float64, p *transport.UDP, obs *contracts
 					label.Application, label.HasApp = *latest.Application, true
 				}
 				t.Decided(flow, label)
+				noteOutcome(flow, label)
 			}
 		}
 	}
@@ -486,6 +517,7 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 		}
 		t.Drop(key, ReasonTrackingEnded)
 		if len(t.tracked) >= t.opts.MaxConnections {
+			t.Counts["tcp_connection_limit"]++ // PRO-448: reported in the analyze summary
 			return "LIMIT: too many tracked connections"
 		}
 		state = newState(source, destination, t.now)
@@ -501,6 +533,7 @@ func (t *Tracker) Process(timestamp float64, p *transport.TCP) string {
 			return "SKIP: connection beginning not observed"
 		}
 		if len(t.tracked) >= t.opts.MaxConnections {
+			t.Counts["tcp_connection_limit"]++ // PRO-448: reported in the analyze summary
 			return "LIMIT: too many tracked connections"
 		}
 		if err := t.manager.Open(source, destination, p.Sequence, p.Ack, t.now); err != nil {

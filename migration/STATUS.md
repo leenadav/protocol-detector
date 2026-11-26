@@ -503,6 +503,7 @@ changes):
 | One generation counter per capture (`protocol_adapters/coordinator.py`, `protocol_adapters/events.py`) | Lee, 2026-11-18 | `0d78604` |
 | PRO-260: TLS post-quantum hybrid key shares (0x11EB, 0x11EC, 0x11ED) are recognised in Go only; the Python reference is unchanged and the 18 differing parity cases are pinned in `migration/parity/deltas.json` (section "PRO-260" below) | Go-only by Lee's decision, 2026-11-23 (relayed by Hermes) | `b1379a4` |
 | SEC-FP-1 (PRO-394): the ClientHello and TLS 1.2 ServerHello keep the ALPN wire bytes beside the display string, and the JA4/JA4S ALPN code is computed from those bytes only, so a printable offer that starts with `hex:` is no longer decoded as hex (`hex:zz` crashed `_alpn_code` in `Inspector.feed`; `hex:7a7a` gave `zz`, now `ha`). Only `protocol_engine/parsers.py`, `protocol_engine/tls_server.py` and `protocol_engine/fingerprints.py` change; `dtls.py` and `quic.py` are untouched (they read the raw bytes through `ClientHelloInfo`); no output or schema change. Go matches in `tlsx/tls.go` and `fingerprint/fingerprint.go`; 12 parity cases (`stream/options/fingerprints-alpn-*`) are appended | Lee, 2026-11-25 12:42 UTC, option A on Paperclip PRO-392 (relayed by Hermes, PRO-394) | this branch (`migration/notes/PRO-394.md`) |
+| PRO-448: `protodetect analyze` reports `udp_flow_limit` and `tcp_connection_limit` in the summary and its input quality, and UDP session records carry `mixed_outcomes` / `datagram_outcomes`, in Go only; the Python reference is unchanged and `analyze_diff.py` compares Go with it under `migration/parity/pro448.py`, which adds exactly those fields (section "PRO-448" below) | Go-only by the task (Hermes, PRO-448: "the Python engine is being retired") | this branch (`migration/notes/PRO-448.md`) |
 | Content releases 2026.11.1 to 2026.11.9: new versions of the reference's data (`protocol_engine/host_apps.py`, the release tables in `content.py`, `content_lock.json`), each added as a new version (AGENTS.md rule 2) to both engines' pack | content-release process; each release is recorded in this ledger, and no separate Lee approval is recorded for them | `9cec1e6`, `3b0ddf9`, `baa07b9`, `6ab434d`, `7dcabb7`, `b6ed149`, `ee1645d`, `253a91d`, `2f6ad4d` |
 
 C11 (2026-11-18, research finding): a rollback recomputed an earlier release's digest from the current
@@ -621,6 +622,40 @@ record the divergence):
 | Regression tests | `TestRequestTargetAuthorityIsTheHostname` (9 cases), `TestAbsoluteFormTargetIsTheObservedHostname` | Before the fix 5 of the 9 cases failed. In the absolute-form and CONNECT cases with a disagreeing Host, the Host header won; with no Host there was no hostname; and an IPv4 target took a named Host. After it all pass, and no disagreeing name appears in any evidence. |
 | Parity | divergence recorded, 0 case changes | No parity case uses an absolute-form target, and every CONNECT case's Host agrees with its target. All 7,430 still match. |
 | Randomized differential | approved-divergence rule | `random_diff.py` accepts a mismatch as SEC-HTTP-1 only when the request has an absolute-form or CONNECT target and every differing path is host attribution (hostname, evidence, application). Any other difference still fails; the self-test covers acceptance and both rejections. Seed 1: 1,972 matched plus 28 approved, 0 failures. Seeds 2 and 3 at 20,000 each: 265 and 225 approved, 0 failures. |
+
+## PRO-448: flow-table limits and mixed UDP outcomes in analyze, Go only (2026-11-26)
+
+**Finding** (external PoC by kidcarmi, forwarded by Lee, 2026-11-25). In an 800-flow UDP run only 32 flows got a
+session record: `analyze` builds `session.Options{MaxConnections: 32, MaxUDPFlows: -1}`, so the UDP table follows
+the TCP limit of 32. The remaining datagrams were inspected, but `Tracker.ProcessUDP` only counted them in
+`Counts["udp_flow_limit"]`, which no output carried. A UDP flow also keeps its first identification, so a later
+datagram identified as another protocol left no trace in the record.
+
+**The change** (Go only; the Python reference is frozen). `analyze` writes `udp_flow_limit` and
+`tcp_connection_limit` (TCP openings answered "LIMIT: too many tracked connections", counted at the two tracker
+sites) into the summary counter and its `input_quality`, always, 0 when nothing was turned away; the text summary
+names each only when it is not 0. The tracker keeps each UDP flow's distinct identified labels (the labels
+`Decided` records) with datagram counts, at most `MaxDatagramOutcomes` (8), the rest counted in `OutcomesBeyond`;
+`analyzer.Options.DatagramOutcomes` (set by `analyze` only) adds `mixed_outcomes` and `datagram_outcomes` to UDP
+session records, so `live`, `present` and replay output are unchanged. The public `detector` package gains
+`Stats.RefusedFlowLimit` (refusals by `Config.MaxFlows`, part of `Refused`). Schemas: optional properties in
+`offline-row` and `session`; OUTPUT.md documents both.
+
+**Parity.** `migration/parity/pro448.py` models the reference: it patches `Analyzer._decided`, `_record` and
+`process` for the duration of one `analyze` call and rewrites the summary line, adding exactly the fields above. Its
+self-test fails if the reference ever prints them itself, if a row it does not own changes, or if a patch leaks.
+`analyze_diff.py` runs every capture through it. A planted off-by-one in Go's `tcp_connection_limit` failed 17 of
+20 captures.
+
+**Default of 32 UDP flows (item 3, a proposal, not changed).** Measured on this branch (Go 1.27.4, linux/amd64,
+heap after GC with N flows live, MaxConnections 32): one live DNS flow holds about 1.6 KB (32: 50 KiB, 1,024:
+1.6 MiB, 4,096: 6.4 MiB); one identified QUIC flow about 3.2 KB (1,024: 3.1 MiB; 4,096: 9.3 MiB). The QUIC CRYPTO
+store is capped at min(MaxUDPFlows, 1024) entries of at most 16 KiB (`quicx.MaxCrypto`), so its worst case is
+16 MiB from 1,024 flows on. For comparison, 32 TCP connections may hold 32 x 2 x 64 KiB = 4 MiB of windows. Proposal:
+decouple analyze's UDP table from `MaxConnections` and set `MaxUDPFlows: 1024` (worst case about 3.2 MiB of flow
+state plus the 16 MiB CRYPTO cap), which would have given the PoC 800 of 800 records. It changes which records
+`analyze` emits, so it needs Lee's decision and a matching `max_udp_flows=1024` in the parity model; the memory
+budgets the task names (SEC-SESS-1 / PRO-398) are not on `main`, so they should confirm the figure first.
 
 ## PRO-260: TLS post-quantum hybrid key shares, Go only (Lee, 2026-11-23)
 
