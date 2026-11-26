@@ -231,8 +231,11 @@ def check_one(rec):
             socket.getaddrinfo(n, 443, proto=socket.IPPROTO_TCP); res["dns"] = True
         except OSError: continue
         try:
+            # Local context so static analysis sees the TLS 1.2 floor on the same object.
+            tctx = ssl.create_default_context()
+            tctx.minimum_version = ssl.TLSVersion.TLSv1_2
             with socket.create_connection((n, 443), timeout=8) as s:
-                with CTX.wrap_socket(s, server_hostname=n):   # verifies chain + hostname
+                with tctx.wrap_socket(s, server_hostname=n):   # verifies chain + hostname
                     res["tls"] = True; res["tls_name_ok"] = True; tlshost = n; break
         except ssl.SSLCertVerificationError as e:
             res["tls"] = True; res["error"] = "cert:" + str(e.verify_message)[:60]; tlshost = tlshost or n

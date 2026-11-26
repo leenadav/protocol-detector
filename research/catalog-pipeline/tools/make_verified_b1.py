@@ -56,7 +56,10 @@ def check(dom):
     except Exception as e: r["error"] = "dns:" + type(e).__name__; return r
     for h in (dom, "www." + dom):
         try:
-            with socket.create_connection((h, 443), timeout=8) as s, CTX.wrap_socket(s, server_hostname=h) as t:
+            # Local context so static analysis sees the TLS 1.2 floor on the same object.
+            tctx = ssl.create_default_context()
+            tctx.minimum_version = ssl.TLSVersion.TLSv1_2
+            with socket.create_connection((h, 443), timeout=8) as s, tctx.wrap_socket(s, server_hostname=h) as t:
                 if covers(t.getpeercert(), h) or covers(t.getpeercert(), dom): r["tls_covers"] = True; r["tls_host"] = h; break
         except Exception as e: r["error"] = "tls:" + type(e).__name__
     if not r["tls_covers"]: return r
