@@ -51,6 +51,31 @@ budgeted continuation framed after the identification (`http_messages`,
 ended first). It is absent when the option is off or nothing followed; the
 verdict, `decision` and hostname are never changed by it (PROTOCOLS.md).
 
+Flow-table limits (PRO-448, `protodetect analyze`). Offline analysis tracks at
+most 32 TCP connections and 32 UDP flows at a time. Traffic beyond that is still
+inspected (its frame rows carry a classification), but it gets no `session`
+record. The final `summary` therefore always carries two counters, in the
+`summary` counter and in its `input_quality`, both 0 when nothing was turned
+away: `udp_flow_limit` counts the UDP datagrams that arrived while the flow table
+was full, and `tcp_connection_limit` counts the TCP connection openings
+answered `LIMIT: too many tracked connections`. Both count packets, not
+distinct flows: 800 single-datagram UDP flows give 32 records and
+`udp_flow_limit: 768`. The text summary adds `; udp_flow_limit: N` and
+`; tcp_connection_limit: N` only when they are not 0. The public `detector`
+package reports the same thing as `Stats.RefusedFlowLimit` (flows refused by
+`Config.MaxFlows`).
+
+Mixed datagram outcomes (PRO-448, `protodetect analyze`). A UDP flow keeps its
+first identification as the session verdict. Every UDP `session` record from
+`analyze` also carries `mixed_outcomes` (boolean) and `datagram_outcomes`:
+`distinct` lists the flow's identified datagram results as `protocol`,
+`application` (null when none) and `datagrams` (the count), in first-seen order,
+at most 8 entries; `beyond_limit` counts the identified datagrams whose result
+did not fit. `mixed_outcomes` is true when more than one result was seen. Only
+identified datagrams count (an `unknown` or `detecting` datagram is not an
+outcome), and nothing is counted after the flow is invalidated. `live`, `present`
+and the reference Python engine do not emit these fields.
+
 Schemas set `additionalProperties: false` on every object the tools build, so a
 new field is a schema change and a review item. Values that could carry
 payload are structurally excluded: `evidence[].value` is a short string from a
