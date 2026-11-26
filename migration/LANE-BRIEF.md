@@ -176,6 +176,7 @@ The authoritative list is in `migration/STATUS.md` ("Frozen milestone SHAs"):
 `aaa5a7e`, `93cbf2a` (with `36e2c5e`), `76e467a`, `d65d21a`, `07b216e`, `6ab434d`, `7dcabb7`, `b6ed149`, `c08773f`,
 `ee1645d`, `253a91d`, `2f6ad4d` and **`50ce5c0`, the review head**. After the packet: `6194fb9`, `4d8aa29` and `376a204` (PRO-31), each reviewed as its own diff (`376a204` together with `6194fb9`).
 
+PRO-166 (PR #141, against `main` `23bbc0c`): `a2fd9b1` (fix and tests), `763b227` and `813de6e` (PRO-459: #139's uncovered tests ported), with the documentation commit after them.
 PRO-201 (fix diff against `e5ac90f`): `7da811e`..`6b614c0` plus the documentation commit after them.
 PRO-261 (against `cb3ac80`): `7045c42`, `9121403`, `9af4388` plus the documentation commit after them.
 
