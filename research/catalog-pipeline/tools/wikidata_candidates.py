@@ -215,8 +215,9 @@ def normalise(rows):
     return out, stats
 
 # ---------------- checks ----------------
-CTX = ssl.create_default_context()
+CTX = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)  # verifies chain + hostname
 CTX.minimum_version = ssl.TLSVersion.TLSv1_2
+CTX.load_default_certs()
 def check_one(rec):
     res = {"dns": False, "tls": False, "tls_name_ok": False, "http_status": None, "final_host": None,
            "final_registrable": None, "redirect_offsite": False, "parked": False, "error": None}
