@@ -74,9 +74,9 @@ jobs:
         run: python -B tools/go_ci.py build --summary "$GITHUB_STEP_SUMMARY"
       - name: Compile every module (syntax gate, no runtime dependencies allowed)
         run: |
-          python -m compileall -q protocol_engine tools ./*.py
+          python -m compileall -q tools migration presentation ./*.py
           grep -q '^dependencies = \[\]' pyproject.toml || (echo "runtime dependencies are not allowed" && exit 1)
-      - name: Unit, fuzz and property tests
+      - name: Repository tooling and launcher tests (the Python reference engine is removed, PRO-403)
         env:
           PYTHON_VERSION: ${{ matrix.python }}
         run: |
@@ -91,49 +91,29 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Documentation numbers must match the tree (families, applications, tests, version)
         run: python -B tools/check_docs_counts.py | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Product integrity (adapters and presentation compile, build manifest, inventory, key logs, content lock, sequence relations)
+      - name: Product integrity (build manifest, key logs, content lock)
         run: |
-          python -m compileall -q protocol_adapters presentation
           python -B tools/build_manifest.py --check presentation/SOURCE.json | tee -a "$GITHUB_STEP_SUMMARY"
-          python -B tools/check_inventory.py | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_no_keylogs.py | tee -a "$GITHUB_STEP_SUMMARY"
           python -B tools/check_content.py | tee -a "$GITHUB_STEP_SUMMARY"
-          python -B tools/sequence_check.py --iterations 1 | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Go migration parity oracle on this interpreter (committed fixtures through the Python reference)
-        # The Go port is judged against fixtures the Python reference produced; they must hold on every
-        # supported interpreter (issue #2 R6), not only on the one that generated them. tools/go_ci.py
-        # passes when the commit has no migration tree and fails when it has one only in part.
-        run: python -B tools/go_ci.py oracle --summary "$GITHUB_STEP_SUMMARY"
-      - name: Presentation application with the optional decryption extra (Node and browser tests are required in presentation-ui)
-        # Stage 1c (A01): the whole product is covered, not only the engine. The extra is installed from the
-        # repository's own hash-pinned lock; the core wheel still declares no runtime dependency (package job).
-        # `unittest` passes a skipped test, so the strict runner fails on any skip but the three UI tests named
+      - name: Presentation suite (Node and browser tests are required in presentation-ui)
+        # `unittest` passes a skipped test, so the strict runner fails on any skip but the two UI tests named
         # here, which the presentation-ui job runs with Node and Playwright and allows no skip at all.
         run: |
-          python -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt
           python -B tools/run_tests_strict.py --self-test
-          python -B tools/run_tests_strict.py --cwd presentation --start tests --summary "$GITHUB_STEP_SUMMARY" --allow-skip test_ui.StoreUnitTests.test_store_reducer_and_selectors --allow-skip test_ui.BrowserTests.test_dashboard_in_a_real_browser --allow-skip test_ui.GoServiceBrowserTests.test_dashboard_in_a_real_browser_on_the_go_service
-      - name: Offline replay of synthetic captures
+          python -B tools/run_tests_strict.py --cwd presentation --start tests --summary "$GITHUB_STEP_SUMMARY" --allow-skip test_ui.StoreUnitTests.test_store_reducer_and_selectors --allow-skip test_ui.GoServiceBrowserTests.test_dashboard_in_a_real_browser_on_the_go_service
+      - name: Offline replay of synthetic captures through the launcher and the Go binary
         run: |
-          python -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
-          python -B live_capture.py --stdin --duration 0 --json < sample-expanded.pcap > /dev/null
-          python -B protocol_demo.py --json > /dev/null
-          python -B appid_catalog.py --json > /dev/null
           python -B protodetect.py version
-          python -B protodetect.py policy lint policy-example.json --strict
-          python -B protodetect.py signatures lint signatures-example.json
           python -B protodetect.py analyze sample-expanded.pcap --policy policy-example.json --json --events-only > /dev/null
           python -B protodetect.py analyze sample-expanded.pcap --json --sessions > rows.jsonl
           python -B protodetect.py schema offline-row --validate rows.jsonl
-          python -B tools/coverage_matrix.py --check PROTOCOLS.md
 
   presentation-ui:
-    # The presentation suite with every prerequisite installed explicitly: the hash-pinned decryption extra,
-    # Node, and the lock-pinned Playwright with its Chromium. No test may skip, so a missing prerequisite
-    # fails the job instead of reading as a pass, and the installed-artifact check runs with the browser
-    # on the package job's exact wheel.
+    # The presentation suite with every prerequisite installed explicitly: Node and the lock-pinned
+    # Playwright with its Chromium. No test may skip, so a missing prerequisite fails the job instead of
+    # reading as a pass. PRO-403: the page is served by the Go binary; there is no wheel to install.
     name: presentation with Node and a real browser (no test may skip)
-    needs: package
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -167,9 +147,8 @@ jobs:
           GOPRIVATE: ""
           GOINSECURE: ""
         run: python -B tools/go_ci.py build --summary "$GITHUB_STEP_SUMMARY"
-      - name: Install the hash-pinned decryption extra, and Playwright with Chromium from the lock
+      - name: Install Playwright with Chromium from the lock
         run: |
-          python -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt
           npm ci --prefix tools/ui-test-deps --ignore-scripts --no-audit --no-fund
           tools/ui-test-deps/node_modules/.bin/playwright install --with-deps chromium
           node --version | tee -a "$GITHUB_STEP_SUMMARY"
@@ -178,151 +157,6 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/tools/ui-test-deps/node_modules
         run: python -B tools/run_tests_strict.py --cwd presentation --start tests --summary "$GITHUB_STEP_SUMMARY"
-      - name: Fetch the package job's distributions (the exact wheel this run built and uploaded)
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: dist-${{ github.sha }}
-          path: package-dist
-      - name: Installed whole-product check on that wheel (decryption extra, installed server, presentation suite, no skip)
-        # tools/installed_check.py (engine lane, A01/A16): --wheel checks the given wheel instead of building one,
-        # --require-all fails when any presentation test of the installed copy was skipped (SSDLC.md, item 25).
-        env:
-          NODE_PATH: ${{ github.workspace }}/tools/ui-test-deps/node_modules
-        run: python -B tools/installed_check.py --wheel package-dist/*.whl --require-all | tee -a "$GITHUB_STEP_SUMMARY"
-
-  behaviour-diff:
-    name: behaviour diff against the previous commit
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - name: Harden runner egress
-        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 2
-          # On a pull request the default checkout is the synthetic merge commit, whose parent is the
-          # base branch; the diff must compare the pushed head with its own parent instead.
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.13"
-      - name: Compare every fixture, truncation and seeded mutation with the parent commit
-        env:
-          SEED: ${{ github.run_id }}
-        run: |
-          if git rev-parse --verify -q HEAD~1 >/dev/null && git cat-file -e HEAD~1:protocol_engine/engine.py 2>/dev/null; then
-            git worktree add --detach ../baseline HEAD~1
-            python -B tools/compare_engine.py ../baseline --iterations 300 --seed "$SEED" --report behaviour-diff.md --report-only
-          else
-            printf '# Engine behaviour diff\n\nNo comparable parent commit (first commit or a parent without the engine).\n' > behaviour-diff.md
-          fi
-          head -60 behaviour-diff.md
-          {
-            echo "### Behaviour diff against the parent commit"
-            echo
-            head -40 behaviour-diff.md
-          } >> "$GITHUB_STEP_SUMMARY"
-      - name: Check out the pull request base (the first checkout drops its credentials, so git fetch cannot)
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 1
-          ref: ${{ github.event.pull_request.base.sha }}
-          path: pr-base
-      - name: Compare with the pull request base as well (whole change, when the base carries the engine)
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          SEED: ${{ github.run_id }}
-        run: |
-          if [ -f pr-base/protocol_engine/engine.py ]; then
-            python -B tools/compare_engine.py pr-base --iterations 300 --seed "$SEED" --report behaviour-diff-base.md --report-only
-          else
-            printf '# Engine behaviour diff\n\nThe pull request base %s has no engine to compare with.\n' "$BASE_SHA" > behaviour-diff-base.md
-          fi
-          head -60 behaviour-diff-base.md
-          {
-            echo "### Behaviour diff against the pull request base"
-            echo
-            head -40 behaviour-diff-base.md
-          } >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload the pull request base diff report
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: behaviour-diff-base-${{ github.sha }}
-          path: behaviour-diff-base.md
-          retention-days: 30
-      - name: Upload the behaviour diff report
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: behaviour-diff-${{ github.sha }}
-          path: behaviour-diff.md
-          retention-days: 30
-
-  mutation-smoke:
-    name: per-commit mutation smoke (second seed, python 3.9)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - name: Harden runner egress
-        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 2
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.9"
-      - name: Seeded mutation diff against the parent commit with a second, fixed seed
-        # The behaviour-diff job seeds its mutations with the run id, so every run explores new
-        # inputs; this job repeats the comparison with one fixed seed under the oldest supported
-        # interpreter so a result can be reproduced locally with the same command.
-        env:
-          SEED: "20261021"
-        run: |
-          if git rev-parse --verify -q HEAD~1 >/dev/null && git cat-file -e HEAD~1:protocol_engine/engine.py 2>/dev/null; then
-            git worktree add --detach ../baseline-smoke HEAD~1
-            python -B tools/compare_engine.py ../baseline-smoke --iterations 100 --seed "$SEED" --report mutation-smoke.md --report-only
-          else
-            printf '# Engine behaviour diff\n\nNo comparable parent commit (first commit or a parent without the engine).\n' > mutation-smoke.md
-          fi
-          {
-            echo "### Mutation diff against the parent commit (seed $SEED, 100 mutations per fixture, python 3.9)"
-            echo
-            head -40 mutation-smoke.md
-            echo
-            echo 'Reproduce: `python3 -B tools/compare_engine.py <parent checkout> --iterations 100 --seed '"$SEED"'`'
-          } >> "$GITHUB_STEP_SUMMARY"
-      - name: Reproducible fuzz pass (100 mutations per fixture, seed from the run number)
-        env:
-          SEED: ${{ github.run_number }}
-        run: |
-          python -B tools/fuzz_fixtures.py --iterations 100 --seed "$SEED" | tee fuzz-smoke.txt
-          {
-            echo "### Fuzz smoke (seed $SEED, 100 mutations per fixture)"
-            echo
-            echo '```'
-            tail -n 5 fuzz-smoke.txt
-            echo '```'
-            echo
-            echo 'Reproduce: `python3 -B tools/fuzz_fixtures.py --iterations 100 --seed '"$SEED"'`'
-          } >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload the mutation smoke report
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: mutation-smoke-${{ github.sha }}
-          path: |
-            mutation-smoke.md
-            fuzz-smoke.txt
-          retention-days: 14
 
   static-analysis:
     name: static analysis (ruff, bandit, secrets)
@@ -352,7 +186,7 @@ jobs:
           echo "ruff: no findings ($(ruff --version))" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Bandit (Python security linter)
         run: |
-          bandit -c bandit.yaml -r protocol_engine analyze_pcap.py live_capture.py sessions.py packets.py link_packets.py capture_stream.py -f txt | tee bandit.txt
+          bandit -c bandit.yaml -r protodetect.py main.py -f txt | tee bandit.txt
           {
             echo
             echo '```'
@@ -439,66 +273,6 @@ jobs:
           name: sbom-${{ github.sha }}
           path: sbom.cdx.json
           retention-days: 30
-
-  package:
-    name: package build (sdist, wheel, clean install)
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - name: Harden runner egress
-        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.13"
-          cache: pip
-          cache-dependency-path: requirements-dev.txt
-      - name: Build the sdist and wheel with the hash-pinned toolchain
-        run: |
-          python -m pip install --require-hashes -r requirements-dev.txt
-          python -m build --sdist --wheel --outdir dist
-      - name: The wheel holds exactly the engine and adapter packages and declares only the decryption extra
-        run: python -B tools/check_wheel.py "dist/*.whl" | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Install the wheel into an empty environment and classify fixtures from it (python 3.13)
-        # tools/wheel_smoke.py refuses to import the engine from the checkout: the classification
-        # must come from site-packages of the environment the wheel was installed into.
-        run: |
-          python -m venv /tmp/wheel-env
-          /tmp/wheel-env/bin/python -m pip install --no-deps --no-index dist/*.whl
-          (cd /tmp && /tmp/wheel-env/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Complete-product SBOM (this wheel and the hash-pinned decryption extra, nothing else)
-        # An environment holding only the product: the lock's packages, then this wheel, then pip removed, so
-        # the SBOM lists exactly what a user of the extra installs (tools/check_product_sbom.py).
-        run: |
-          python -m venv /tmp/product-env
-          /tmp/product-env/bin/python -m pip install --require-hashes -r presentation/requirements-decryption.lock.txt
-          /tmp/product-env/bin/python -m pip install --no-deps --no-index dist/*.whl
-          /tmp/product-env/bin/python -m pip uninstall --yes pip
-          cyclonedx-py environment /tmp/product-env/bin/python --pyproject pyproject.toml --output-reproducible --output-file dist/product-sbom.cdx.json
-          python -B tools/check_product_sbom.py --self-test
-          python -B tools/check_product_sbom.py dist/product-sbom.cdx.json --lock presentation/requirements-decryption.lock.txt --wheel dist/*.whl --python /tmp/product-env/bin/python --summary "$GITHUB_STEP_SUMMARY"
-      - name: Python 3.9, the oldest supported interpreter
-        id: py39
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.9"
-      - name: Install the same wheel under python 3.9 and classify the fixtures again
-        env:
-          PY39: ${{ steps.py39.outputs.python-path }}
-        run: |
-          "$PY39" -m venv /tmp/wheel-env39
-          /tmp/wheel-env39/bin/python -m pip install --no-deps --no-index dist/*.whl
-          (cd /tmp && /tmp/wheel-env39/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Upload the distributions
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: dist-${{ github.sha }}
-          path: dist/
-          retention-days: 14
 
   workflow-lint:
     name: workflow lint (actionlint, zizmor)
@@ -1306,7 +1080,7 @@ jobs:
   security-requirements:
     name: security requirements gate
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
@@ -1318,8 +1092,38 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13"
-      - name: Documented security requirements must have an executable check
-        run: python -B tools/check_security_requirements.py | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Set up the pinned Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Build the Go binary the referenced Python tests run (offline and vendored)
+        # PRO-546 (SEC-PYRM-2): --run now runs the referenced Python tests strictly, and SR-63 and SR-67 drive
+        # go/bin/protodetect; without it they skip or error, which fails the gate instead of passing silently.
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/go_ci.py build --summary "$GITHUB_STEP_SUMMARY"
+      - name: Every security requirement names tests that exist and pass when run (none skipped)
+        # PRO-403: the requirements are verified by the Go engine's tests; --run runs each referenced test with
+        # the pinned Go, offline and vendored, and fails unless every one reports PASS. PRO-546: the referenced
+        # Python test methods (test_*::test_*) run too, and a skip, failure, error or missing method fails.
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          python -B tools/check_security_requirements.py --self-test
+          python -B tools/check_security_requirements.py --run | tee -a "$GITHUB_STEP_SUMMARY"
 
   ledgers:
     # PRO-347: the shared ledger sections (lane briefs, STATUS.md recent work, README/REVIEW-SCOPE test counts) are
@@ -1354,7 +1158,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     if: always()
-    needs: [verify, presentation-ui, behaviour-diff, mutation-smoke, static-analysis, supply-chain, package, workflow-lint, toolchain-audit, osv-scan, go-engine, go-fuzz-smoke, go-parity, go-minimum, go-vendor, go-lint, go-determinism, go-licenses, go-coverage, go-api, go-bench, contract-compat, content-pack, security-requirements, ledgers]
+    needs: [verify, presentation-ui, static-analysis, supply-chain, workflow-lint, toolchain-audit, osv-scan, go-engine, go-fuzz-smoke, go-parity, go-minimum, go-vendor, go-lint, go-determinism, go-licenses, go-coverage, go-api, go-bench, contract-compat, content-pack, security-requirements, ledgers]
     steps:
       - name: Harden runner egress
         uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0

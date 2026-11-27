@@ -43,6 +43,22 @@ class ProtodetectLauncherTests(unittest.TestCase):
         self.assertEqual(done.stdout, "")
         self.assertIn("Go engine binary is not installed", done.stderr)
 
+    def test_subcommands_of_the_removed_python_engine_refuse_and_name_the_tag(self):
+        # PRO-403: these ran the Python reference, which is gone; they exit 2 and never reach the Go binary.
+        for name in ("protocols", "apps", "risks", "demo", "content", "explain", "policy", "signatures"):
+            done = self.run_cli([name, "lint", "x.json"], self.fake)
+            self.assertEqual((done.returncode, done.stdout), (2, ""), name)
+            self.assertIn("python-final", done.stderr)
+        self.assertFalse((ROOT / "protocol_engine").exists() or (ROOT / "protocol_adapters").exists())
+
+    def test_version_and_schema_need_no_engine(self):
+        done = self.run_cli(["version"], self.fake + "-absent")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertRegex(done.stdout, r"^protocol-detector \d+\.\d+\.\d+\n$")
+        done = self.run_cli(["schema"], self.fake + "-absent")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("offline-row", done.stdout.split())
+
     def test_the_launcher_imports_no_adapter_for_go_commands(self):
         source = (ROOT / "protodetect.py").read_text(encoding="utf-8")
         self.assertNotIn('_delegate("analyze_pcap"', source)

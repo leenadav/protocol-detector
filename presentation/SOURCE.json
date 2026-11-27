@@ -1,24 +1,24 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "960299fc8337560c9319554bd0108f3823a61db5",
-  "branch": "claude/engine-PRO-448-udp-flow-limit",
-  "build_digest": "8d24d8d1b30f15d6e0437215229007df44b873006ef6617fb42dd86cb4bf45d5",
+  "commit": "9c553118d8192d4476eb968ed26fd19d6b5e62aa",
+  "branch": "claude/vigilant-maxwell-gub33g",
+  "build_digest": "b3c5a0a3a986493872576c81ae31c38843bc049244ebf58bd6fc668956cfc44f",
   "components": {
     "engine": {
-      "root": "protocol_engine",
+      "root": "go",
       "version": "0.66.0",
-      "files": 72
+      "files": 136
     },
-    "adapters": {
-      "root": "protocol_adapters",
+    "launchers": {
+      "root": ".",
       "version": "0.66.0",
-      "files": 27
+      "files": 2
     },
     "presentation": {
       "root": "presentation",
       "version": "0.66.0",
-      "files": 21
+      "files": 8
     },
     "schemas": {
       "root": "schemas",
@@ -28,569 +28,704 @@
   },
   "files": [
     {
-      "path": "protocol_engine/__init__.py",
+      "path": "go/go.mod",
       "component": "engine",
-      "sha256": "50b9eeefc794b76439c6a690902a1861577b3f026757fea9ba0cf96da3f05fda"
+      "sha256": "56e08697b2e8a1afd9ce01435950d1af822ea2ab37db9511839a3979a7f614e8"
     },
     {
-      "path": "protocol_engine/aes.py",
+      "path": "go/go.sum",
       "component": "engine",
-      "sha256": "16e1802c5b3f692d4db565336e0bf2591d22f02bc325bdeaa23c94ba4bc2c742"
+      "sha256": "19116744d7294af15e9d82c45df8bc417b9f0fa07e0dfc85bbf26f4612663a08"
     },
     {
-      "path": "protocol_engine/afp.py",
+      "path": "go/cmd/protodetect/analyze.go",
       "component": "engine",
-      "sha256": "58f610b2382c46e176fc73de6056aa13a8ca8392914bf60025e56b384225b2c2"
+      "sha256": "61dffc995ec641b869dc2f66f7b3b966f7f468cb3c7e2bd25fa71da9f8758d45"
     },
     {
-      "path": "protocol_engine/appid.py",
+      "path": "go/cmd/protodetect/controlreplay.go",
       "component": "engine",
-      "sha256": "31241726a9f41946fef50ea4ab734ab1ce94d0fa6003b3f1e51332a432256661"
+      "sha256": "b809a2ce817bb5dba46bc4b97babe8fb1041ac8db2084411ebcfcd09732d3d79"
     },
     {
-      "path": "protocol_engine/applications.py",
+      "path": "go/cmd/protodetect/decrypt.go",
       "component": "engine",
-      "sha256": "05057cbdcb80cb918f91e6a70a805d231b0bc40e4a4553a4bc67448d87e90f56"
+      "sha256": "bbc26b81dd8d88b1831e4a4865031cbc51fac4a4c53f33603c4d156bab22032d"
     },
     {
-      "path": "protocol_engine/binary.py",
+      "path": "go/cmd/protodetect/live.go",
       "component": "engine",
-      "sha256": "9b4dfae1c1c0ff968215d0493d37adc986b3759af7138a9734502a1021a74402"
+      "sha256": "7051947fb2d0be31f8f6a12f30f3fb7abf826dbc89fc6c7949a2cf95d6bdf09a"
     },
     {
-      "path": "protocol_engine/bson.py",
+      "path": "go/cmd/protodetect/livedecrypt.go",
       "component": "engine",
-      "sha256": "b730adbac15394cf569c2eb570005675460c586a61a522d2d73d7faffaaf5451"
+      "sha256": "e0d30c95f431eb5d42dd02f6069770adab286a72aa494d4c4622d04cd72107ab"
     },
     {
-      "path": "protocol_engine/catalog.py",
+      "path": "go/cmd/protodetect/main.go",
       "component": "engine",
-      "sha256": "dafef4ed1e7ae2fd9ef569e413acfc1a1b9e2f7e4e1d77df51de3016f89d3a5c"
+      "sha256": "19f35fe3e2b0fa454c1ac6454eb97e31bc783ac26b27a6d7c8aeb0addc3b550b"
     },
     {
-      "path": "protocol_engine/cdr.py",
+      "path": "go/cmd/protodetect/present.go",
       "component": "engine",
-      "sha256": "b171d83c07b2f203794259dfd81b3288e695e49b6071b295670215c7fd155be1"
+      "sha256": "ef6cea2c0d7311bbcc59cb53fa20a7f26303d86b557bd408aca3ff358e967abf"
     },
     {
-      "path": "protocol_engine/content.py",
+      "path": "go/cmd/protodetect/serve.go",
       "component": "engine",
-      "sha256": "cb7f930d053ab6fdc419a8dd3958e3d2c4f164a5fd0fdd9d5c12c51bb56873ab"
+      "sha256": "8202988496545d005a1d55fd6af551e63f1b65479fb4ac31bb4d4b598273c2fc"
     },
     {
-      "path": "protocol_engine/continuation.py",
+      "path": "go/detector/apps.go",
       "component": "engine",
-      "sha256": "08d6c04f00c5cb720d560f4ff6a302d5e2806b9f2db830e0fdcd31655cdb0d1c"
+      "sha256": "9b17f991aabff16bb0135e43f61a311b42301e5981738f7b93a230f039b28fae"
     },
     {
-      "path": "protocol_engine/control.py",
+      "path": "go/detector/detector.go",
       "component": "engine",
-      "sha256": "7e214539007fb8cbb87f6f08b05e9b92ae5e54e10a61387a35e8c06f84f992f9"
+      "sha256": "7bfa413d4f058fbc197a6f1648cce5e49fcf7d3d88e761989dedc935a1f64042"
     },
     {
-      "path": "protocol_engine/database.py",
+      "path": "go/detector/doc.go",
       "component": "engine",
-      "sha256": "a39a9d5d790a738f91a3026d6d60ec0e4f32f767c43066f228f34bcd2f081206"
+      "sha256": "25b96e8d55d787b22e068ee7d2d4ece0c2a4405d2cb07dd0a63c4ce2d844bbb2"
     },
     {
-      "path": "protocol_engine/datagram.py",
+      "path": "go/detector/evidence.go",
       "component": "engine",
-      "sha256": "497c3c3091cfbc2d1d1ea57eaa7b021383cdde81ef96f57ca572c3c27692f70d"
+      "sha256": "d452407881b2570cebc94597a2a8770e40eaed33ba6d7830a56cbb185b5b2012"
     },
     {
-      "path": "protocol_engine/datagram_result.py",
+      "path": "go/detector/vocab.go",
       "component": "engine",
-      "sha256": "a178aadac31cecb23f8d4cddde5b3ede8b329a6df6852c8dcbbf9539b4a2ad5a"
+      "sha256": "32f4bd20585504aeb02316b1bdf017e0663f4bb306c20e4335e263675b1e1044"
     },
     {
-      "path": "protocol_engine/datainfra.py",
+      "path": "go/internal/analyze/analyze.go",
       "component": "engine",
-      "sha256": "6f4456a075d0a5709936e37a55591dd238aaf6527de9308b523d15f2b295ca40"
+      "sha256": "c7af589c8dfe2cf3b2bc96ff24e81bd5787fee537511494d1665c490a9cd8178"
     },
     {
-      "path": "protocol_engine/dcerpc.py",
+      "path": "go/internal/analyze/present.go",
       "component": "engine",
-      "sha256": "3e3c64b35aeeaee5059c6c82b36c5d6e6a3f19f506968f0120c4f86a116b2ead"
+      "sha256": "2ab444560f615d99bd4fa1b24514d310d8aeac3af1cd54d6eed8b1abb090df4f"
     },
     {
-      "path": "protocol_engine/descriptors.py",
+      "path": "go/internal/analyzer/analyzer.go",
       "component": "engine",
-      "sha256": "110b8d292f60deea00f76e00594f1d9eb24f6c30c2beac898b1ce77ce8bd396b"
+      "sha256": "414d84dd6e1729daf4b67972c837e9dac6710a45ce6e1b6e3bd2a4080e397b25"
     },
     {
-      "path": "protocol_engine/desktop.py",
+      "path": "go/internal/appid/appid.go",
       "component": "engine",
-      "sha256": "217a840c378fc5eded0dba4e6f69963a85a893f4e7e6e1d16c73c5e3032d9a91"
+      "sha256": "d172e73768cc75bf23d02ac1b094622aee5be57f031ce10c418c74a8664b3661"
     },
     {
-      "path": "protocol_engine/diameter.py",
+      "path": "go/internal/appid/layers.go",
       "component": "engine",
-      "sha256": "37585f4033f28e75c05ab7516d658eaf0b8763f0a8182dc3012b1fdee3a891a0"
+      "sha256": "4eb45b27c58b2c8c54ead38a23422c56a0aa981d4c9afd380211ff8060597d3e"
     },
     {
-      "path": "protocol_engine/dispatch.py",
+      "path": "go/internal/appid/risks.go",
       "component": "engine",
-      "sha256": "a971dc8f5b61fd75ea4e17958a85c29989a8786f177ee1a703392a83ceac688b"
+      "sha256": "b9d52cdee48ced20c24b2e8fb4eed480c57adc7e9bdba40ae6a6a0eb97c1440a"
     },
     {
-      "path": "protocol_engine/dtls.py",
+      "path": "go/internal/appid/unknown.go",
       "component": "engine",
-      "sha256": "7eea092103d14e027d241f68968219caea583229761272aa8d977e7d0def3147"
+      "sha256": "22eb9c7cb4f6f02d0aa2cf45e565fffd29bd0c7e5600e9643be7a0bbbc32eeeb"
     },
     {
-      "path": "protocol_engine/engine.py",
+      "path": "go/internal/ascii/ascii.go",
       "component": "engine",
-      "sha256": "b45786c8662359356c29ff0ce71aa4564eac0e77322e9ddf839d7aee740a1ae2"
+      "sha256": "152e9a0d46ef4eab76a6c5bd72d886be2ccb124a2eb454181e34b40c7f8f52ec"
     },
     {
-      "path": "protocol_engine/enterprise_db.py",
+      "path": "go/internal/bench/bench.go",
       "component": "engine",
-      "sha256": "76c2d1e6eeb57c7bdc365606104e1bd369a5bb30c34c02e5039ef4b7accae157"
+      "sha256": "14376634e8394aa091acde32b9a2adcd20b0a41c074e67dcf29fe3c97f99b339"
     },
     {
-      "path": "protocol_engine/extended.py",
+      "path": "go/internal/buffer/buffer.go",
       "component": "engine",
-      "sha256": "e12994ad46305b92ab09a045f30568f8049819b69b8b2ad3231093b15a2f0dba"
+      "sha256": "07f5ed8074a4031626ddd084f50fca352dd676dc5688e4ca99c5f7fcb9a30295"
     },
     {
-      "path": "protocol_engine/fastcgi.py",
+      "path": "go/internal/capture/capture.go",
       "component": "engine",
-      "sha256": "b413e581a0d07e814dea00cd3938047030704c89158e432ee58efffb7ae0319d"
+      "sha256": "d9961863bf1293d8f0013399ae5e5cced3b0a3881313eb0979f6179c5fd4cd0e"
     },
     {
-      "path": "protocol_engine/fingerprints.py",
+      "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "8a7869569dd869393ccfcfa4997649c7d850a0d1e0bc4bad517856bd5a91523b"
+      "sha256": "780d84f4bc25ecda93d6ea12e529b21244528485670e3b6cc96cf0c4c326cf45"
     },
     {
-      "path": "protocol_engine/fins.py",
+      "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "9ece56c6d65c18a4d31fa4f9433756a72d2202390a0e66c5bd9e0b16ed2ceb19"
+      "sha256": "7eb298aedb2db290d7cc98bc6a02af1d6eeffaeecd794fa884c15761610c7e6c"
     },
     {
-      "path": "protocol_engine/framing.py",
+      "path": "go/internal/clock/clock.go",
       "component": "engine",
-      "sha256": "7c544231cdbc591573ffc4142727bca3abf39038f2546e16000b71711a3b8432"
+      "sha256": "db8afb40c0492d2dc626acee4fa43b71720d20cb81dac9b326c8d34fd62d6b8d"
     },
     {
-      "path": "protocol_engine/giop.py",
+      "path": "go/internal/content/content.go",
       "component": "engine",
-      "sha256": "1f076dfc89909f27aa01d9c8ead063c68c1c1549e8618d5dbe762d99d1933c30"
+      "sha256": "cdc3be1a955dfab617f3dc765eb8deb145ab3c56516155e1d2db62247c942f6b"
     },
     {
-      "path": "protocol_engine/git_transport.py",
+      "path": "go/internal/content/digest.go",
       "component": "engine",
-      "sha256": "7c8964f24f52b4fb5e98b31b85993f83c5eeeef554fc3da9c45bcea5a14cc21c"
+      "sha256": "112793487bc42723c69d90f7c4f20c689a301d194805d4160d9162343eee0345"
     },
     {
-      "path": "protocol_engine/greetings.py",
+      "path": "go/internal/contracts/contracts.go",
       "component": "engine",
-      "sha256": "ba8e89b8ca14e9c1277019056d72806434aa2c3724e491c75b065382ba497cc8"
+      "sha256": "4b5406896a3ddca0158a7fd1664ad6c78e4b268aa6694b40aa0a4c5b70e55d9c"
     },
     {
-      "path": "protocol_engine/gss.py",
+      "path": "go/internal/decrypt/connection.go",
       "component": "engine",
-      "sha256": "c1adaa7bcff84fe8832c3535f5384c9bc5dd3724bddbd1ce16e0167fd717f78d"
+      "sha256": "dc8820dfa3701c349cd69911b0e55bce0b8674a9ffff3b27c843cb855bc32940"
     },
     {
-      "path": "protocol_engine/heuristics.py",
+      "path": "go/internal/decrypt/keys.go",
       "component": "engine",
-      "sha256": "870629723af29e6240b4616f2f1800bc4978f8cfc1b0beb864dc16c4cd7a8c85"
+      "sha256": "33c08693f8269af28572350aaef1a4fc0c5513cf59cff5ffcf2b96b0b90f7780"
     },
     {
-      "path": "protocol_engine/host_apps.py",
+      "path": "go/internal/engine/datagram.go",
       "component": "engine",
-      "sha256": "54e2f5184896c8ebfb92798982819b367e4af5d946eace689551bba333ba5e3b"
+      "sha256": "05e354823179e67214921b606b9c383fb11ce0acc2bbd99e1a2764112804d31d"
     },
     {
-      "path": "protocol_engine/hpack.py",
+      "path": "go/internal/engine/dispatch.go",
       "component": "engine",
-      "sha256": "f493d5f0b1a9657eda8c49f16084bcfd3422c0d87c200a8e896606e671fc006f"
+      "sha256": "ee91bce68b6f155347a012623789127c3aea8ea97406f93f175ee7f5137435b1"
     },
     {
-      "path": "protocol_engine/ics.py",
+      "path": "go/internal/engine/inspector.go",
       "component": "engine",
-      "sha256": "dd8f85b82cfb9b0939279729764d3cce17a6c629a66739836e6212bada11fb64"
+      "sha256": "6666c3f7f3282103b5336e039ae07cd93fc230bbae7a9f00b3a9f9c12bebf841"
     },
     {
-      "path": "protocol_engine/ikev2.py",
+      "path": "go/internal/errs/errs.go",
       "component": "engine",
-      "sha256": "c740849123aefb19d45066b1befde9561da266f35615b24b7230d1b64208f50b"
+      "sha256": "a1e2d76cae06e15f6764550e39a9a2e99c8e61c16f655a6767261264c3e7ee61"
     },
     {
-      "path": "protocol_engine/irc.py",
+      "path": "go/internal/events/events.go",
       "component": "engine",
-      "sha256": "c27b99b06c767f52471c03d0912528da5cfc7ec2c6207fd955616a4ee7f79d30"
+      "sha256": "ad5e8dcc172c5dacb5e236daf230fd781b139888f14f64b805ca086a6bcac53f"
     },
     {
-      "path": "protocol_engine/media.py",
+      "path": "go/internal/facts/facts.go",
       "component": "engine",
-      "sha256": "63931481f4dae86ff16410f79b46490a23da455ce3418bf34cab12f31e1a7770"
+      "sha256": "234c899f4cf1bb7918c96a11f39633bb444072dc4087b20161084e13aa8e494c"
     },
     {
-      "path": "protocol_engine/messaging.py",
+      "path": "go/internal/jobs/buffer.go",
       "component": "engine",
-      "sha256": "8215731dad56382e1c72983ee7213f6b132a1e1616691c129401c697fb086c2b"
+      "sha256": "aa8888496f04097581c04dbcd12df7275409f8de8d2628bdae17347c80e0fc35"
     },
     {
-      "path": "protocol_engine/model.py",
+      "path": "go/internal/jobs/jobs.go",
       "component": "engine",
-      "sha256": "96cd8b404650ef82fcfc650af89c5baf531a117df3a2309b6b06349ec0e0b8b1"
+      "sha256": "892f3d10f0cc7c0b3b8571305b559248509f89b3c253ba8a73294d35e7cf4fa7"
     },
     {
-      "path": "protocol_engine/network.py",
+      "path": "go/internal/jobs/process_other.go",
       "component": "engine",
-      "sha256": "c4f699a325925de12a597d77d42008fc12557176cc580c9a96059fa0810c2928"
+      "sha256": "6dc9cd42e8e74253cad9ca27d2e4971221ceda2dc90f0e4e44f523c3adfe73ce"
     },
     {
-      "path": "protocol_engine/opcua.py",
+      "path": "go/internal/jobs/process_unix.go",
       "component": "engine",
-      "sha256": "ed21ec4435d7302e0cba08f193d7b40d5bc69f8176b295c824d6a8d299e7c6bf"
+      "sha256": "0de7a57b8140297360a8df4e778988e537a8597d19f92940240634fb5cc06720"
     },
     {
-      "path": "protocol_engine/parsers.py",
+      "path": "go/internal/keylogcap/capture.go",
       "component": "engine",
-      "sha256": "e5b2fcf7822bf1e039ab68033c4be08fb54c5aeb15076eca144353dde0e30905"
+      "sha256": "11823e5f7f59f8b0d4a36056c74d0c1778b23ae33e0d79f3143080420b116b72"
     },
     {
-      "path": "protocol_engine/policy.py",
+      "path": "go/internal/keylogcap/coordinator.go",
       "component": "engine",
-      "sha256": "3dba03357ff3ea3a1875e8c50fb8e12211a59962f8192b02d3431130363df194"
+      "sha256": "2c9e5158cbe6c18c141747577abb05a17568751413315e18d4a7a1338d5e5af3"
     },
     {
-      "path": "protocol_engine/quic.py",
+      "path": "go/internal/keylogcap/decryptor.go",
       "component": "engine",
-      "sha256": "79ae3d97dafbbf731f7401ed95024cfb75c19184fb6ff321a567e89d056305a4"
+      "sha256": "322b691c01b4c97d6b89987f9a406947e34093b614e1068f16af290d52bc7daf"
     },
     {
-      "path": "protocol_engine/radius.py",
+      "path": "go/internal/keylogcap/generations.go",
       "component": "engine",
-      "sha256": "52da3604fd19160e8368121ababeda87563a818c7933ebc757b73c40af3d4092"
+      "sha256": "8ec7b5181c094232ad54d138f5657cbc2d83b29156b85ac5a471520c2bb56ea1"
     },
     {
-      "path": "protocol_engine/registry.py",
+      "path": "go/internal/live/monitor.go",
       "component": "engine",
-      "sha256": "a1368a0230262f98965012eba1c0a95f16466657753c1cf7e730dd5ef9489bd3"
+      "sha256": "f863b13782b4ffafb2cb06d76678335dd8d2a2b5d616e01955e310c4707826c2"
     },
     {
-      "path": "protocol_engine/remote.py",
+      "path": "go/internal/live/output.go",
       "component": "engine",
-      "sha256": "ceba98e0ee96dce86a57287d804a0bd401c739c8bdf64104d654939eef80bcfe"
+      "sha256": "59465a98d3c20281b91e1fec1a67656df673f61a838f1b2a61d28bfda2a51242"
     },
     {
-      "path": "protocol_engine/rip.py",
+      "path": "go/internal/live/run.go",
       "component": "engine",
-      "sha256": "c7fef24f5c578a88011592574fd0947a0b68c0ccee78b882a8c3d25683fe5a62"
+      "sha256": "9d7a9bfc0f635319923c8b5e2f6dabf42a48c8dc6bd14294e6fd2edb80b0a7ec"
     },
     {
-      "path": "protocol_engine/risks.py",
+      "path": "go/internal/livectl/process.go",
       "component": "engine",
-      "sha256": "5b87b24fa5fcf19300f01109bb75a58ae8d53ab80df080e81466f58845424f7d"
+      "sha256": "46c482615740aa884f403716e7e57dbbdf976a0775495cfa2f13f0c8fb87cd08"
     },
     {
-      "path": "protocol_engine/rpc.py",
+      "path": "go/internal/livectl/session_other.go",
       "component": "engine",
-      "sha256": "4593c9612e3abf4e3eb11617245831d902dce55081292d3c89e18b1b253250f6"
+      "sha256": "50d5ae9dadb8936681472ad80c621057c1f7959cf4358073ebeedd540b915f4a"
     },
     {
-      "path": "protocol_engine/rsync.py",
+      "path": "go/internal/livectl/session_unix.go",
       "component": "engine",
-      "sha256": "99e329984baffd26a4f97f5112f017e0e43513dd053d6ed67eeab4e77a8a7304"
+      "sha256": "9a9c9ae8feff308001c89a9bd5bdce4002a36d64257777c776e2d058686d5437"
     },
     {
-      "path": "protocol_engine/s7.py",
+      "path": "go/internal/livectl/state.go",
       "component": "engine",
-      "sha256": "744302d0fa7e5fe1e3bb050b0d8c623247895f45b83559693b0ccb34c37bb574"
+      "sha256": "511c6efa78e7d86465536f6c5b2e2d7c062058163d9fb8d47549d0b62e0c2f4f"
     },
     {
-      "path": "protocol_engine/service_text.py",
+      "path": "go/internal/livedecrypt/decoder.go",
       "component": "engine",
-      "sha256": "f46ef44e25007c6d09c13b20ea2ec75db41384d2600cd0415898a3cc81d78265"
+      "sha256": "a785c3d29dcf54f6bd75631f892bd06c82c3ababa1f5cb3ad40e7a520677a051"
     },
     {
-      "path": "protocol_engine/session_text.py",
+      "path": "go/internal/livedecrypt/keylog.go",
       "component": "engine",
-      "sha256": "1cfba0a3b0937b5307e00c4b6623f35f742fca479e5500bc18f33e96a976ab25"
+      "sha256": "5f5d58f26d92b5fd8d0c207563b1927ccd3f3e853ca2b6302fdac8f184e7520e"
     },
     {
-      "path": "protocol_engine/signatures.py",
+      "path": "go/internal/livedecrypt/keylog_unix.go",
       "component": "engine",
-      "sha256": "9746d50fb37515b4ca63dbfebdf141e4a568e88c15f8292b731b199200e2bae0"
+      "sha256": "283e9c7e9c77bbbdd3c81e56beb89510e08ebefe7b17202a7938fc24a9c5f0ff"
     },
     {
-      "path": "protocol_engine/smarthome.py",
+      "path": "go/internal/livedecrypt/limit_unix.go",
       "component": "engine",
-      "sha256": "e0d65638c29aee968035faf56eec550d4573221cf0361e2c0fe71204284b0d26"
+      "sha256": "31745944b98bd2521d6851c2bdba3988a598b72939c026b24e2675ea96ddce1a"
     },
     {
-      "path": "protocol_engine/ssh_posture.py",
+      "path": "go/internal/livedecrypt/platform_other.go",
       "component": "engine",
-      "sha256": "fa4570610a2ea192423d5ce5d46dd35cfecad5f55e9cc341f674093153e81ab8"
+      "sha256": "93a7047f8cb631b6f3c2fda290039f3297962fab4c16b9b5921054594d9fc7dd"
     },
     {
-      "path": "protocol_engine/stomp.py",
+      "path": "go/internal/livedecrypt/run.go",
       "component": "engine",
-      "sha256": "3c8be31bff49808c340450b8e4b51cf749681ee5ebca381a03ad5022fb0c4d62"
+      "sha256": "a5c9a623e729023f553fb88f59279b0eb61c1e6118b3505d8e482aa60d0f3b76"
     },
     {
-      "path": "protocol_engine/syslog.py",
+      "path": "go/internal/names/hostname.go",
       "component": "engine",
-      "sha256": "210dc53ca8ea6761fa000e3c81b3eb10d6d399da6f7eed8670ab315aad67686c"
+      "sha256": "2c315e5be5254d7952ab590c4f87a6a7daef5fa31c61e0acebe998ab4a26f6ad"
     },
     {
-      "path": "protocol_engine/telemetry.py",
+      "path": "go/internal/ojson/bytes.go",
       "component": "engine",
-      "sha256": "1822fdad0caa9820b552be30f9a8df8039552991430243461a34b0fde7c3f690"
+      "sha256": "38c98c58d8281e05ab23571beb9b8db445a4e280934352abd67be0f78005bd49"
     },
     {
-      "path": "protocol_engine/tls_ciphers.py",
+      "path": "go/internal/ojson/ojson.go",
       "component": "engine",
-      "sha256": "870f5bcadda860deaf20e7fdda23ba4fc51cf8390c568f11f3a2b0d98948eed1"
+      "sha256": "81678303b9062fcdd8ae2ecc38c01f2dec24c90a99a9d6df0293f684a1d2128d"
     },
     {
-      "path": "protocol_engine/tls_server.py",
+      "path": "go/internal/parity/parity.go",
       "component": "engine",
-      "sha256": "882873d108438c5234963d30b71dbd55b8a10b80e464b60749d900c2ddbefc00"
+      "sha256": "5e2027169ea5db12310aad7a8a0617f49221afd7e481ab2e81c60cfbca19f017"
     },
     {
-      "path": "protocol_engine/unknown.py",
+      "path": "go/internal/parsertest/parsertest.go",
       "component": "engine",
-      "sha256": "3ae7af0fe27c4b9b6876777e75345520a7550c225db81c8fd9808c50c43a3877"
+      "sha256": "69436e18eb92005cbdacada4260541de9c91576eb11b30c2af1fa27c6871b065"
     },
     {
-      "path": "protocol_engine/upgrade.py",
+      "path": "go/internal/parsing/credit.go",
       "component": "engine",
-      "sha256": "0703126ea2a6a72e7993fa6c367fa17f95f6c4d3098281a72776ed3739cd4d15"
+      "sha256": "b5913d3c466f17cad3e65a2d1b02dedcb328b88e882f9281f9fdf8ce6148bdea"
     },
     {
-      "path": "protocol_engine/vpn.py",
+      "path": "go/internal/parsing/parsing.go",
       "component": "engine",
-      "sha256": "3e898997036e37576fc2282797a3c21c1973c115022efe1e94de5c5a8b12107f"
+      "sha256": "803d00e6bf3d8657be0173edee132491ac8b1f9b13a9ab8123c7100df8772c80"
     },
     {
-      "path": "protocol_engine/windows.py",
+      "path": "go/internal/policy/policy.go",
       "component": "engine",
-      "sha256": "f81abc9debbd7881ad6ebf35f6c05da605c68931386ae518b8a446d9884c8f29"
+      "sha256": "2c074e3b7b359d4ebadca34e72469bb79b2db6c5a2d211601991414b9363ed74"
     },
     {
-      "path": "protocol_engine/wire.py",
+      "path": "go/internal/protocols/dnsx/dns.go",
       "component": "engine",
-      "sha256": "2bbd90c3fab6904d0964dda4f391b9c31c560076a17403f03068085a53eb5353"
+      "sha256": "b4bd736c29b9a88f56ae2bd85b46b11f05ec8bc05a6da64064a4a935a3e582a8"
     },
     {
-      "path": "protocol_engine/x509.py",
+      "path": "go/internal/protocols/fingerprint/fingerprint.go",
       "component": "engine",
-      "sha256": "5de29b7be9eb3435cefe15734d306ade2ef9c0d0feccfa5960b741ca21639227"
+      "sha256": "cedbc024080acfe3d7b4753252b1b2fa132bb03e876bfe5249390d27da3be568"
     },
     {
-      "path": "protocol_engine/xmpp.py",
+      "path": "go/internal/protocols/framed/bson.go",
       "component": "engine",
-      "sha256": "ac9ca9d5c7a0d723cabf15783ffdf14803ce5e57667d4a1e3947c1b198366830"
+      "sha256": "2a7925d96098c93a4490abd85152e5d6b49c59879169d55409d4af8900765ca2"
     },
     {
-      "path": "protocol_adapters/__init__.py",
-      "component": "adapters",
-      "sha256": "985053ff7013b8d88ee798a57275927ae6c54b3fb3ab6444ee18f97c02de7acc"
+      "path": "go/internal/protocols/framed/database.go",
+      "component": "engine",
+      "sha256": "78df70b637db4e0e6240ebac74b3ffa6415e5410b85dd390d6ddafd643775a6f"
+    },
+    {
+      "path": "go/internal/protocols/framed/datagram.go",
+      "component": "engine",
+      "sha256": "d1b00c222df7095bd676c331877a4172c30c17709cbec8e3fe32b358b5aadf0c"
+    },
+    {
+      "path": "go/internal/protocols/framed/datagram_services.go",
+      "component": "engine",
+      "sha256": "132e116d49786ba42438875ffc897891ce7a809288d75d4b88e1662cb6b89f40"
+    },
+    {
+      "path": "go/internal/protocols/framed/datagram_text.go",
+      "component": "engine",
+      "sha256": "1b61b30eec3c060046a6df9f4f9117744ecc03de609e3295955efae29a27d145"
+    },
+    {
+      "path": "go/internal/protocols/framed/datagram_wire.go",
+      "component": "engine",
+      "sha256": "c25789d146fe29476b435694d8b216d587b4f824385605a22aec816b7083fafe"
+    },
+    {
+      "path": "go/internal/protocols/framed/desktop.go",
+      "component": "engine",
+      "sha256": "c6ed8ebda9bd9dd540cc6c466b4e6de7dc62abb147f71dc0a8f03fcb7831c03e"
+    },
+    {
+      "path": "go/internal/protocols/framed/families.go",
+      "component": "engine",
+      "sha256": "c3a9f8a6ae4d60a4678fbaa90aed0c3841f429e035bc002912fae070126f86c7"
+    },
+    {
+      "path": "go/internal/protocols/framed/framed.go",
+      "component": "engine",
+      "sha256": "b03158524fd527a563dfe9fc3cad6a3ae999bd720c3ca21cfee5ee021140718c"
+    },
+    {
+      "path": "go/internal/protocols/framed/git.go",
+      "component": "engine",
+      "sha256": "7f84ac3c0a4e8d60c813c7930b366fdc12288f09be968be92ffdfe502b4c319f"
+    },
+    {
+      "path": "go/internal/protocols/framed/gss.go",
+      "component": "engine",
+      "sha256": "03dae2ac94e35c2fade5dd3ef9c5e9b02f51e492627bca343271a02652e1443e"
+    },
+    {
+      "path": "go/internal/protocols/framed/ics.go",
+      "component": "engine",
+      "sha256": "99e1cd291e6ebe56f0acd691a11e4442aa0b7fc05f0e0f717f7de514401e7e82"
+    },
+    {
+      "path": "go/internal/protocols/framed/ikev2.go",
+      "component": "engine",
+      "sha256": "01802865329945aeba1f0eda1cd3a9bce6d4dbc857268141e7bda8266bc8cdc4"
+    },
+    {
+      "path": "go/internal/protocols/framed/kasa.go",
+      "component": "engine",
+      "sha256": "33624068865e0e33e3777259983591023037c2497ac819aeb5a5530ac7917394"
+    },
+    {
+      "path": "go/internal/protocols/framed/kerberos.go",
+      "component": "engine",
+      "sha256": "6bfcf91ae274832363e059ee1dfb8404cb1e7a883f04f0b4aa4f357314ed7f49"
+    },
+    {
+      "path": "go/internal/protocols/framed/ldap.go",
+      "component": "engine",
+      "sha256": "d30a504d39b5f0df1b0cf3b37db118b5da2152b99f5721227410b74b3f6e4e2a"
+    },
+    {
+      "path": "go/internal/protocols/framed/lines.go",
+      "component": "engine",
+      "sha256": "d866c716df685b666a8cadfd539958fc9480f39a405ec310e3744f6d27b7d910"
+    },
+    {
+      "path": "go/internal/protocols/framed/messaging.go",
+      "component": "engine",
+      "sha256": "c1f462fad45c17231b00d83cd11202bf1fe34b5cbea9bc1297fc8728d71374d5"
+    },
+    {
+      "path": "go/internal/protocols/framed/routing.go",
+      "component": "engine",
+      "sha256": "69d0654a2695a816c8ab7902ebc48a58732b8c7e2c1f5c669e068e1a78e722f3"
+    },
+    {
+      "path": "go/internal/protocols/framed/rpc.go",
+      "component": "engine",
+      "sha256": "01598ed1937345540fc2de39d3bf22d1159b81f84986a16614fdb160263dcd6f"
+    },
+    {
+      "path": "go/internal/protocols/framed/services.go",
+      "component": "engine",
+      "sha256": "de4055cbf116664d46b7a1275b7b24b5d912b13db5bcacf6beb8f1ec219eecce"
+    },
+    {
+      "path": "go/internal/protocols/framed/sessions.go",
+      "component": "engine",
+      "sha256": "605e36887df2132a403fdd13752ebf46c06a0f30123b802aa409f4a152e04037"
+    },
+    {
+      "path": "go/internal/protocols/framed/smb.go",
+      "component": "engine",
+      "sha256": "3f08c02c039a8567cbefdf327b60e4ccecf909c57615957e1d179da7e2da6158"
+    },
+    {
+      "path": "go/internal/protocols/framed/snmp.go",
+      "component": "engine",
+      "sha256": "3cf63df41c3540add48e5e278b0fbe3206344a26ef05b5453791941dd3fe4063"
+    },
+    {
+      "path": "go/internal/protocols/framed/tpkt.go",
+      "component": "engine",
+      "sha256": "545e283eb526de68f05b8453f2b36469d8ddce5db9c9da724fd91aae6256759e"
+    },
+    {
+      "path": "go/internal/protocols/heuristics/heuristics.go",
+      "component": "engine",
+      "sha256": "968470f0f6a57f31d3af0dc986063b5ee82da8c9c6e05e6877571ac6856da662"
+    },
+    {
+      "path": "go/internal/protocols/hpack/hpack.go",
+      "component": "engine",
+      "sha256": "70787fa75ecb525ac5ecaaf3adc73dd912420f7006fdd91c46e8dbd7919fa4c2"
+    },
+    {
+      "path": "go/internal/protocols/hpack/tables.go",
+      "component": "engine",
+      "sha256": "fd539c0bfc29847e2465cfbe775a74a1c982c7e41cc6227884d6fbf8355b5a2f"
+    },
+    {
+      "path": "go/internal/protocols/quicx/assembler.go",
+      "component": "engine",
+      "sha256": "7bfb4006a4e2e25985b8d501972c4b25551b9b578c4b337c5a2e4009fa68397e"
+    },
+    {
+      "path": "go/internal/protocols/quicx/quic.go",
+      "component": "engine",
+      "sha256": "106930d5d53d3cd04cedf1a684ad9b00ffb85a0a78e9a78a4537820a0170ebd9"
+    },
+    {
+      "path": "go/internal/protocols/textroute/continuation.go",
+      "component": "engine",
+      "sha256": "68bd4b4ced640c8b05de1a813fb65b94a4bf9002d3824237702a6d3c30ba286e"
+    },
+    {
+      "path": "go/internal/protocols/textroute/http.go",
+      "component": "engine",
+      "sha256": "329b83bc3f32c386459ed39b05d891c4af71c1c6be69eeeae3a2890bb55ebb26"
+    },
+    {
+      "path": "go/internal/protocols/textroute/http2.go",
+      "component": "engine",
+      "sha256": "c9c3f0be74449b007485b1515a536e5d6bbbb25eec66417be7139b73a6ee0963"
+    },
+    {
+      "path": "go/internal/protocols/textroute/irc.go",
+      "component": "engine",
+      "sha256": "b0d815dae792551cc3757d7908619b6698933de0b998223887bf05c839c98f4f"
+    },
+    {
+      "path": "go/internal/protocols/textroute/services.go",
+      "component": "engine",
+      "sha256": "2f5fc443a1318ec347010d4fe78fdf3c649ad01b2ab2b75d214df058f3c5f07b"
+    },
+    {
+      "path": "go/internal/protocols/textroute/ssh.go",
+      "component": "engine",
+      "sha256": "716040dbdf7bbe2c67ea47c0827e5339fa3840a1b2d52e50dce3a41b911cd1f0"
+    },
+    {
+      "path": "go/internal/protocols/tlsx/certificate.go",
+      "component": "engine",
+      "sha256": "60d51a0348b78606e13172c4816e496e3680679943980d5a8eb8306e68a43de0"
     },
     {
-      "path": "protocol_adapters/analyze_pcap.py",
-      "component": "adapters",
-      "sha256": "9c3d6102a96f1d1dafbc153dfe1f0777c8a6a075202ff1525fff5e7f99d64f14"
+      "path": "go/internal/protocols/tlsx/ciphers.go",
+      "component": "engine",
+      "sha256": "31d68b9434ecbbf60b84c959bba33d3eda28fe06fd34d52e3e90c0ebf4996c1a"
+    },
+    {
+      "path": "go/internal/protocols/tlsx/continuation.go",
+      "component": "engine",
+      "sha256": "06a8b02be794710620fbab65674c311247de7da4e440e1e97b233cc8637a26b7"
+    },
+    {
+      "path": "go/internal/protocols/tlsx/dtls.go",
+      "component": "engine",
+      "sha256": "633b77ccd766d637088c1a6cb6f2da0801196cca4c4e6d2b6d7a2450339afafb"
+    },
+    {
+      "path": "go/internal/protocols/tlsx/tls.go",
+      "component": "engine",
+      "sha256": "d06949e2484670b2e5c8ead8d8ec4c24c3a755166c9b1632b1fee8a8f9a038e5"
+    },
+    {
+      "path": "go/internal/protocols/x509x/x509.go",
+      "component": "engine",
+      "sha256": "dd92bb0987190744d7df4d245886a66adf69be89a3bfda9cfbea300285b0885b"
     },
     {
-      "path": "protocol_adapters/capture_stream.py",
-      "component": "adapters",
-      "sha256": "9aef88cca94f43c146912a0105c64bc103d6ecf5fcb28a89eb978ffb16243916"
+      "path": "go/internal/pyjson/pyjson.go",
+      "component": "engine",
+      "sha256": "0ee93565f11706d6204adbef9ebe5db62f43cd83cfd60176b0848c9b7170e353"
     },
     {
-      "path": "protocol_adapters/coordinator.py",
-      "component": "adapters",
-      "sha256": "7e98739163045b13caf94d6273861fce46748c72512ddd89ba23b442c2bf2d64"
+      "path": "go/internal/reassembly/stream.go",
+      "component": "engine",
+      "sha256": "a40cba78a4d686cab70db56aa6e9a6d9e59230c50182c55716ac93c2d7e50961"
     },
     {
-      "path": "protocol_adapters/detectors.py",
-      "component": "adapters",
-      "sha256": "44278efdc5cc2c0e8550c9695854d9b16836536365de1a071e473d9ae7e6a463"
+      "path": "go/internal/replay/digest.go",
+      "component": "engine",
+      "sha256": "36b72ab33323b56ff5f0e642a0c5c4baef41cbd1be422e1be32a24946519dd95"
     },
     {
-      "path": "protocol_adapters/events.py",
-      "component": "adapters",
-      "sha256": "0657066e074da3ac9874b3ce817616d44858cfb418820e2fa6b09465d30e2925"
+      "path": "go/internal/replay/replay.go",
+      "component": "engine",
+      "sha256": "8895fe41d4ec7614649d3fef70c90d1cc4dc0c02b193712e001980cf4fb2347d"
     },
     {
-      "path": "protocol_adapters/layers.py",
-      "component": "adapters",
-      "sha256": "ed67088e3c3056dee070e1a6c4bfe45a0a27cd9d204edf1674ed25003fae449a"
+      "path": "go/internal/serve/conn.go",
+      "component": "engine",
+      "sha256": "bb5434c6ad5a9feec8d0310fc5b1aefc1a4cb8ec29050eaf7ab17192b8d8dfac"
     },
     {
-      "path": "protocol_adapters/link_packets.py",
-      "component": "adapters",
-      "sha256": "786a9ce80f9c8bd820de6b371b924a0b98001a3d0e473c9b9f2f3e8ea38654a1"
+      "path": "go/internal/serve/limit_other.go",
+      "component": "engine",
+      "sha256": "b657ba359c7553608f294e646dfe37e93ce7fd7f06c8d9268949af2024bd6fc3"
     },
     {
-      "path": "protocol_adapters/live_capture.py",
-      "component": "adapters",
-      "sha256": "41c5bd0bb6e2d44371ea22c92cf07eb653909a36726c60001a80aa15b80a47bf"
+      "path": "go/internal/serve/limit_unix.go",
+      "component": "engine",
+      "sha256": "7a7d4ec76998c6f6c683f0ffcfdfc9e52ecc8dd85474ff578111db02b3ee63bc"
     },
     {
-      "path": "protocol_adapters/make_sample_pcap.py",
-      "component": "adapters",
-      "sha256": "ed6fe3189fc40aba31dc597950c243713b81aad329ab9de6ed218d4cac20c2dc"
+      "path": "go/internal/serve/pytext.go",
+      "component": "engine",
+      "sha256": "e448d684f84e73e3b3f8f80e163ebf1c3ab14ac64f22d7c3322005a5190fbed9"
     },
     {
-      "path": "protocol_adapters/observability.py",
-      "component": "adapters",
-      "sha256": "c0c3d44a17680b3418381b6be10c69e9b00601450caa3764be41222a2e3a96e9"
+      "path": "go/internal/serve/server.go",
+      "component": "engine",
+      "sha256": "1b40cd8eb11d65a66c3fefd84027498f0879b9cf05fda4083cc830920bde9a50"
     },
     {
-      "path": "protocol_adapters/packets.py",
-      "component": "adapters",
-      "sha256": "1cf27b64b49834cc7dac3baa5dc29e9a12cc345148370a7e522b2057453dc423"
+      "path": "go/internal/serve/showcase.go",
+      "component": "engine",
+      "sha256": "362d2ba4f11f7858b1c9ffd94cf7d5e4140a1e9cbd723256eb508bfb1f9744d3"
     },
     {
-      "path": "protocol_adapters/protocol_fixtures.py",
-      "component": "adapters",
-      "sha256": "04223ffe97439102778262807fef5b077feee58d67fa598b0f4dfb23fa2bfe51"
+      "path": "go/internal/serve/worker.go",
+      "component": "engine",
+      "sha256": "ab28e51c1db310dfa648c5f991a36c60b6afe4d1a6e1970408a85a8a65dfc181"
     },
     {
-      "path": "protocol_adapters/proxy_demo.py",
-      "component": "adapters",
-      "sha256": "76300e38334d29dbd0ab72e51b4ec9a4362a001ca8b1c487f774d98ccf8fa4fa"
+      "path": "go/internal/session/manager.go",
+      "component": "engine",
+      "sha256": "e707f3cf12c25a724ad250d14ccac96eaf5cda3f0a0040a1d206c12bc96beba2"
     },
     {
-      "path": "protocol_adapters/quality.py",
-      "component": "adapters",
-      "sha256": "093acc519fc927d191f9d16b2881d25369de7779aa8a74245d75d615286c8a37"
+      "path": "go/internal/session/tracker.go",
+      "component": "engine",
+      "sha256": "1444c5102debe5d89c45ca9ca3690512c68cb42a6d91f9a2afcfd37bb971b21b"
     },
     {
-      "path": "protocol_adapters/sessions.py",
-      "component": "adapters",
-      "sha256": "b92517411db1f57a286a49703ea05b2fb517ff0e6b7f1b520289c25aa820186d"
+      "path": "go/internal/sessionid/sessionid.go",
+      "component": "engine",
+      "sha256": "3c15798e44a4770d775b2cc443d325558f3e82a6c43b2a72f7c7f1d9694c4ac0"
     },
     {
-      "path": "packets.py",
-      "component": "adapters",
-      "sha256": "9f09c6ea5b2738a838b0aaf16cb8c06a8b93ec41c3b08da826e76060c3224f94"
+      "path": "go/internal/signatures/cost.go",
+      "component": "engine",
+      "sha256": "4715cbab1d209d03d0c81d1768b779b0a9985b4628a75a040b4f1ba4e15c44b0"
     },
     {
-      "path": "link_packets.py",
-      "component": "adapters",
-      "sha256": "92ee537907c30ff336356e4801e05dacd25fbda0ba5623829151ebecc6ebcf62"
+      "path": "go/internal/signatures/pattern.go",
+      "component": "engine",
+      "sha256": "97ba650094a24f6a9a1ca88c352a1dd09617c62ed44fc9f076b959aa09471f0b"
     },
     {
-      "path": "capture_stream.py",
-      "component": "adapters",
-      "sha256": "15e7ad639e66c26942898cd2e04ae974dcbcecb2b1ed9e90eb317fde89094563"
+      "path": "go/internal/signatures/signatures.go",
+      "component": "engine",
+      "sha256": "d4a910135ccd267a9f9b2f63f532de7e32ba0baa6ea4db6b9205c73fd8ae395f"
     },
     {
-      "path": "sessions.py",
-      "component": "adapters",
-      "sha256": "3989d754a0f3a2a8dd08e1694c4eafe23a94066ba9eda431e14e9a2a3522cf70"
+      "path": "go/internal/telemetry/telemetry.go",
+      "component": "engine",
+      "sha256": "baf037a5a06fd4aaf1889c96b8d866358d66ee55f6fb6037b35dc78426626afb"
     },
     {
-      "path": "analyze_pcap.py",
-      "component": "adapters",
-      "sha256": "5e29d9456aa826364b36e6a53f8cb67e702d8381149cdc54d30295cd508c206e"
+      "path": "go/internal/testframes/testframes.go",
+      "component": "engine",
+      "sha256": "8e2b6acb3eb8363795ac2353b8cd124a570ed12c5b9a2b5cebafb4bda4902251"
     },
     {
-      "path": "live_capture.py",
-      "component": "adapters",
-      "sha256": "ca09722f916c810937f810499c1b3d5451c8ed1decd60a1a573ffc3a4898c91e"
+      "path": "go/internal/transport/transport.go",
+      "component": "engine",
+      "sha256": "b663366ec9bf8ab4774f377f1bb59787b4b03084d3b107ca93ad24f0a137008f"
     },
     {
-      "path": "make_sample_pcap.py",
-      "component": "adapters",
-      "sha256": "e6fbc7eeef8ace8402785a58ff88a2c71d1784fff470af63a9a6fd9ead68bb74"
+      "path": "go/internal/serve/catalog.json",
+      "component": "engine",
+      "sha256": "eb01771861e6fcbf13739e6733a219f9a3630c8eff9d658a624a5e4113495d6c"
     },
     {
-      "path": "protocol_fixtures.py",
-      "component": "adapters",
-      "sha256": "e23a9fa5fbcb0d5d25c58eb493ebf6d60d15e2524192b413afa594d6146075fc"
+      "path": "go/internal/content/pack.json",
+      "component": "engine",
+      "sha256": "8c14b627897d9bf3364d4b92257f25cbcfc94fb37d2f8c0398347737262d5f19"
     },
     {
-      "path": "proxy_demo.py",
-      "component": "adapters",
-      "sha256": "6fcde6667e603934e64bf57a53622d068f75a9ef1866f469d05cdcf6a312f8c8"
+      "path": "go/internal/content/history.json",
+      "component": "engine",
+      "sha256": "1f1295c7408ac625868b1f3f00a1d09b3e5c0e7e43952513881ad47e8a4ff6c7"
     },
     {
       "path": "protodetect.py",
-      "component": "adapters",
-      "sha256": "50040078d983ffe3e2fbb836052fd582e4e513982c9d88954796220d97e80b74"
+      "component": "launchers",
+      "sha256": "e943caad85f77ea633527d55e0bfc806d61bef5eb99b2f825ce0460bfdc9876f"
     },
     {
-      "path": "detectors.py",
-      "component": "adapters",
-      "sha256": "8ed95f13dce9c98df366422c7bdb66dca7b4e7565e563cdb66706e2bb039d11b"
+      "path": "main.py",
+      "component": "launchers",
+      "sha256": "6ea6bf6ea07484b1e2ac418d2749d0c14a07e6e32bd3f16f30c91e2255f06739"
     },
     {
       "path": "presentation/__init__.py",
       "component": "presentation",
-      "sha256": "c58e150c25a2c411355c46ca1aa598df0af00035fa46a338e44ea2cd90894b20"
-    },
-    {
-      "path": "presentation/jobs.py",
-      "component": "presentation",
-      "sha256": "7ff1e60c7336073e76508f6b7cf41aacf264ab4875c7e637ef975a6464e1e394"
+      "sha256": "63fb81e9d72f9050b9085822781a3d5442e59846607a1a07deeb414dffd59e5f"
     },
     {
       "path": "presentation/launch.py",
       "component": "presentation",
       "sha256": "775703f2f2c8f0dc5f42d1f03c5bc92043ba8cd335b5f3ccc2027ccde7cac8fa"
-    },
-    {
-      "path": "presentation/live_decrypt_smoke_check.py",
-      "component": "presentation",
-      "sha256": "c08bde733086df4e933fefc791bcd4e1059758721131cd05192d2dae9ca7ecb5"
-    },
-    {
-      "path": "presentation/live_manager.py",
-      "component": "presentation",
-      "sha256": "704c967ad7cafa86b11b944446784d8092f4b2f81b2a7b018ecdc3ed3eb1a8de"
-    },
-    {
-      "path": "presentation/live_smoke_check.py",
-      "component": "presentation",
-      "sha256": "35ad69a66b2c5e5ae332d23c076d1bf99c3b03805395d0273dbd8c728d098cc1"
-    },
-    {
-      "path": "presentation/server.py",
-      "component": "presentation",
-      "sha256": "6060c5f77ac76d148e09789c7011a31f18e34a1bd7ec567dc2b56999865762da"
-    },
-    {
-      "path": "presentation/poc_decryption/__init__.py",
-      "component": "presentation",
-      "sha256": "d7b47a54764d4900a4c650bf19cf840519c48fd140b264e431de2b2d65f4596b"
-    },
-    {
-      "path": "presentation/poc_decryption/capture.py",
-      "component": "presentation",
-      "sha256": "e7814062d8693d61b2ae82455adb4f9f12b22248a351430e0ed25015f4002696"
-    },
-    {
-      "path": "presentation/poc_decryption/decryptor.py",
-      "component": "presentation",
-      "sha256": "785858af678218bd1879b9ab2411c814fc4a8cb27d80914491669a20bc62a87d"
-    },
-    {
-      "path": "presentation/poc_decryption/demo.py",
-      "component": "presentation",
-      "sha256": "6597847f21918e548ad8549ca0383646b95fb1571e2b67ffa5b06dfcd66a78b1"
-    },
-    {
-      "path": "presentation/poc_decryption/engine.py",
-      "component": "presentation",
-      "sha256": "f08a621ca3574e02b4c7db096da032fbd7045be9c944f878e088e28062699d1f"
-    },
-    {
-      "path": "presentation/poc_decryption/live.py",
-      "component": "presentation",
-      "sha256": "9e0ca2a6fd3122329867818d4693e34c44982c47d261d9dfb96e9b05a76352a5"
-    },
-    {
-      "path": "presentation/poc_decryption/tls12.py",
-      "component": "presentation",
-      "sha256": "80f46f338ae644b72e3466ba0594517531c613ccff802270ae9d9ad7f8752890"
     },
     {
       "path": "presentation/web/app.js",
@@ -621,11 +756,6 @@
       "path": "presentation/web/styles.css",
       "component": "presentation",
       "sha256": "52a65c6299e433ad98bd9c05cd1a274a0ad52dc06a5be69efbe6386a55e80f0f"
-    },
-    {
-      "path": "presentation/requirements-decryption.txt",
-      "component": "presentation",
-      "sha256": "8b5c18678b29b5e8e0fb586a35ac1dce3ccd9da321e8f12ace0e118350b4e568"
     },
     {
       "path": "schemas/event-envelope.schema.json",

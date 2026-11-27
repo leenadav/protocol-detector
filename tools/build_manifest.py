@@ -1,4 +1,4 @@
-"""Build manifest for the whole product (stage 1b / A16): engine, adapters, presentation, schemas, tools.
+"""Build manifest for the whole product (stage 1b / A16; PRO-403): the Go engine, launchers, presentation, schemas.
 
 Usage: python3 -B tools/build_manifest.py --write presentation/SOURCE.json
        python3 -B tools/build_manifest.py --check presentation/SOURCE.json
@@ -16,16 +16,17 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# PRO-403: the Python reference engine is removed (tag python-final). The engine is the Go module (its sources and
+# module files; tests, test data and the vendored dependencies are not shipped files), the launchers are the root
+# entry points, the presentation is the page the Go service serves and its launcher.
 COMPONENTS = {
-    "engine": ("protocol_engine", ("protocol_engine/**/*.py",)),
-    "adapters": ("protocol_adapters", ("protocol_adapters/*.py", "packets.py", "link_packets.py", "capture_stream.py",
-                                       "sessions.py", "analyze_pcap.py", "live_capture.py", "make_sample_pcap.py",
-                                       "protocol_fixtures.py", "proxy_demo.py", "protodetect.py", "detectors.py")),
-    "presentation": ("presentation", ("presentation/*.py", "presentation/poc_decryption/*.py", "presentation/web/*",
-                                      "presentation/requirements-decryption.txt")),
+    "engine": ("go", ("go/go.mod", "go/go.sum", "go/cmd/**/*.go", "go/detector/**/*.go", "go/internal/**/*.go",
+                      "go/internal/serve/catalog.json", "go/internal/content/pack.json", "go/internal/content/history.json")),
+    "launchers": (".", ("protodetect.py", "main.py")),
+    "presentation": ("presentation", ("presentation/*.py", "presentation/web/*")),
     "schemas": ("schemas", ("schemas/*.json",)),
 }
-EXCLUDED_SUFFIXES = (".pcap", ".pcapng", ".pyc", ".log", ".keys", ".pem", ".key")
+EXCLUDED_SUFFIXES = (".pcap", ".pcapng", ".pyc", ".log", ".keys", ".pem", ".key", "_test.go")
 
 
 def version():
@@ -46,7 +47,8 @@ def build():
         for pattern in patterns:
             for path in sorted(ROOT.glob(pattern)):
                 relative = path.relative_to(ROOT).as_posix()
-                if path.is_file() and not relative.endswith(EXCLUDED_SUFFIXES) and "__pycache__" not in relative:
+                if path.is_file() and not relative.endswith(EXCLUDED_SUFFIXES) and "__pycache__" not in relative \
+                        and "/testdata/" not in relative and not any(entry["path"] == relative for entry in files):
                     files.append({"path": relative, "component": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
     digest = hashlib.sha256("\n".join(entry["path"] + " " + entry["sha256"] for entry in files).encode()).hexdigest()
     return {"repository": "leenadav/protocol-detector", "version": version(), "commit": git("rev-parse", "HEAD"),

@@ -4,7 +4,6 @@
 /go/                    @leenadav
 /go/internal/serve/     @leenadav
 /presentation/          @leenadav
-/protocol_engine/       @leenadav
 /.github/               @leenadav
 SECURITY.md             @leenadav
 THREAT-MODEL.md         @leenadav

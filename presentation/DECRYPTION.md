@@ -1,8 +1,8 @@
 # פענוח TLS ו־App-ID ל־POC
 
 נוסף מסלול ניתוח offline: capture + קובץ SSLKEYLOGFILE → איחוד TCP → פענוח ואימות רשומות TLS → Inspector → App-ID.
-הקוד נמצא ב־`poc_decryption/`; הפרונט וכל השרת נכללים בתיקיית `presentation/` בפרויקט המקומי.
-עותק המנוע שבתיקייה עודכן ל־v0.65.0 עם SHA המתועד ב־SOURCE.json. תיקיית המקור המקומית הישנה לא שודרגה ולא נדרסה.
+הפענוח רץ בשירות ה־Go (`protodetect serve`, בחבילות `go/internal/decrypt` ו־`go/internal/keylogcap`); הפרונט נמצא ב־`presentation/web/`.
+מאז PRO-403 מימוש הפייתון (`poc_decryption/` ו־`server.py`) הוסר יחד עם מנוע הפייתון, והמצב האחרון שלו שמור בתגית `python-final`.
 
 ## שימוש
 

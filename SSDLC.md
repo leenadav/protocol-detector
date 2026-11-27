@@ -1,5 +1,8 @@
 # Secure software development lifecycle
 
+PRO-403: the Python reference engine is removed (tag `python-final`); Go (`go/`) is the only engine. Numbered
+items below that describe the reference's jobs (behaviour diff, mutation smoke, wheel, Python fuzz) are history.
+
 The project follows a lightweight SSDLC in which every phase leaves an
 artifact in the repository and every security claim has an executable check.
 
@@ -19,9 +22,9 @@ artifact in the repository and every security claim has an executable check.
 2. `make check` passes locally.
 3. PROTOCOLS.md / APPID.md / ARCHITECTURE.md updated; threat model touched if a boundary moved; schemas/ updated when an output field changes (OUTPUT.md).
 4. SECURITY-REQUIREMENTS.md row added when the change introduces a new guarantee.
-5. Benchmark recorded when a hot path changed, with a differential check against the previous tree when a parser was rewritten (tools/compare_client_hello.py is the model).
-6. The direction coverage matrix in PROTOCOLS.md is regenerated (`tools/coverage_matrix.py --write PROTOCOLS.md`) when fixtures or evidence fields change; CI checks it.
-7. The behaviour diff report of the CI job (`tools/compare_engine.py` against the parent commit of the pushed head, also on pull requests; uploaded as an artifact and shown in the job summary) lists only intended changes; an unexpected family in the report is a review finding.
+5. Benchmark recorded when a hot path changed (the Go bench gate, `make bench-gate`, holds allocation and retained-byte budgets).
+6. `make go-check` passes: a behaviour change shows up against the frozen answers of the parity gates, and is fixed or pinned as an approved divergence (migration/STATUS.md).
+7. The security requirements a change touches keep naming Go tests that fail without their guard (`make requirements-run`).
 8. README.md and REVIEW-SCOPE.md carry the current family, application, test and version numbers; `tools/check_docs_counts.py` (part of `make check` and CI) fails on drift.
 
 ## Enforced controls and recommended required checks
@@ -87,13 +90,10 @@ push to `main`:
 
 | Workflow | Job name | Gate |
 |---|---|---|
-| ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile, unit/fuzz/property tests, docs numbers, product integrity (build manifest, protocol inventory, no tracked key logs), the Go migration's parity oracle replayed through the Python reference on that interpreter (`tools/go_ci.py oracle`), the presentation suite with the decryption extra under `tools/run_tests_strict.py` (any skip but the two named UI tests fails), offline replay, coverage matrix |
-| ci | `presentation with Node and a real browser (no test may skip)` | the presentation suite with Node 22.22.0 and the lock-pinned Playwright 1.64.1 with Chromium, zero skips allowed; the installed whole-product check (`tools/installed_check.py`) |
-| ci | `behaviour diff against the previous commit` | `tools/compare_engine.py` against the parent (and the pull request base) |
-| ci | `per-commit mutation smoke (second seed, python 3.9)` | second-seed mutation diff and a 100-mutation fuzz pass |
+| ci | `tests (python 3.9)`, `tests (python 3.11)`, `tests (python 3.13)` | compile the remaining Python (tools, migration, presentation launcher, root launchers), their unit tests, docs numbers, product integrity (build manifest, no tracked key logs, content lock), the presentation suite under `tools/run_tests_strict.py` (any skip but the two named UI tests fails), offline replay through `protodetect.py` and the Go binary with schema validation. PRO-403: the Python reference engine, its tests, the behaviour diff, the mutation smoke and the wheel went with it (tag `python-final`) |
+| ci | `presentation with Node and a real browser (no test may skip)` | the presentation suite with Node 22.22.0 and the lock-pinned Playwright 1.64.1 with Chromium against the Go service (`protodetect serve`), zero skips allowed |
 | ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) with inline allows ignored, over the pull request merge commit's history on a pull request (`--log-opts=HEAD`) and the full history of every fetched ref on every other event (PRO-539); then `tools/check_gitleaks_allowlist.py` with that gitleaks: a DNS CNAME chain is allowed only in `research/live-results-*.tsv`, and keys, tokens and the same chain in any other file are still reported |
 | ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM of the development toolchain, zero-runtime-dependency contract |
-| ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
 | ci | `known vulnerabilities in the dev toolchain (pip-audit, govulncheck)` | pip-audit in hash mode, strict; govulncheck in binary mode over the pinned gitleaks and govulncheck builds, and in source mode over go/ on its vendor tree (`GOFLAGS=-mod=vendor`, `GOPROXY=off`) |
 | ci | `Known vulnerabilities in every lockfile (osv-scanner; accepted only with a reason and an expiry)` | `tools/osv_scan.py`: osv-scanner 2.7.1 from `tools/golint/osv-scanner/go.mod` and go.sum, built outside the checkout, over every tracked lockfile (requirements, npm, go.mod); a finding fails unless `tools/osv_ignore.json` accepts it for that lockfile and package with a reason and an expiry at most 90 days ahead; an expired or stale entry, or a lockfile it did not read, fails (item 41) |
@@ -110,7 +110,7 @@ push to `main`:
 | ci | `Go benchmarks against the merge base (benchstat; hot path +10 % at p<0.05 or more allocs fails)` | `tools/go_bench.py`: benchstat from `tools/golint/benchstat/go.mod` and go.sum, built outside the checkout, compares every existing Go benchmark at the head with its merge base (6 interleaved rounds per side, vendored, offline) when go/ changed; a hot-path benchmark more than 10 % slower with p < 0.05, or with more allocs/op, fails (item 44) |
 | ci | `External contract compatibility (JSON schemas, protodetect CLI; breaks need the api-break label)` | `tools/contract_check.py`: schemas/*.schema.json ($ref resolved) and the protodetect CLI from its own help output, base vs this commit; a breaking change fails without the `api-break` label, additions are reported (item 40) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack` (while the Python content and its lock exist; PRO-401), the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...` (every component and release digest recomputed); nothing to check without the Go content pack (item 30) |
-| ci | `security requirements gate` | every SR row names an existing test |
+| ci | `security requirements gate` | every SR row names existing Go tests (`go/<package>::TestName`), and `--run` runs each one with the pinned Go, offline and vendored: a referenced test that is skipped, missing or failing fails the gate (PRO-403) |
 | ci | `ledgers (generated sections not hand-edited, notes well-formed)` | `tools/build_ledgers.py --self-test` and `--check`: every `migration/notes/PRO-<n>.md` parses, and every generated section (lane-brief and STATUS recent work, README/REVIEW-SCOPE test counts) is exactly what its notes render to, possibly lagging behind this pull request's own note; a hand edit fails with the command that rebuilds them (item 43) |
 
 Not required checks, by design: `ledgers.yml` (the nightly strict ledger check and refresh patch, item 43), `nightly-fuzz` (the Python mutation fuzz, every Go fuzz target
@@ -1093,18 +1093,15 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
 ## Local commands
 
 ```bash
-make check          # compile, tests, ruff, action pins, security-requirement gate, example policy lint, coverage matrix, docs numbers, manifest, inventory, key logs, content lock (D08)
+make check          # ruff, tooling and launcher tests, action pins, workflow policy, security requirements, docs numbers, ledgers, manifest, presentation, key logs, content lock and pack
+make requirements-run   # every Go test the security requirements name, run on the pinned Go; each must PASS
+make go-check       # the Go engine's gate: gofmt, vet, race tests, 32-bit parser tests, fuzz smoke, every frozen-answer parity gate
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories (dev tools installed)
 (mkdir -p /tmp/scanners && cp tools/scanners/go.mod tools/scanners/go.sum /tmp/scanners/ && cd /tmp/scanners && GOFLAGS=-mod=readonly GOWORK=off GOTOOLCHAIN=go1.27.4 GOBIN=/tmp/scanners/bin go install tool && bin/govulncheck -mode=binary bin/gitleaks)   # Go scanner advisories (needs Go)
-make ci-local       # make check plus extended fuzzing and the offline replay/schema validation CI runs
-make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
+make ci-local       # make check, make go-check and the vendor check
 make workflow-lint  # actionlint (needs a local actionlint and shellcheck, which the hosted runner has; CI fetches a checksum-verified release) then zizmor from the dev toolchain
 make pin-drift      # pinned action SHAs still match the tags in their comments (network; the weekly supply-chain-drift workflow runs the same check)
 make go-drift       # the Go that builds the pinned scanners is a supported line on its newest patch (network; weekly in supply-chain-drift)
-make fuzz           # extended seeded fuzzing
-make sequences-extended   # D10 metamorphic packet-sequence relations, two seeds x 8 transformations per fixture
-make perf-profile   # D11 separated local measurements: CPU by layer, bytes to identification, queue wait, memory (docs/PERF-PROFILE-V066.md)
-python3 -B tools/compare_engine.py ../previous-checkout --report diff.md   # behaviour diff against another tree
 make sbom           # CycloneDX SBOM of the environment (requires dev tools)
-python3 -B tools/check_content.py --update   # after adding a Release to protocol_engine/content.py (docs/CONTENT-GOVERNANCE.md)
+python3 -B tools/content_pack.py add BATCH.json   # a content batch (docs/CONTENT-BATCHES.md)
 ```

@@ -34,7 +34,7 @@ const token = `[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+`
 
 var (
 	requestLine    = regexp.MustCompile(`^` + token + ` [\x21-\x7e]+ HTTP/1\.[01]$`)
-	responseStrict = regexp.MustCompile(`^HTTP/1\.[01] [1-5][0-9]{2} [\x09\x20-\x7e\x80-\xff]*$`)
+	responsePrefix = regexp.MustCompile(`^HTTP/1\.[01] [1-5][0-9]{2} $`)
 	responseLoose  = regexp.MustCompile(`^HTTP/1\.[01] [1-5][0-9]{2} .*$`)
 	headerName     = regexp.MustCompile(`^` + token + `$`)
 	contentLength  = regexp.MustCompile(`^[0-9]{1,20}$`)
@@ -753,7 +753,7 @@ func (p *Parser) consumeLine(line []byte) error {
 		p.family, p.mode = "http", "http"
 		p.first = false
 		request := requestLine.Match(line)
-		response := responseStrict.Match(line)
+		response := statusLine(line)
 		if !request && !response {
 			return parsing.Malformed("Unsupported HTTP/1.x start-line")
 		}
@@ -1176,4 +1176,20 @@ func (p *Parser) shiftBoundary() error {
 		}
 	}
 	return nil
+}
+
+// statusLine is the reference's strict status-line pattern `HTTP/1\.[01] [1-5][0-9]{2} [\x09\x20-\x7e\x80-\xff]*` on
+// bytes. A Go regexp class matches runes, so `[\x80-\xff]` would refuse a raw obs-text byte; the reason phrase is
+// checked byte by byte instead (RFC 9112 4: HTAB, SP, VCHAR, obs-text).
+func statusLine(line []byte) bool {
+	const prefix = len("HTTP/1.1 200 ")
+	if len(line) < prefix || !responsePrefix.Match(line[:prefix]) {
+		return false
+	}
+	for _, b := range line[prefix:] {
+		if b != 0x09 && (b < 0x20 || b == 0x7f) {
+			return false
+		}
+	}
+	return true
 }

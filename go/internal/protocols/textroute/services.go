@@ -20,7 +20,6 @@ var (
 	natsStart       = regexp.MustCompile(`(?i)^(INFO|CONNECT)[ \t]+(.+)$`)
 	imapGreeting    = regexp.MustCompile(`(?i)^\* (?:OK|PREAUTH) \[CAPABILITY ([^\]]+)\] (.+)$`)
 	imapCapability  = regexp.MustCompile(`(?i)^\* CAPABILITY (.+)$`)
-	imapAtom        = regexp.MustCompile(`^[^\x00-\x20\x7f-\xff(){%*"\\\]]+$`)
 	controlStartRE  = regexp.MustCompile(`^(?:[A-Z_]+ [\x21-\x7e]+ (?:SIP/2\.0|RTSP/[12]\.0)|(?:SIP/2\.0|RTSP/[12]\.0) [1-6][0-9]{2} [\x20-\x7e]*)$`)
 	sipVia          = regexp.MustCompile(`^SIP/2\.0/[A-Z]+ [\x21-\x7e]+$`)
 	sipCSeq         = regexp.MustCompile(`^([0-9]{1,10}) ([A-Z_]+)$`)
@@ -340,7 +339,7 @@ func imapServerCapability(line []byte, maxHeaders int) (bool, error) {
 		return false, parsing.Budget("IMAP capability count exceeds budget")
 	}
 	for _, c := range caps {
-		if !imapAtom.Match(c) {
+		if !isIMAPAtom(c) {
 			return false, parsing.Malformed("Invalid IMAP capability atom")
 		}
 	}
@@ -489,4 +488,22 @@ func (c *controlHeaders) consume(line []byte) error {
 		}
 	}
 	return nil
+}
+
+// isIMAPAtom is the reference's `[^\x00-\x20\x7f-\xff(){%*"\\\]]+` on bytes: one or more ASCII ATOM-CHARs. A Go
+// regexp negated class matches runes, so it would accept a raw byte of 0x80 or more; the bytes are checked directly.
+func isIMAPAtom(b []byte) bool {
+	if len(b) == 0 {
+		return false
+	}
+	for _, c := range b {
+		if c <= 0x20 || c >= 0x7f {
+			return false
+		}
+		switch c {
+		case '(', ')', '{', '%', '*', '"', '\\', ']':
+			return false
+		}
+	}
+	return true
 }

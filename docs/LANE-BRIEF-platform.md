@@ -36,6 +36,8 @@ their decisions, the policy locks, and the release controller.
   branch nightly (`--log-opts=--all`, 01:41 UTC, failure summary step, not a required check). Rule 15 pins both
   (`GITLEAKS_SCOPE`, `NIGHTLY_SCAN_STEPS`); `tools/check_gitleaks_allowlist.py` checks the scope and proves it with the
   real gitleaks. `.gitleaks.toml` and the allowlists are unchanged.
+  PRO-602: main (after PRO-403 and PRO-546) merged in; `SSDLC.md` takes main's job rows with the PRO-539 scope
+  carried into the `static analysis` row; the workflow lock regenerated unchanged.
 - **PRO-270 (Dependabot, 2026-11-27):** security updates only. Every `dependabot.yml` entry has
   `open-pull-requests-limit: 0`, one `applies-to: security-updates` group per ecosystem and the prefix
   `deps(security)`; Go covers go/, go/oracle, tools/scanners, tools/golint/* and gremlins. Nothing opens until Lee
@@ -232,6 +234,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **PRO-270:** `7863692f382c39c5da592493e8047cfb3d68963d` (Dependabot security-only).
 - **PRO-503:** `9b7e79aecdca5a40717bd35d289b42d0503ed0e6` (framed builds and tests on GOARCH=386; `GO_386_EXCLUDE` empty; RESP length wrap on 386). Fix round: `23458ef6fa27d71e6b5d67489b20f299752440f4` (gosec G115: `bits32` int64 widening instead of `uint32`).
 - **PRO-545 (#178):** `81ec7b37071711d59aa1a869dd1dbc1a86a68544` (SR gate: unparsable rows, duplicates, pinned id set; SR-70..SR-75 renumbered).
+- **PRO-546 (SEC-PYRM-2, #181, stacked on #174):** see `migration/notes/PRO-546.md` for the frozen SHA.
   Fix round (SEC-PYRM-10): `b80580f544278e5ffd4b1c2b11c771532ed3fa5d` (rows without a leading pipe, look-alike ids).
 - **PRO-75 (#170):** `e179654a0933a3dbe093eb4ebc62817755f44bc7` (guardrail hooks), `6204d9bf5e4a7a2d5f296db821c2643026049919` (CodeQL empty-except fix).
 - **PRO-539:** `4154bbd7207cde1ad1975567b0b451be0b5b26b9` and CodeQL fixes `8212ab7a6f1d9f56001dd631c24eecf0b94df51b`, `53439e33c93550827fee7e838ba3eacbe14786f7`, `643193e1aacc1413e0b8df30607090e6bc25421f` (CodeQL warnings) (secret scan: pull request `--log-opts=HEAD`, main full, nightly
@@ -246,6 +249,9 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   covers main's history too. The nightly run is the only scan of other branches: a red `secret-scan` run is a leak to
   report on the board, never something to allowlist.
 
+- **Python test references must run (PRO-546):** a grepped `def` is not evidence. The requirements gate runs every
+  referenced `test_*::test_*` method under `--run` and fails on a skip; tests that drive `go/bin/protodetect` need
+  `tools/go_ci.py build` (or `make go-build`) first, in every job that runs `--run`.
 - **Line numbers of Go sources (PRO-187):** gosec counts `\n` only; Python's `str.splitlines()` also splits on form
   feed and U+2028, so a source with one of them shifts every later line. `go_lint.enclosing_function` uses
   `split("\n")`. Rewriting the gosec baseline is a reviewed change and needs `--write-scanner-lock` in the same commit.
