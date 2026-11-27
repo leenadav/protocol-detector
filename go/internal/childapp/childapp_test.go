@@ -300,7 +300,8 @@ func TestPatternTemplates(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", c.pattern, err)
 		}
-		if got := matchPattern(segs, c.path); got != c.want {
+		ps := splitPath(c.path)
+		if got := matchPattern(segs, &ps); got != c.want {
 			t.Errorf("%s on %s: %v", c.pattern, c.path, got)
 		}
 	}

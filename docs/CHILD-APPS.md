@@ -89,7 +89,8 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
   pins the most literal bytes, then the one with more condition kinds; on a tie the earlier rule in the file. So
   `POST /upload/gmail/v1/users/me/messages/send` is `gmail-sending` (a pattern), not `gmail-uploading` (a prefix).
 - **Load limits:** 4 MiB, 4,096 children, 32 rules per child, 16,384 rules, 32 entries per list, 256 bytes per entry,
-  32 pattern segments. Keys are exact and unique; anything else refuses the whole file.
+  32 pattern segments, 256 path patterns indexed under one host or host suffix (SEC-CHILD-4). Keys are exact and
+  unique; anything else refuses the whole file.
 - **Base children:** research's `<parent>-base` is the parent itself here: `app=<parent>`, `container` empty.
 
 ## Paths are matched only in canonical form
@@ -106,6 +107,11 @@ Rules are indexed by host, so a request only meets the rules of its own host and
 (default 4,096) or a method or content type over 32 or 256 bytes is not matched. Hitting any of these is reported in
 `limit` (`child_rule_evaluations`, `child_path_bytes`, `child_field_bytes`) with reason `work_limit` or
 `field_too_long`, and the verdict then names the parent only, never a child.
+
+Path work is linear in the path once per request, never per pattern (SEC-CHILD-4): the path is checked for dot
+segments without splitting, split at most once (only when a rule with a pattern is reached, into at most 33 parts),
+and each pattern first compares the segment count, so a 4 KiB path of 2,048 segments against the 256 patterns a host
+may hold costs about 10 µs and under 1 KB (`BenchmarkClassifyPatternCapLongPath`; it was 8.4 ms and 8.5 MB).
 
 ## Where the rules come from
 

@@ -21,7 +21,10 @@ const (
 	MaxListEntries    = 32
 	MaxEntryBytes     = 256
 	MaxPatternSegment = 32
-	MaxEvidence       = 8
+	// MaxPatternsPerHost caps the path patterns indexed under one host or host suffix (SEC-CHILD-4): with the
+	// per-request rule ceiling it bounds pattern work per request to a few hundred comparisons of one split path.
+	MaxPatternsPerHost = 256
+	MaxEvidence        = 8
 )
 
 //go:embed childapps.json
@@ -195,6 +198,17 @@ func Load(data []byte, pack *content.Pack, opts Options) (*Set, error) {
 	}
 	for host, l := range s.suffix {
 		s.suffix[host] = sortedUnique(l)
+	}
+	for _, index := range []map[string][]int{s.exact, s.suffix} {
+		for host, l := range index {
+			n := 0
+			for _, order := range l {
+				n += len(s.rules[order].pathPatterns)
+			}
+			if n > MaxPatternsPerHost {
+				return nil, invalid("host %s has %d path patterns, more than %d", host, n, MaxPatternsPerHost)
+			}
+		}
 	}
 	return s, nil
 }
