@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "9c553118d8192d4476eb968ed26fd19d6b5e62aa",
-  "branch": "claude/vigilant-maxwell-gub33g",
-  "build_digest": "b3c5a0a3a986493872576c81ae31c38843bc049244ebf58bd6fc668956cfc44f",
+  "commit": "46c3e8a64280e79ecedc85fa22b185132a2a33c3",
+  "branch": "claude/engine-PRO-533-sec-child-8",
+  "build_digest": "d106e2aad44b9cf9dc9276fe751350b0dc2499d8f9ce6dc5fd84914344c5440b",
   "components": {
     "engine": {
       "root": "go",
@@ -80,7 +80,7 @@
     {
       "path": "go/detector/apps.go",
       "component": "engine",
-      "sha256": "9b17f991aabff16bb0135e43f61a311b42301e5981738f7b93a230f039b28fae"
+      "sha256": "e4d71670b5c9fdd1dbb1b291458392d3e7b37476c6a7a37f2033710b275f7087"
     },
     {
       "path": "go/detector/detector.go",
@@ -120,7 +120,7 @@
     {
       "path": "go/internal/appid/appid.go",
       "component": "engine",
-      "sha256": "d172e73768cc75bf23d02ac1b094622aee5be57f031ce10c418c74a8664b3661"
+      "sha256": "e42e82ab7f4c42d27000d6db2428b81559f9d17034d748f6f5193aebf6b3ccb7"
     },
     {
       "path": "go/internal/appid/layers.go",
@@ -160,12 +160,12 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "780d84f4bc25ecda93d6ea12e529b21244528485670e3b6cc96cf0c4c326cf45"
+      "sha256": "2bd0d0b88790f51b3565fe54ba552c4c49082b4b9bf8f920904becf93770c0a7"
     },
     {
       "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "7eb298aedb2db290d7cc98bc6a02af1d6eeffaeecd794fa884c15761610c7e6c"
+      "sha256": "fceff4d63a05d49824bf6b3bbb330e2acda8c7a150d1d8f7cf89baa74772b76f"
     },
     {
       "path": "go/internal/clock/clock.go",
@@ -370,7 +370,7 @@
     {
       "path": "go/internal/policy/policy.go",
       "component": "engine",
-      "sha256": "2c074e3b7b359d4ebadca34e72469bb79b2db6c5a2d211601991414b9363ed74"
+      "sha256": "59b411b7a91ac156c6de400b075d45950eb455b27ba9c00509c45045325879e7"
     },
     {
       "path": "go/internal/protocols/dnsx/dns.go",
