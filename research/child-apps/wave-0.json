@@ -1,0 +1,2491 @@
+{
+  "schema": "child-apps/v1",
+  "task": "PRO-495",
+  "feeds": "PRO-492 (Engine, enterprise App-ID child apps)",
+  "wave": 0,
+  "pack": {
+    "commit": "5cb35d29e6392b1d96d75c3f569baa378a0efe68",
+    "version": "2026.11.9",
+    "path": "go/internal/content/pack.json"
+  },
+  "accessed": "2026-11-27",
+  "pro491_overlap": "No PRO-491 output exists on main at 5cb35d2 (grep of research/ and migration/notes/, 2026-11-27); none of these 30 services can be cross-linked yet.",
+  "rules": [
+    "verified=false means every signals field is null: such a child is a proposal only and must not become a rule.",
+    "surface=api: documented vendor API endpoint (scripts, integrations). The first-party web UI's own request paths are not documented and must not be assumed equal.",
+    "host_sni lists names as the source spells them; a '*.' or '{...}' form is a pattern, not a literal.",
+    "transport is set for non-HTTP signals (ports, UDP media); those are invisible to an HTTP rule and UDP is off the Phase 1 observed path.",
+    "Hosts and paths are client assertions seen by a decrypting proxy, not authenticated identity.",
+    "citation_also (optional) lists further official sources for the same row. Rows citing raw.githubusercontent.com cite the vendor's own published spec or SDK repository (Box, Discord, X, Mega), used where the vendor's documentation site was not reachable; the sources are named in each note."
+  ],
+  "services": [
+    {
+      "service": "Gmail",
+      "parent_app_id": "gmail",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": "Gmail web UI request paths below /mail are undocumented; only the API upload prefix is published.",
+      "children": [
+        {
+          "child_id": "gmail-base",
+          "function": "web mail",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "mail.google.com"
+            ],
+            "http_method": null,
+            "path_pattern": "/mail",
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://support.google.com/a/answer/9012184",
+          "citation_page_date": "2026-11-10",
+          "notes": "Allowlist row 'Email: https://mail.google.com/mail'. Host and path prefix only; no function split."
+        },
+        {
+          "child_id": "gmail-api",
+          "function": "Gmail API (any operation)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "www.googleapis.com"
+            ],
+            "http_method": null,
+            "path_pattern": "/gmail",
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://support.google.com/a/answer/9012184",
+          "citation_page_date": "2026-11-10",
+          "notes": "Allowlist row 'Gmail API: https://www.googleapis.com/gmail'. www.googleapis.com maps to google-base today, so the parent must come from the path, not the host (ENGINE-FIELD)."
+        },
+        {
+          "child_id": "gmail-api-uploading",
+          "function": "Gmail API media upload endpoint",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "www.googleapis.com"
+            ],
+            "http_method": null,
+            "path_pattern": "/upload/gmail",
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://support.google.com/a/answer/9012184",
+          "citation_page_date": "2026-11-10",
+          "notes": "Allowlist row 'https://www.googleapis.com/upload/gmail'. The page lists the URL only; which operations (send, insert, import) use it is in the Gmail API reference, which is SOURCE BLOCKED."
+        },
+        {
+          "child_id": "gmail-api-uploading-simple",
+          "function": "Gmail API media upload (simple and multipart)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "gmail.googleapis.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/upload/gmail/v1/users/{userId}/messages/send | /upload/gmail/v1/users/{userId}/drafts | /upload/gmail/v1/users/{userId}/drafts/send | /upload/gmail/v1/users/{userId}/messages | /upload/gmail/v1/users/{userId}/messages/import",
+            "content_type": "message/*",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+          "citation_page_date": "discovery revision 20261116",
+          "notes": "Gmail's official Discovery document: rootUrl https://gmail.googleapis.com/; mediaUpload.protocols.simple.path of users.messages.send, users.drafts.create, users.drafts.send, users.messages.insert and users.messages.import; accept ['message/*']; global parameter uploadType 'Legacy upload protocol for media (e.g. \"media\", \"multipart\")'. The uploadType value is a query parameter, not part of the path (PRO-510)."
+        },
+        {
+          "child_id": "gmail-api-uploading-resumable",
+          "function": "Gmail API resumable media upload",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "gmail.googleapis.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/resumable/upload/gmail/v1/users/{userId}/messages/send | /resumable/upload/gmail/v1/users/{userId}/drafts | /resumable/upload/gmail/v1/users/{userId}/drafts/send | /resumable/upload/gmail/v1/users/{userId}/messages | /resumable/upload/gmail/v1/users/{userId}/messages/import",
+            "content_type": "message/*",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+          "citation_page_date": "discovery revision 20261116",
+          "notes": "Same Discovery document: mediaUpload.protocols.resumable.path of the same five methods (multipart true). Only the protocol paths the document states are listed; the guide pages on developers.google.com stay blocked (blocked-urls row 45) (PRO-510)."
+        },
+        {
+          "child_id": "gmail-uploading",
+          "function": "attachment upload in the Gmail web UI",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: the web UI's attachment request is not described in any readable official page."
+        },
+        {
+          "child_id": "gmail-downloading",
+          "function": "attachment download in the Gmail web UI",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: not described in any readable official page."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://developers.google.com/workspace/gmail/api/guides/uploads",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "Outlook.com / Outlook on the web",
+      "parent_app_id": "outlook-web",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": "The documented paths are Microsoft Graph API calls (API clients, scripts, integrations). The first-party web and desktop clients' internal request paths are not documented; no rule may assume they match.",
+      "children": [
+        {
+          "child_id": "outlook-web-base",
+          "function": "Outlook on the web / Exchange Online",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "outlook.cloud.microsoft",
+              "outlook.office.com",
+              "outlook.office365.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://endpoints.office.com/endpoints/worldwide?clientrequestid=b10c5ed1-bad1-445f-b386-b919946339a7",
+          "citation_page_date": null,
+          "notes": "M365 endpoint web service id 1 (Exchange, Optimize, TCP 80/443, UDP 443). This is the work or school service; consumer outlook.live.com has no readable network page."
+        },
+        {
+          "child_id": "outlook-web-sending",
+          "function": "send mail (Graph)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.microsoft.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/me/sendMail | /users/{id}/sendMail",
+            "content_type": "application/json (or text/plain carrying base64 MIME)",
+            "direction": "upload",
+            "websocket": false,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/graph/api/user-sendmail?view=graph-rest-1.0",
+          "citation_page_date": "2024-06-21",
+          "notes": "Attachments may be inline in the JSON body. graph.microsoft.com maps to ms-base today."
+        },
+        {
+          "child_id": "outlook-web-uploading",
+          "function": "large attachment upload session",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.microsoft.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/v1.0/me/messages/{id}/attachments/createUploadSession | /v1.0/users/{id}/messages/{id}/attachments/createUploadSession",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/graph/api/attachment-createuploadsession?view=graph-rest-1.0",
+          "citation_page_date": "2024-04-04",
+          "notes": "The rule is the documented POST that opens the session (page: 'POST /me/messages/{id}/attachments/createUploadSession'; example request 'Content-type: application/json'). The bytes then go by PUT to the returned uploadUrl, which is opaque (examples on outlook.office.com/api/.../AttachmentSessions(...)): that host and path are not rule fields (PRO-507)."
+        },
+        {
+          "child_id": "outlook-web-downloading",
+          "function": "attachment download in the web UI",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: not described in any readable official page."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Google Drive",
+      "parent_app_id": "google-drive",
+      "separability": "host-only",
+      "not_separable": "Upload versus download cannot be told apart from the readable sources: they give hosts only.",
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "google-drive-base",
+          "function": "Drive web and Drive for desktop",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "drive.google.com",
+              "*.drive.google.com",
+              "googledrive.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://knowledge.workspace.google.com/admin/drive/drive-and-sites-firewall-and-proxy-settings?hl=en",
+          "citation_page_date": "2026-11-10",
+          "notes": "Firewall list for Drive, Docs editors and Sites. The page gives no per-host function."
+        },
+        {
+          "child_id": "google-drive-content",
+          "function": "Drive user-content hosts",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "drive.usercontent.google.com",
+              "drive-data-export.usercontent.google.com",
+              "drive-data-export-eu.usercontent.google.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://knowledge.workspace.google.com/admin/drive/drive-and-sites-firewall-and-proxy-settings?hl=en",
+          "citation_page_date": "2026-11-10",
+          "notes": "Hosts verified as Drive hosts; the page does not say they carry downloads or exports, so no direction is set (the host names suggest it: UNVERIFIED)."
+        },
+        {
+          "child_id": "google-drive-uploading",
+          "function": "file upload",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: the Drive API upload guide is SOURCE BLOCKED; the web UI's upload path is undocumented."
+        },
+        {
+          "child_id": "google-drive-downloading",
+          "function": "file download",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no readable page ties a host or path to downloads."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://developers.google.com/workspace/drive/api/guides/manage-uploads",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "Google Docs",
+      "parent_app_id": "google-drive",
+      "separability": "host-only",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "google-docs-base",
+          "function": "Docs, Sheets and Slides editors",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "docs.google.com",
+              "*.docs.google.com",
+              "*.c.docs.google.com",
+              "sheets.google.com",
+              "slides.google.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://knowledge.workspace.google.com/admin/drive/drive-and-sites-firewall-and-proxy-settings?hl=en",
+          "citation_page_date": "2026-11-10",
+          "notes": "Docs editors have no app id of their own: docs.google.com is a google-drive domain in the pack. Proposed as a child of google-drive. Re-read 2026-11-27 (PRO-507): the page lists 'docs.google.com:443/HTTPS', '*.docs.google.com:443/HTTPS', '*.c.docs.google.com:443/HTTPS', 'sheets.google.com:443/HTTPS', 'slides.google.com:443/HTTPS' for 'Google Drive, Google Docs editors, and Google Sites' (page 'Last updated 2026-11-10 UTC')."
+        },
+        {
+          "child_id": "google-docs-editing",
+          "function": "document editing",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: editor sync requests are undocumented."
+        },
+        {
+          "child_id": "google-docs-downloading",
+          "function": "export or download a document",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: the export endpoint is in the Drive API reference, SOURCE BLOCKED."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://developers.google.com/workspace/drive/api/guides/manage-downloads",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "OneDrive",
+      "parent_app_id": "ms-onedrive",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": "The documented paths are Microsoft Graph API calls (API clients, scripts, integrations). The first-party web and desktop clients' internal request paths are not documented; no rule may assume they match.",
+      "children": [
+        {
+          "child_id": "ms-onedrive-base",
+          "function": "OneDrive consumer web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: the pack's consumer hosts (onedrive.live.com) are not in any page read today; the work or school service is SharePoint (sharepoint-online, M365 id 31)."
+        },
+        {
+          "child_id": "ms-onedrive-uploading",
+          "function": "simple upload (< 250 MB)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.microsoft.com"
+            ],
+            "http_method": "PUT",
+            "path_pattern": "/me/drive/items/{parent-id}:/{filename}:/content | /drives/{drive-id}/items/{item-id}/content (also /groups, /sites, /users)",
+            "content_type": "text/plain (example); any file type",
+            "direction": "upload",
+            "websocket": false,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/graph/api/driveitem-put-content?view=graph-rest-1.0",
+          "citation_page_date": "2017-09-10",
+          "notes": ""
+        },
+        {
+          "child_id": "ms-onedrive-uploading-session",
+          "function": "resumable upload session",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.microsoft.com",
+              "*.up.1drv.com (example: sn3302.up.1drv.com)"
+            ],
+            "http_method": "POST then PUT",
+            "path_pattern": "POST .../items/{parentItemId}:/{fileName}:/createUploadSession; then PUT byte ranges with Content-Range to the returned uploadUrl (example path /up/...)",
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/graph/api/driveitem-createuploadsession?view=graph-rest-1.0",
+          "citation_page_date": "2025-10-15",
+          "notes": "The uploadUrl carries its own auth; the PUT has no Authorization header. Example host maps to ms-onedrive today."
+        },
+        {
+          "child_id": "ms-onedrive-downloading",
+          "function": "file download",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.microsoft.com"
+            ],
+            "http_method": "GET",
+            "path_pattern": "/me/drive/items/{item-id}/content | /me/drive/root:/{item-path}:/content | /shares/{shareId}/driveItem/content",
+            "content_type": null,
+            "direction": "download",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/graph/api/driveitem-get-content?view=graph-rest-1.0",
+          "citation_page_date": "2024-06-12",
+          "notes": "Returns 302 to a preauthenticated download URL whose host the page does not fix: the download bytes themselves come from that redirect target."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Dropbox",
+      "parent_app_id": "dropbox",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "dropbox-base",
+          "function": "Dropbox web",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "www.dropbox.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://help.dropbox.com/security/official-domains",
+          "citation_page_date": "2025-07-21",
+          "notes": "'Most of the things you do with Dropbox online happen on www.dropbox.com.'"
+        },
+        {
+          "child_id": "dropbox-downloading",
+          "function": "user content (shared links)",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "dl.dropboxusercontent.com",
+              "dl-{eu,au,jp,uk}.dropboxusercontent.com",
+              "dl.dropbox.com",
+              "dl-web.dropbox.com",
+              "dl-client.dropbox.com",
+              "dl-doc.dropbox.com",
+              "dl-doc.dropboxusercontent.com",
+              "api-content.dropbox.com",
+              "content.dropboxapi.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": "download",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://help.dropbox.com/security/official-domains",
+          "citation_page_date": "2025-07-21",
+          "notes": "'URLs used to host user data ... when they create links to their folders and files'. The page lists content.dropboxapi.com in the same group; whether it carries uploads too is in the API docs (SOURCE BLOCKED), so direction 'download' is set for the shared-link hosts only and Engine should not apply it to content.dropboxapi.com without that source."
+        },
+        {
+          "child_id": "dropbox-uploading",
+          "function": "file upload",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: the Dropbox HTTP API reference is SOURCE BLOCKED."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://www.dropbox.com/developers/documentation/http/documentation",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "Box",
+      "parent_app_id": "box",
+      "separability": "partial",
+      "not_separable": "Sharing (create a shared link) is PUT /2.0/files/{file_id} with a shared_link body (put_files_id#add_shared_link); the same method and path rename or move a file, so only the body separates it.",
+      "web_ui_note": "Rules come from Box's official OpenAPI spec (API clients); the box.com web UI's request paths are not published.",
+      "children": [
+        {
+          "child_id": "box-base",
+          "function": "Box web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: Box firewall article returned HTTP 403."
+        },
+        {
+          "child_id": "box-uploading",
+          "function": "file upload",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "upload.box.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/api/2.0/files/content | /api/2.0/files/{file_id}/content",
+            "content_type": "multipart/form-data",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+          "citation_page_date": "info.version 2024.0",
+          "notes": "Box's official OpenAPI spec (Apache-2.0): post_files_content and post_files_id_content, servers https://upload.box.com/api/2.0, requestBody multipart/form-data."
+        },
+        {
+          "child_id": "box-downloading",
+          "function": "file download",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.box.com"
+            ],
+            "http_method": "GET",
+            "path_pattern": "/2.0/files/{file_id}/content",
+            "content_type": null,
+            "direction": "download",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+          "citation_page_date": "info.version 2024.0",
+          "notes": "get_files_id_content on https://api.box.com/2.0; response 302: 'Location header for the file on dl.boxcloud.com', which 'is not persistent' (dl.boxcloud.com is under boxcloud.com, already in app_domains[box])."
+        },
+        {
+          "child_id": "box-uploading-session",
+          "function": "chunked upload session",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "upload.box.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/api/2.0/files/upload_sessions | /api/2.0/files/{file_id}/upload_sessions",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+          "citation_page_date": "info.version 2024.0",
+          "notes": "post_files_upload_sessions and post_files_id_upload_sessions on https://upload.box.com/api/2.0. The parts then go by PUT, application/octet-stream, to https://{box-upload-server}/api/2.0/files/upload_sessions/{id}: a server variable, so that host is not listed."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://support.box.com/hc/en-us/articles/33552262497683-Configuring-A-Firewall-For-Box-Applications-and-Services",
+          "status": "SOURCE BLOCKED",
+          "reason": "HTTP 403 from the vendor's help centre (bot protection), not bypassed"
+        },
+        {
+          "url": "https://developer.box.com/reference/post-files-content/",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "WeTransfer",
+      "parent_app_id": "wetransfer",
+      "separability": "host-only",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "wetransfer-base",
+          "function": "WeTransfer web",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "wetransfer.com",
+              "www.wetransfer.com",
+              "auth.wetransfer.com",
+              "auth-web.wetransfer.com",
+              "portals.wetransfer.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": "HTTPS 443 and QUIC (HTTP/3, UDP)"
+          },
+          "citation_url": "https://wetransfer.com/help-center/troubleshooting/configure-firewall",
+          "citation_page_date": "2026-10-22",
+          "notes": "'Core WeTransfer domains'. QUIC is not on the Phase 1 observed path."
+        },
+        {
+          "child_id": "wetransfer-file-transfer",
+          "function": "transfer storage (Amazon S3)",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "wt-prod-euwest1-storm.s3.amazonaws.com",
+              "wt-prod-euwest1-storm.s3-accelerate.amazonaws.com",
+              "wt-prod-euwest1-storm.s3.eu-west-1.amazonaws.com",
+              "wt-prod-useast1-storm.s3.amazonaws.com",
+              "wt-prod-useast1-storm.s3-accelerate.amazonaws.com",
+              "wt-prod-useast1-storm.s3.us-east-1.amazonaws.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://wetransfer.com/help-center/troubleshooting/configure-firewall",
+          "citation_page_date": "2026-10-22",
+          "notes": "'Amazon S3 storage' group. The page does not say upload or download, so direction is unset. The same group lists generic s3.amazonaws.com names, which are shared cloud hosting and must not name WeTransfer."
+        },
+        {
+          "child_id": "wetransfer-uploading",
+          "function": "upload versus download split",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no readable page says which requests upload."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Slack",
+      "parent_app_id": "slack",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "slack-base",
+          "function": "Slack web and desktop",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "slack.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://slack.com/help/articles/360024821873-Approve-Slack-workspaces-for-your-network",
+          "citation_page_date": null,
+          "notes": "'IT administrators can configure an on-premises or cloud-based proxy server to intercept traffic to slack.com'. Re-cited (PRO-507): the earlier article named slack.com only in a help-centre link. Its WebSocket hosts wss-primary, wss-backup and wss-mobile.slack.com are under slack.com; the full allowlist is workspace-specific (my.slack.com/help/urls)."
+        },
+        {
+          "child_id": "slack-messaging",
+          "function": "real-time messaging (Flannel WebSocket)",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "wss-primary.slack.com",
+              "wss-backup.slack.com",
+              "wss-mobile.slack.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": true,
+            "transport": "WebSocket over TCP 443"
+          },
+          "citation_url": "https://slack.com/help/articles/360001603387-Manage-Slack-connection-issues",
+          "citation_page_date": null,
+          "notes": "'Slack uses WebSockets over port 443'; a decrypting proxy must support WebSockets or exempt these three names."
+        },
+        {
+          "child_id": "slack-uploading",
+          "function": "file upload",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: Slack Web API docs (files.*) not readable."
+        },
+        {
+          "child_id": "slack-downloading",
+          "function": "file download",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: not described in any readable official page."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://docs.slack.dev/reference/methods/files.getUploadURLExternal",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        },
+        {
+          "url": "https://my.slack.com/help/urls",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27); also workspace-specific"
+        }
+      ]
+    },
+    {
+      "service": "Microsoft Teams",
+      "parent_app_id": "ms-teams",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": "The documented paths are Microsoft Graph API calls (API clients, scripts, integrations). The first-party web and desktop clients' internal request paths are not documented; no rule may assume they match.",
+      "children": [
+        {
+          "child_id": "ms-teams-base",
+          "function": "Teams web and desktop",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "teams.microsoft.com",
+              "*.teams.microsoft.com",
+              "teams.cloud.microsoft",
+              "*.teams.cloud.microsoft",
+              "*.lync.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://endpoints.office.com/endpoints/worldwide?clientrequestid=b10c5ed1-bad1-445f-b386-b919946339a7",
+          "citation_page_date": null,
+          "notes": "M365 endpoint web service id 12 (Skype/Teams, Allow, TCP 80/443, UDP 443)."
+        },
+        {
+          "child_id": "ms-teams-voice-video",
+          "function": "real-time media",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": "UDP 3478-3481 (VDI also UDP 49152-53247)"
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/microsoftteams/prepare-network",
+          "citation_page_date": "2026-10-28",
+          "notes": "'Teams media prefers UDP ports 3478-3481' (also M365 id 11, IP ranges only, no names). Not an HTTP signal: invisible to an HTTP proxy rule and off the Phase 1 path."
+        },
+        {
+          "child_id": "ms-teams-posting",
+          "function": "send chat or channel message (Graph)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.microsoft.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/chats/{chat-id}/messages | /teams/{team-id}/channels/{channel-id}/messages",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": false,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/graph/api/chat-post-messages?view=graph-rest-1.0",
+          "citation_page_date": "2024-04-04",
+          "notes": "Channel path from channel-post-messages (same date). Graph API only."
+        },
+        {
+          "child_id": "ms-teams-file-transfer",
+          "function": "file sharing in chats",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no readable page ties Teams file sharing to a host or path."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Zoom",
+      "parent_app_id": "zoom",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "zoom-base",
+          "function": "Zoom web and client signalling",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "*.zoom.us"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": "TCP 80, 443; UDP 443"
+          },
+          "citation_url": "https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0060548",
+          "citation_page_date": null,
+          "notes": "'User's web browser ... *.zoom.us'."
+        },
+        {
+          "child_id": "zoom-voice-video",
+          "function": "meeting media",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": "TCP 443, 8801, 8802; UDP 3478, 3479, 8801-8810"
+          },
+          "citation_url": "https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0060548",
+          "citation_page_date": null,
+          "notes": "'Firewall rules for Zoom Meetings and Webinars'. Port-based, not an HTTP signal; UDP is off the Phase 1 path."
+        },
+        {
+          "child_id": "zoom-file-transfer",
+          "function": "in-meeting file transfer",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: not described in the readable page."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "WhatsApp Web",
+      "parent_app_id": "whatsapp",
+      "separability": "blocked",
+      "not_separable": "Expected not separable (message and media payloads end-to-end encrypted), but the WhatsApp security FAQ could not be read: UNVERIFIED until a source is relayed.",
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "whatsapp-base",
+          "function": "WhatsApp Web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: the FAQ pages render empty."
+        },
+        {
+          "child_id": "whatsapp-file-transfer",
+          "function": "media and file send",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no readable source."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://faq.whatsapp.com/1299035810920553",
+          "status": "SOURCE BLOCKED",
+          "reason": "page renders empty in curl and headless Chromium (JavaScript-only), not paraphrased"
+        },
+        {
+          "url": "https://faq.whatsapp.com/820124435853543",
+          "status": "SOURCE BLOCKED",
+          "reason": "page renders empty in curl and headless Chromium (JavaScript-only), not paraphrased"
+        }
+      ]
+    },
+    {
+      "service": "Telegram Web",
+      "parent_app_id": "telegram",
+      "separability": "not-separable",
+      "not_separable": "All functions travel as MTProto inside one encrypted, obfuscated stream (core.telegram.org/mtproto/transports; secret chats are end-to-end encrypted, core.telegram.org/api/end-to-end). Only the base child is separable.",
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "telegram-web-base",
+          "function": "Telegram Web MTProto transport",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "(name)(-1).web.telegram.org"
+            ],
+            "http_method": null,
+            "path_pattern": "/api(w)(s)(_test)",
+            "content_type": null,
+            "direction": null,
+            "websocket": true,
+            "transport": "WebSocket (Sec-WebSocket-Protocol: binary) or HTTP"
+          },
+          "citation_url": "https://core.telegram.org/mtproto/transports",
+          "citation_page_date": null,
+          "notes": "'http://(name)(-1).web.telegram.org:80/api(w)(s)'; w = CORS for browsers, s = WebSocket API. Payloads are MTProto encrypted containers and WebSocket transport obfuscation is required."
+        },
+        {
+          "child_id": "telegram-file-transfer",
+          "function": "file upload/download",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: upload.saveFilePart / upload.getFile are MTProto RPCs inside the encrypted stream (core.telegram.org/api/files): not visible to a proxy."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Discord",
+      "parent_app_id": "discord",
+      "separability": "partial",
+      "not_separable": "Voice and video: UDP media to a server named at run time, end-to-end encrypted (DAVE). See discord-voice-video.",
+      "web_ui_note": "Rules are Discord's documented API (bots, webhooks); the discord.com client's own requests are not documented.",
+      "children": [
+        {
+          "child_id": "discord-base",
+          "function": "Discord web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: support article returned 403."
+        },
+        {
+          "child_id": "discord-voice-video",
+          "function": "voice and video",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "Not separable by HTTP signals: 'a separate UDP-based connection for voice data', and DMs, voice channels and Go Live are moving to end-to-end encryption (DAVE) (https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/topics/voice-connections.mdx). Kept unverified: no host is published."
+        },
+        {
+          "child_id": "discord-uploading",
+          "function": "attachment upload",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "discord.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/api/v10/channels/{channel_id}/messages | /api/v10/webhooks/{webhook_id}/{webhook_token}",
+            "content_type": "multipart/form-data",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx",
+          "citation_page_date": null,
+          "citation_also": [
+            "https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json"
+          ],
+          "notes": "Official developer docs source: base URL 'https://discord.com/api', version in the path 'https://discord.com/api/v{version_number}'; 'Endpoints that support file uploads use a multipart/form-data request body'. Same path as discord-posting: the content type separates the upload."
+        },
+        {
+          "child_id": "discord-posting",
+          "function": "message post",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "discord.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/api/v10/channels/{channel_id}/messages | /api/v10/webhooks/{webhook_id}/{webhook_token}",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json",
+          "citation_page_date": "spec version 10",
+          "notes": "Discord's official OpenAPI spec (MIT): servers https://discord.com/api/v10; create_message and execute_webhook accept application/json, application/x-www-form-urlencoded or multipart/form-data. The webhook token is a credential: match the shape, never log it."
+        },
+        {
+          "child_id": "discord-downloading",
+          "function": "attachment download",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "cdn.discordapp.com"
+            ],
+            "http_method": "GET",
+            "path_pattern": "/attachments/",
+            "content_type": null,
+            "direction": "download",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx",
+          "citation_page_date": null,
+          "notes": "Same page: CDN base 'https://cdn.discordapp.com/' and the example 'https://cdn.discordapp.com/attachments/<channel>/<attachment>/my_image.png?ex=...'. The query (ex, is, hm) is a signed token: never logged."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://support.discord.com/hc/en-us/articles/115001310031",
+          "status": "SOURCE BLOCKED",
+          "reason": "HTTP 403 from the vendor's help centre (bot protection), not bypassed"
+        },
+        {
+          "url": "https://discord.com/developers/docs/reference#uploading-files",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "Facebook",
+      "parent_app_id": "facebook",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": "Web UI paths on www.facebook.com are undocumented; the documented signals are Graph API calls.",
+      "children": [
+        {
+          "child_id": "facebook-base",
+          "function": "Facebook web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no readable official network page for facebook.com."
+        },
+        {
+          "child_id": "facebook-posting",
+          "function": "photo post (Graph API)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.facebook.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/{version}/{page-id}/photos",
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://developers.secure.facebook.com/docs/graph-api/reference/page/photos/",
+          "citation_page_date": null,
+          "notes": "Graph API (Pages), not the facebook.com web UI."
+        },
+        {
+          "child_id": "facebook-uploading",
+          "function": "resumable upload (Graph API)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.facebook.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/{version}/upload:<UPLOAD_SESSION_ID>",
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://developers.secure.facebook.com/docs/graph-api/guides/upload/",
+          "citation_page_date": null,
+          "notes": "GET on the same path reads the session status."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Instagram",
+      "parent_app_id": "instagram",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": "Web UI paths on www.instagram.com are undocumented.",
+      "children": [
+        {
+          "child_id": "instagram-base",
+          "function": "Instagram web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no readable official network page for instagram.com."
+        },
+        {
+          "child_id": "instagram-posting",
+          "function": "content publishing (Graph API)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "graph.instagram.com",
+              "graph.facebook.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/{version}/{IG_ID}/media | /{version}/{IG_ID}/media_publish",
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://developers.secure.facebook.com/docs/instagram-platform/content-publishing/",
+          "citation_page_date": null,
+          "notes": "graph.facebook.com maps to the facebook parent today: the parent must come from the path."
+        },
+        {
+          "child_id": "instagram-uploading",
+          "function": "resumable video upload",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "rupload.facebook.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/ig-api-upload/{version}/{container-id}",
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://developers.secure.facebook.com/docs/instagram-platform/content-publishing/",
+          "citation_page_date": null,
+          "notes": "rupload.facebook.com maps to facebook today (ENGINE-FIELD)."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "X / Twitter",
+      "parent_app_id": "twitter",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": "Rules are the X API v2 as its official SDK calls it; x.com's web client paths are not published.",
+      "children": [
+        {
+          "child_id": "twitter-base",
+          "function": "X web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: developer.x.com not readable."
+        },
+        {
+          "child_id": "twitter-posting",
+          "function": "post",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.x.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/2/tweets",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/client.py",
+          "citation_page_date": null,
+          "citation_also": [
+            "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/posts/client.py"
+          ],
+          "notes": "X's official SDK (xdevplatform/xdk-python, MIT): client.py 'base_url: str = \"https://api.x.com\"'; posts/client.py create: base_url + \"/2/tweets\", Content-Type application/json, session.post."
+        },
+        {
+          "child_id": "twitter-uploading",
+          "function": "media upload",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.x.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/2/media/upload/initialize | /2/media/upload/{id}/append | /2/media/upload/{id}/finalize",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/client.py",
+          "citation_page_date": null,
+          "citation_also": [
+            "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/media/client.py"
+          ],
+          "notes": "Host from client.py base_url; paths from media/client.py (initialize_upload, append_upload, finalize_upload: base_url + \"/2/media/upload/...\", Content-Type application/json, session.post). docs.x.com was not readable, so a multipart variant is not ruled out."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://docs.x.com/x-api/media/upload-media",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "LinkedIn",
+      "parent_app_id": "linkedin",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "linkedin-base",
+          "function": "LinkedIn web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no readable network page for www.linkedin.com."
+        },
+        {
+          "child_id": "linkedin-posting",
+          "function": "create post (Posts API)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.linkedin.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/rest/posts",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api",
+          "citation_page_date": "2026-05-07",
+          "notes": ""
+        },
+        {
+          "child_id": "linkedin-uploading",
+          "function": "image or video upload",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.linkedin.com",
+              "www.linkedin.com"
+            ],
+            "http_method": "POST then PUT",
+            "path_pattern": "POST /rest/images?action=initializeUpload (videos: /rest/videos?action=initializeUpload, finalizeUpload); then PUT /dms-uploads/... on www.linkedin.com",
+            "content_type": "application/octet-stream (PUT)",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api",
+          "citation_page_date": "2026-06-19",
+          "notes": "Video flow from the Videos API page. /dms-uploads/ on www.linkedin.com is the only documented upload path on the web host."
+        },
+        {
+          "child_id": "linkedin-messaging",
+          "function": "send message (Messages API)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.linkedin.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/v2/messages",
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/linkedin/shared/integrations/communications/messages",
+          "citation_page_date": "2019-11-20",
+          "notes": "Page dated 2019-11-20 and partner-restricted; may be stale."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "YouTube",
+      "parent_app_id": "youtube",
+      "separability": "host-only",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "youtube-base",
+          "function": "YouTube web and API hosts",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "www.youtube.com",
+              "m.youtube.com",
+              "youtubei.googleapis.com",
+              "youtube.googleapis.com",
+              "www.youtube-nocookie.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://support.google.com/a/answer/6214622",
+          "citation_page_date": null,
+          "notes": "Restricted Mode page. youtubei.googleapis.com and youtube.googleapis.com map to google-base today (NAME-BASED candidate for Engine). The YouTube-Restrict header is an enforcement control, not an identity signal."
+        },
+        {
+          "child_id": "youtube-uploading",
+          "function": "video upload",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: YouTube Data API upload docs not readable."
+        },
+        {
+          "child_id": "youtube-posting",
+          "function": "comments and posts",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: not readable."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://developers.google.com/youtube/v3/guides/uploading_a_video",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "ChatGPT",
+      "parent_app_id": "openai-chatgpt",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "openai-chatgpt-base",
+          "function": "ChatGPT web",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "chatgpt.com",
+              "*.chatgpt.com",
+              "chat.openai.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps",
+          "citation_page_date": null,
+          "notes": "Allowlist on the same page also lists third-party names (workos, intercom, sentry, stripe): those are dependencies and must not name ChatGPT."
+        },
+        {
+          "child_id": "openai-chatgpt-messaging",
+          "function": "conversation updates (WebSocket)",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "ws.chatgpt.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": true,
+            "transport": "WebSocket over TCP 443"
+          },
+          "citation_url": "https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps",
+          "citation_page_date": null,
+          "notes": "'ChatGPT wss://ws.chatgpt.com Conversation updates and notifications'. Codex also uses wss://chatgpt.com/ (same host as base)."
+        },
+        {
+          "child_id": "openai-chatgpt-uploading",
+          "function": "file upload",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "*.oaiusercontent.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps",
+          "citation_page_date": null,
+          "notes": "'They may need to allow access to *.oaiusercontent.com for uploads to work.' Method and path are not documented."
+        },
+        {
+          "child_id": "openai-chatgpt-voice",
+          "function": "ChatGPT Voice",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": "UDP 3478 to the IP ranges in openai.com/chatgpt-voice.json; TCP 443 fallback"
+          },
+          "citation_url": "https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps",
+          "citation_page_date": null,
+          "notes": "Not an HTTP signal; off the Phase 1 path."
+        },
+        {
+          "child_id": "openai-platform-uploading",
+          "function": "API file upload (parent openai-platform)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.openai.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/v1/files",
+            "content_type": "multipart/form-data (the official example uses curl -F)",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://platform.openai.com/docs/api-reference/files/create",
+          "citation_page_date": null,
+          "notes": "api.openai.com is openai-platform in the pack, not openai-chatgpt: this child belongs under openai-platform."
+        },
+        {
+          "child_id": "openai-platform-realtime",
+          "function": "Realtime API (parent openai-platform)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.openai.com"
+            ],
+            "http_method": null,
+            "path_pattern": "/v1/realtime",
+            "content_type": null,
+            "direction": null,
+            "websocket": true,
+            "transport": null
+          },
+          "citation_url": "https://platform.openai.com/docs/guides/realtime-websocket",
+          "citation_page_date": null,
+          "notes": ""
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Claude",
+      "parent_app_id": "anthropic-claude",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "anthropic-claude-base",
+          "function": "claude.ai web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no readable official page lists claude.ai request hosts or paths; see research/apps/anthropic-claude.md."
+        },
+        {
+          "child_id": "anthropic-claude-uploading",
+          "function": "file upload in claude.ai",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: undocumented web UI path."
+        },
+        {
+          "child_id": "anthropic-api-uploading",
+          "function": "Files API upload (parent anthropic-api)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.anthropic.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/v1/files",
+            "content_type": "multipart/form-data (the official example uses curl -F file=@...)",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://platform.claude.com/docs/en/build-with-claude/files",
+          "citation_page_date": null,
+          "notes": "api.anthropic.com is anthropic-api in the pack."
+        },
+        {
+          "child_id": "anthropic-api-downloading",
+          "function": "Files API download (parent anthropic-api)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.anthropic.com"
+            ],
+            "http_method": "GET",
+            "path_pattern": "/v1/files/{file_id}/content",
+            "content_type": null,
+            "direction": "download",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://platform.claude.com/docs/en/build-with-claude/files",
+          "citation_page_date": null,
+          "notes": ""
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Gemini",
+      "parent_app_id": "google-gemini",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "google-gemini-base",
+          "function": "Gemini app",
+          "verified": true,
+          "surface": null,
+          "signals": {
+            "host_sni": [
+              "gemini.google.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://support.google.com/a/answer/9012184",
+          "citation_page_date": "2026-11-10",
+          "notes": "Allowlist group 'Generative AI': 'https://gemini.google.com'. surface left null: the allowlist page names the host but not which client uses it (PRO-507)."
+        },
+        {
+          "child_id": "google-gemini-uploading",
+          "function": "file upload in the Gemini app",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: undocumented web UI path."
+        },
+        {
+          "child_id": "google-gemini-api-uploading",
+          "function": "Gemini API file upload (no pack parent)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "generativelanguage.googleapis.com"
+            ],
+            "http_method": "POST (the official example uses curl -d)",
+            "path_pattern": "/upload/v1beta/files",
+            "content_type": "application/json (start request)",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://ai.google.dev/gemini-api/docs/files",
+          "citation_page_date": null,
+          "notes": "Resumable: X-Goog-Upload-Protocol: resumable, X-Goog-Upload-Command: start, then 'upload, finalize'. Host maps to google-base today; no Gemini API app id exists in the pack."
+        },
+        {
+          "child_id": "google-gemini-api-live",
+          "function": "Gemini Live API (no pack parent)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": true,
+            "transport": null
+          },
+          "citation_url": "https://ai.google.dev/gemini-api/docs/live",
+          "citation_page_date": null,
+          "notes": "'Stateful WebSocket connection (WSS)'; the page read does not give the endpoint host or path, so those stay empty."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Microsoft Copilot",
+      "parent_app_id": "ms-copilot",
+      "separability": "host-only",
+      "not_separable": "Per-feature traffic (chat, upload, plugins) is not published by Microsoft.",
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "ms-copilot-base",
+          "function": "Microsoft 365 Copilot (WebSocket)",
+          "verified": true,
+          "surface": "web",
+          "signals": {
+            "host_sni": [
+              "copilot.cloud.microsoft",
+              "*.cloud.microsoft",
+              "*.office.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": true,
+            "transport": null
+          },
+          "citation_url": "https://learn.microsoft.com/en-us/copilot/microsoft-365/microsoft-365-copilot-requirements",
+          "citation_page_date": "2026-11-04",
+          "notes": "'Verify full WebSocket Secure (WSS) connectivity ... to these domains'. Only copilot.cloud.microsoft is Copilot-specific; the wildcards are shared M365 names and must not name Copilot. Microsoft states it does not publish per-feature names."
+        },
+        {
+          "child_id": "ms-copilot-uploading",
+          "function": "file upload to Copilot",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: Microsoft: 'don't provide a fixed list of individual fully qualified domain names for every Copilot feature and scenario'."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "GitHub",
+      "parent_app_id": "github",
+      "separability": "partial",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "github-base",
+          "function": "github.com web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: the allowlist page read lists no service hosts in text."
+        },
+        {
+          "child_id": "github-git-transport",
+          "function": "git over HTTPS",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": [
+              "github.com"
+            ],
+            "http_method": null,
+            "path_pattern": "/{owner}/{repo}.git",
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://docs.github.com/en/get-started/git-basics/about-remote-repositories",
+          "citation_page_date": null,
+          "notes": "'An HTTPS URL like https://github.com/user/repo.git'. Push versus fetch service paths are git protocol facts not on this page: UNVERIFIED here (see research/protocol for git)."
+        },
+        {
+          "child_id": "github-uploading",
+          "function": "write file (contents API)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.github.com"
+            ],
+            "http_method": "PUT",
+            "path_pattern": "/repos/{owner}/{repo}/contents/{path}",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://docs.github.com/en/rest/repos/contents",
+          "citation_page_date": null,
+          "notes": ""
+        },
+        {
+          "child_id": "github-downloading",
+          "function": "read file or archive",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.github.com"
+            ],
+            "http_method": "GET",
+            "path_pattern": "/repos/{owner}/{repo}/contents/{path} | /repos/{owner}/{repo}/tarball/{ref} | /repos/{owner}/{repo}/zipball/{ref}",
+            "content_type": null,
+            "direction": "download",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://docs.github.com/en/rest/repos/contents",
+          "citation_page_date": null,
+          "notes": "tarball/zipball paths listed on the same contents page."
+        },
+        {
+          "child_id": "github-release-uploading",
+          "function": "release asset upload",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "uploads.github.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/repos/{owner}/{repo}/releases/{release_id}/assets?name=",
+            "content_type": null,
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://docs.github.com/en/rest/releases/assets",
+          "citation_page_date": null,
+          "notes": "Content type left null: the page says 'Use the required Content-Type header to provide the media type of the asset'; application/octet-stream appears only in its curl example (PRO-507)."
+        },
+        {
+          "child_id": "github-posting",
+          "function": "create gist",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "api.github.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/gists",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://docs.github.com/en/rest/gists/gists",
+          "citation_page_date": null,
+          "notes": "Gists are a common paste-style exfiltration path."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Pastebin",
+      "parent_app_id": "pastebin",
+      "separability": "blocked",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "pastebin-base",
+          "function": "pastebin.com",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: pastebin.com not readable."
+        },
+        {
+          "child_id": "pastebin-posting",
+          "function": "create paste",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: pastebin.com/doc_api not readable."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://pastebin.com/doc_api",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "iCloud",
+      "parent_app_id": "icloud",
+      "separability": "not-separable",
+      "not_separable": "Upload and download are not separable by published signals. With Advanced Data Protection, 'your trusted devices retain sole access to the encryption keys for the majority of your iCloud data' (support.apple.com/en-us/102651), so content is opaque even to a decrypting proxy.",
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "icloud-base",
+          "function": "iCloud services",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": [
+              "*.icloud.com",
+              "*.icloud.apple.com",
+              "*.apple-cloudkit.com",
+              "*.apple-livephotoskit.com",
+              "*.icloud-content.com",
+              "*.gc.apple.com",
+              "*.cdn-apple.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": "TCP 443 (*.icloud-content.com also UDP 443)"
+          },
+          "citation_url": "https://support.apple.com/en-us/101555",
+          "citation_page_date": null,
+          "notes": "'iCloud' table. *.cdn-apple.com and *.gc.apple.com are shared Apple names; Engine should not move them to icloud without a further source."
+        },
+        {
+          "child_id": "icloud-iwork",
+          "function": "iWork documents",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": [
+              "*.iwork.apple.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://support.apple.com/en-us/101555",
+          "citation_page_date": null,
+          "notes": "'*.iwork.apple.com 443 TCP ... iWork documents'."
+        },
+        {
+          "child_id": "icloud-file-transfer",
+          "function": "iCloud Drive / Photos upload or download",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: no published host or path split."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Mega",
+      "parent_app_id": "mega",
+      "separability": "not-separable",
+      "not_separable": "Every client command is a request to the API host's /cs endpoint with the command in the JSON body, transfer hosts are returned at run time, and file data is encrypted on the client: 'User Controlled Encryption (UCE), and it happens automatically'; encrypter.js is 'used ... to encrypt data while uploading' (https://raw.githubusercontent.com/meganz/webclient/master/README.md). No host, method or path separates upload, download or sharing.",
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "mega-base",
+          "function": "mega.nz web",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: mega.io / mega.nz not readable."
+        },
+        {
+          "child_id": "mega-file-transfer",
+          "function": "upload and download",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED as a rule: not separable (see the service's not_separable, now cited)."
+        },
+        {
+          "child_id": "mega-api",
+          "function": "Mega API (any operation)",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": [
+              "g.api.mega.co.nz"
+            ],
+            "http_method": null,
+            "path_pattern": "/cs",
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/meganz/sdk/master/src/megaclient.cpp",
+          "citation_page_date": null,
+          "notes": "Mega's official SDK (meganz/sdk): g_APIURL_default = \"https://g.api.mega.co.nz/\"; requests go to posturl.append(\"cs?id=\"). The command (upload, download, share) is inside the JSON body, so this child names the API, not a function."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://mega.io/developers",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    },
+    {
+      "service": "TeamViewer",
+      "parent_app_id": "teamviewer",
+      "separability": "not-separable",
+      "not_separable": "File transfer, remote control and chat share one session over an unpublished protocol: only the remote-control/base child is separable.",
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "teamviewer-remote-control",
+          "function": "remote session",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": [
+              "master*.teamviewer.com",
+              "router*.teamviewer.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": "TCP/UDP 5938 (primary); TCP 443 if 5938 is blocked; TCP 80 as last resort"
+          },
+          "citation_url": "https://www.teamviewer.com/en/global/support/knowledge-base/teamviewer-remote/troubleshooting/ports-used-by-teamviewer/",
+          "citation_page_date": null,
+          "notes": "Port 5938 protocol is unpublished (research/apps/teamviewer.md)."
+        },
+        {
+          "child_id": "teamviewer-file-transfer",
+          "function": "file transfer in a session",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: inside the unpublished session protocol."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "AnyDesk",
+      "parent_app_id": "anydesk",
+      "separability": "not-separable",
+      "not_separable": "Session functions are inside AnyDesk's own TLS session, which the vendor says must not be inspected.",
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "anydesk-remote-control",
+          "function": "remote session",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": [
+              "*.net.anydesk.com"
+            ],
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": "TCP 80, 443, 6568"
+          },
+          "citation_url": "https://support.anydesk.com/firewall",
+          "citation_page_date": "2026-01-21",
+          "notes": "AnyDesk asks for HTTPS scanning and DPI to be excluded because they 'disrupt AnyDesk's TLS encryption': a decrypting proxy should bypass, so only SNI is observable. Re-verified 2026-11-27 (PRO-507): the old URL support.anydesk.com/knowledge/firewall answers 301 to this page ('Configure firewalls for AnyDesk', 'Updated on Jan 21, 2026'), which states '*.net.anydesk.com' and 'TCP ports: 80, 443, and 6568'."
+        },
+        {
+          "child_id": "anydesk-file-transfer",
+          "function": "file transfer in a session",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: inside the session protocol."
+        }
+      ],
+      "sources_blocked": []
+    },
+    {
+      "service": "Reddit",
+      "parent_app_id": "reddit",
+      "separability": "blocked",
+      "not_separable": null,
+      "web_ui_note": null,
+      "children": [
+        {
+          "child_id": "reddit-base",
+          "function": "reddit.com",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: reddit.com not readable."
+        },
+        {
+          "child_id": "reddit-posting",
+          "function": "submit post or comment",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: reddit.com/dev/api not readable."
+        },
+        {
+          "child_id": "reddit-uploading",
+          "function": "media upload",
+          "verified": false,
+          "surface": null,
+          "signals": {
+            "host_sni": null,
+            "http_method": null,
+            "path_pattern": null,
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": null,
+          "citation_page_date": null,
+          "notes": "UNVERIFIED: not readable."
+        }
+      ],
+      "sources_blocked": [
+        {
+          "url": "https://www.reddit.com/dev/api/",
+          "status": "SOURCE BLOCKED",
+          "reason": "host not on this session's network allowlist (proxy 403, 2026-11-27)"
+        }
+      ]
+    }
+  ]
+}
