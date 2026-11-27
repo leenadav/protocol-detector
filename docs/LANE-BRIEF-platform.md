@@ -39,6 +39,13 @@ their decisions, the policy locks, and the release controller.
   Go binary only (no `--backend`, no fallback), `main.py` starts the page, and `make serve` does the same.
   `test_ui.GoServiceBrowserTests` runs the Playwright dashboard suite against the Go service with no Python engine
   reachable. PR C (PRO-403) deletes `presentation/server.py` and the Python engine.
+- **PRO-503 (framed on 386):** branch `claude/platform-PRO-503-framed-386`. `framed` builds and tests on
+  `GOARCH=386`, so `GO_386_EXCLUDE` is empty (the guard stays). The five overflowing constants are compared on
+  `bits32(v) = int64(v) & 0xFFFFFFFF` (RPC last-fragment bit, SMB `STATUS_MORE_PROCESSING_REQUIRED`; a widening, so
+  gosec G115 stays clean, where a `uint32` conversion failed the go-lint job) and `respHuge` is `math.MaxInt>>1 + 1`
+  (1<<62 on amd64, as before). The 386 run then showed a real wrap: `strconv.Atoi` clamps a RESP bulk length of
+  10 to 18 digits to MaxInt32, and `total+n+2` went negative past the byte budget; `respNumber` now maps it to
+  `respHuge`. `framed/int32_test.go` covers all three; amd64 behaviour and parity are unchanged.
 - **PRO-262 (32-bit protocol tests):** `make go-check-386` and the `go-engine` step "32-bit protocol tests" (offline, vendored, `CGO_ENABLED=0`, no `-race` on 386). Proven on the old SEC-X509-1 check (`pos+size > limit`): the 386 run fails `x509x`, amd64 passes. The job name is unchanged, so required checks keep matching.
 - **PRO-202 (CI speed), step 3:** branch `claude/platform-PRO-202-ci-speed` adds the docs-only fast path:
   `tools/ci_scope.py` (fail-closed: only `pull_request`, only a two-parent merge HEAD, only `*.md` and
@@ -192,6 +199,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
 | Nightly mutation job (PRO-176): #155, branch `claude/platform-PRO-176-nightly-mutation`, the `mutation` job of `nightly-fuzz.yml` (gremlins and the module cache from one isolated networked step, then `make mutation` offline with `MUTATION_BIN`, results uploaded every run; policy `check_mutation_build`). The 5-point threshold is a placeholder in Engine's `mutation.py`. tlsx and textroute measure nothing today: their tests read `../../../../migration/fixtures/cases.json`, absent from gremlins' copy of `go/`, so every mutant counts as killed | Hermes's review, then Lee; Engine for the tlsx/textroute fixture path (asked on PRO-176) and the PRO-173 `TOLERANCE` |
 | 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 6 packages test, 2 have no tests, `framed` is excluded; an excluded package that compiles fails the target | Hermes's review, then Lee; Engine to make `framed` (5 constant overflows of `int`) build on 386, then drop it from `GO_386_EXCLUDE` |
+| Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
+| 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 7 packages test, 2 have no tests, `GO_386_EXCLUDE` is empty (PRO-503); an excluded package that compiles fails the target | Done (PR #117); `framed` on 386 is PRO-503 |
 
 ## 6. Frozen SHAs awaiting Codex
 
@@ -209,6 +218,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   closed, gosec keyed by function under `internal/protocols/` and `internal/decrypt/`, baseline and scanner lock
   re-keyed) and `c5add9e329ce474af9b5eda9109ffea129593616` (apidiff stderr summary).
 - **PRO-270:** `7863692f382c39c5da592493e8047cfb3d68963d` (Dependabot security-only).
+- **PRO-503:** `9b7e79aecdca5a40717bd35d289b42d0503ed0e6` (framed builds and tests on GOARCH=386; `GO_386_EXCLUDE` empty; RESP length wrap on 386). Fix round: `23458ef6fa27d71e6b5d67489b20f299752440f4` (gosec G115: `bits32` int64 widening instead of `uint32`).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
