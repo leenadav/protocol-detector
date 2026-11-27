@@ -231,9 +231,13 @@ def shape(value):
 # Go's values to the SOURCE.json of the tree under test instead. Every other field (version, repository, components,
 # the catalog itself) and the status line and headers are compared in full. These answers carry no ETag, and
 # Content-Length is never compared for a JSON body (observed), so nothing else derives from the identity.
-BUILD_IDENTITY = ("commit", "branch", "build_digest")
-BUILD_IDENTITY_AT = {"GET '/api/health'": ((), ("commit", "build_digest")),
-                     "GET '/api/catalog'": (("source",), ("commit", "branch", "build_digest"))}
+# PRO-403: the manifest's components (which roots it lists and how many files each has) are build identity too: the
+# golden file recorded the Python reference's components (protocol_engine, protocol_adapters), and the tree now
+# describes the Go engine. They are masked like the rest and held to the tree's SOURCE.json exactly.
+BUILD_IDENTITY = ("commit", "branch", "build_digest", "components")
+BUILD_IDENTITY_TYPES = {"components": dict}
+BUILD_IDENTITY_AT = {"GET '/api/health'": ((), ("commit", "build_digest", "components")),
+                     "GET '/api/catalog'": (("source",), ("commit", "branch", "build_digest", "components"))}
 BUILD_IDENTITY_MARK = "<build identity>"
 
 
@@ -262,7 +266,7 @@ def mask_build_identity(label, answer):
     if holder is None:
         return answer
     for key in BUILD_IDENTITY:
-        if isinstance(holder.get(key), str):
+        if isinstance(holder.get(key), BUILD_IDENTITY_TYPES.get(key, str)):
             holder[key] = BUILD_IDENTITY_MARK
     return head + "\n" + json.dumps(document)
 
@@ -279,7 +283,7 @@ def build_identity_problems(label, answer, source):
     problems = []
     for key in keys:
         want = source.get(key) if isinstance(source, dict) else None
-        if not isinstance(want, str) or not want:
+        if not isinstance(want, BUILD_IDENTITY_TYPES.get(key, str)) or not want:
             problems.append("{}: SOURCE.json has no {} (got {!r})".format(label, key, want))
         elif holder.get(key, None) != want:
             problems.append("{}: {} is {!r}, SOURCE.json has {!r}".format(label, key, holder.get(key), want))
