@@ -1,0 +1,33 @@
+{
+ "task": "PRO-540",
+ "written_before_the_run": "2026-11-27",
+ "binary_before": "culvert-lab-v8",
+ "binary_after": "culvert-lab-v9",
+ "idle_s": 60,
+ "load_s": 1800,
+ "sample_s": 30,
+ "post_s": 180,
+ "corpus_dirs": [
+  "/home/user/protocol-detector/go/detector/testdata/fuzz",
+  "/home/user/protocol-detector/go/internal/engine/testdata/fuzz"
+ ],
+ "actions": [
+  {"name": "restart", "at_s": 600, "binary": "culvert-lab-v8", "proc": "p2"},
+  {"name": "content_change", "at_s": 1200, "binary": "culvert-lab-v9", "proc": "p3"}
+ ],
+ "expected_release": {
+  "culvert-lab-v8": "content=2026.11.8 child=2026.11.1",
+  "culvert-lab-v9": "content=2026.11.9 child=2026.11.1"
+ },
+ "mix_new_tunnels_per_s": {
+  "tls": 60, "http1": 25, "ssh": 20, "inspect": 10, "adverse": 10, "quiet": 2, "blocked": 0.5,
+  "total": 127.5
+ },
+ "holds_s": {"quiet": 15, "blocked": 20, "observation_window": 10},
+ "thresholds": {
+  "recovery_pct": 10,
+  "recovery_within_s": 60,
+  "steady_skip_s": 120,
+  "steady_slope_pct_per_min": 1.0
+ }
+}
