@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "06515ba41a3dbea864baa4a257e90e9de92d04ca",
+  "commit": "9c553118d8192d4476eb968ed26fd19d6b5e62aa",
   "branch": "claude/vigilant-maxwell-gub33g",
-  "build_digest": "7c6003a418be1c9fa2274fce98571287a5cfd4c6e346d6132c73aec89959ddec",
+  "build_digest": "b3c5a0a3a986493872576c81ae31c38843bc049244ebf58bd6fc668956cfc44f",
   "components": {
     "engine": {
       "root": "go",
@@ -160,12 +160,12 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "783e3e9b94355e2432f8ac1180120bc042caf8dac123ba5530a72141fe69b878"
+      "sha256": "780d84f4bc25ecda93d6ea12e529b21244528485670e3b6cc96cf0c4c326cf45"
     },
     {
       "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "543583f062ba1ba813e5c99033d9dd26269e27f528961d99c7ce905cdda60543"
+      "sha256": "7eb298aedb2db290d7cc98bc6a02af1d6eeffaeecd794fa884c15761610c7e6c"
     },
     {
       "path": "go/internal/clock/clock.go",
@@ -315,7 +315,7 @@
     {
       "path": "go/internal/livedecrypt/keylog_unix.go",
       "component": "engine",
-      "sha256": "381741932a6656f708164e72b353949aba0cc70c85361e5caccf9708ac415859"
+      "sha256": "283e9c7e9c77bbbdd3c81e56beb89510e08ebefe7b17202a7938fc24a9c5f0ff"
     },
     {
       "path": "go/internal/livedecrypt/limit_unix.go",
