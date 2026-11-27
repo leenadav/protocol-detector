@@ -1,4 +1,4 @@
-.PHONY: serve test presentation-test presentation-check content manifest check lint sbom pins requirements requirements-run docs-counts ledgers workflow-lint ci-local pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random pcap-oracle mutation-tool mutation golden-check property-long keylogs content-pack
+.PHONY: child-apps serve test presentation-test presentation-check content manifest check lint sbom pins requirements requirements-run docs-counts ledgers workflow-lint ci-local pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random pcap-oracle mutation-tool mutation golden-check property-long keylogs content-pack
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -17,7 +17,7 @@ presentation-test:
 	@PY="$(PYTHON)"; case "$$PY" in /*) ;; */*) PY="$$PWD/$$PY";; esac; \
 	cd presentation && "$$PY" -B -m unittest discover -s tests -v
 
-check: lint test pins workflow-policy requirements docs-counts ledgers manifest presentation-check keylogs content content-pack
+check: lint test pins workflow-policy requirements docs-counts ledgers manifest presentation-check keylogs content content-pack child-apps
 	$(PYTHON) -B -m compileall -q tools migration presentation *.py
 
 manifest:
@@ -82,6 +82,7 @@ workflow-policy:
 	$(PYTHON) -B tools/go_deep.py --self-test
 	$(PYTHON) -B tools/go_cover.py --self-test
 	$(PYTHON) -B tools/go_api.py --self-test
+	$(PYTHON) -B tools/go_bench.py --self-test
 	$(PYTHON) -B tools/contract_check.py --self-test
 	$(PYTHON) -B tools/osv_scan.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
@@ -116,6 +117,11 @@ keylogs:
 
 content:
 	python3 -B tools/check_content.py
+
+# PRO-492: the child-app rules are a reproducible conversion of App Research's cited wave files (docs/CHILD-APPS.md).
+child-apps:
+	$(PYTHON) -B tools/child_apps_wave.py --self-test
+	$(PYTHON) -B tools/child_apps_wave.py migration/fixtures/child-apps/wave-0.json --check
 
 # PRO-411: the content pack is edited directly (go/internal/content/pack.json, history.json, lock.json) with
 # tools/content_pack.py; nothing is exported from the Python tables. The check, the tool's self-test, and the
@@ -165,6 +171,8 @@ GO_FUZZ_SMOKE := \
 	./internal/engine:FuzzInspectorNeverPanics:10 \
 	./internal/engine:FuzzSelectNeverPanics:5 \
 	./internal/signatures:FuzzPatternNeverPanics:10 \
+	./internal/childapp:FuzzClassifyNeverPanics:10 \
+	./internal/childapp:FuzzLoadNeverPanics:10 \
 	./internal/decrypt:FuzzConnectionNeverPanics:10 \
 	./internal/capture:FuzzDecoderNeverPanics:10 \
 	./internal/keylogcap:FuzzAnalyzeNeverPanics:10 \
@@ -210,9 +218,9 @@ go-check-race:
 # go-check-386 (PRO-262, ci: go-engine): the protocol parsers' tests on a 32-bit int (GOARCH=386), where a length
 # sum such as pos+length can wrap negative and pass a bounds check (SEC-X509-1); `go test -race` on amd64 cannot see
 # that. Every package under ./internal/protocols/ runs, new ones included, except GO_386_EXCLUDE: packages that do not
-# compile for 386 yet (framed: untyped constants above 2^31 assigned to int). An excluded package that starts to
+# compile for 386 yet (empty since PRO-503 typed framed's constants above 2^31). An excluded package that starts to
 # compile fails the target, so its exclusion is removed as soon as it can be tested. Offline and vendored.
-GO_386_EXCLUDE := framed
+GO_386_EXCLUDE :=
 go-check-386:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOARCH=386 CGO_ENABLED=0 GOFLAGS=-mod=vendor sh -c '\
 	  set -e; all=$$(go list ./internal/protocols/...); run=""; \

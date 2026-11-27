@@ -73,6 +73,75 @@ signing in, for dependency mapping (item 2); **FEED** = vendor machine-readable 
   (`UNVERIFIED`). The remaining R1 hosts in the table above can be added by Lee in the environment settings,
   or in a new environment dedicated to dependency mapping. This lane does not work around the limit.
 
+## Batch R2 (2026-11-27, PRO-495): vendor API references for child apps (not yet requested)
+
+Reason code **API** = vendor API reference read for child-app signals (method, path, content type). Read-only; one
+approval for the batch. Unblocks `blocked-urls.md` rows 45 to 53 and 55 to 58.
+
+| Host | Reason | Use | Page |
+|---|---|---|---|
+| `developers.google.com` | API | Gmail, Drive, YouTube | rows 45 to 47 |
+| `www.dropbox.com` | API | Dropbox | row 48 |
+| `developer.box.com` | API | Box | row 49 |
+| `docs.slack.dev` | API | Slack | row 50 |
+| `discord.com` | API | Discord | row 51 |
+| `docs.x.com` | API | X | row 52 |
+| `pastebin.com` | API | Pastebin | row 53 |
+| `www.reddit.com` | API | Reddit | row 53 |
+| `mega.io` | API | Mega | row 53 |
+| `developer.wetransfer.com` | API | WeTransfer | row 55 |
+| `docs.slack.dev` | API | Slack file download | row 56 (also row 50) |
+| `developers.zoom.us` | API | Zoom | row 57 |
+| `support.reddithelp.com` | API | Reddit | row 58 |
+
+## Batch R3 (2026-11-27, PRO-524): vendor API references for child apps wave 1 (not yet requested)
+
+Reason code **API**, as batch R2. Read-only; one approval for the batch. Unblocks `blocked-urls.md` rows 59 to 71.
+
+| Host | Reason | Use | Page |
+|---|---|---|---|
+| `developers.google.com` | API | Google Photos upload (also batch R2) | row 59 |
+| `developer.webex.com` | API | Webex | row 60 |
+| `developer.salesforce.com` | API | Salesforce | row 61 |
+| `developer.servicenow.com` | API | ServiceNow | row 62 |
+| `developer.atlassian.com` | API | Jira, Confluence, Trello | row 63 |
+| `developers.notion.com` | API | Notion | row 64 |
+| `developer.monday.com` | API | monday.com | row 65 |
+| `developers.tiktok.com` | API | TikTok | row 66 |
+| `developers.snap.com`, `help.snapchat.com` | API | Snapchat | row 67 |
+| `dev.twitch.tv`, `help.twitch.tv` | API | Twitch | row 68 |
+| `help.yahoo.com` | API | Yahoo Mail | row 69 |
+| `proton.me` | API | Proton Mail | row 70 |
+| `docs.pcloud.com`, `www.pcloud.com` | API | pCloud | row 71 |
+
+## Batch R4 (2026-11-27, PRO-550): vendor API references for child apps wave 2 (not yet requested)
+
+Reason code **API**, as batches R2 and R3. Read-only; one approval for the batch. Unblocks `blocked-urls.md` rows 72 to 92.
+
+| Host | Reason | Use | Page |
+|---|---|---|---|
+| `www.zoho.com`, `www.zoho.eu`, `help.zoho.com` | API | Zoho | row 72 |
+| `www.fastmail.com` | API | Fastmail | row 73 |
+| `developers.docusign.com`, `support.docusign.com`, `www.docusign.com` | API | DocuSign | row 74 |
+| `developers.hellosign.com`, `faq.hellosign.com`, `sign.dropbox.com` | API | Dropbox Sign | row 75 |
+| `www.adobe.com`, `developer.adobe.com` | API | Adobe | row 76 |
+| `dev.evernote.com`, `help.evernote.com` | API | Evernote | row 77 |
+| `docs.replit.com`, `replit.com`, `blog.replit.com` | API | Replit | row 78 |
+| `docs.netlify.com` | API | Netlify | row 79 |
+| `vercel.com` | API | Vercel | row 80 |
+| `developer.zendesk.com` | API | Zendesk | row 81 |
+| `developers.hubspot.com` | API | HubSpot | row 82 |
+| `developers.smartsheet.com` | API | Smartsheet | row 83 |
+| `airtable.com` | API | Airtable | row 84 |
+| `developer.clickup.com`, `help.clickup.com`, `clickup.com` | API | ClickUp | row 85 |
+| `cloud.google.com` | API | Google NotebookLM | row 86 |
+| `developers.egnyte.com`, `www.egnyte.com`, `helpdesk.egnyte.com` | API | Egnyte | row 87 |
+| `www.mediafire.com` | API | MediaFire | row 88 |
+| `www.sync.com` | API | Sync.com | row 89 |
+| `transfer.sh` | API | transfer.sh | row 90 |
+| `developers.facebook.com`, `www.messenger.com`, `www.facebook.com` | API | Facebook Messenger | row 91 |
+| `api.stackexchange.com`, `stackoverflow.com`, `stackapps.com`, `meta.stackexchange.com` | API | Stack Overflow | row 92 |
+
 ## Decisions needed (not vendor-owned, so not requested): **resolved 2026-11-20**
 
 Hermes's decisions 1, 2 and 6: the live tools and dependency-mapping pass 2 run on the Hermes server (no proxy). No DoH

@@ -56,6 +56,16 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   1,000/s is the rig's knee on 4 vCPUs (disturbed rounds on every build). Tools are in `lab/culvert/tools/loadsplit/`
   (`loadtest.py`, `loadhold.py`, `loadtest_report.py`, `loadorigin/`), data in `lab/culvert/results-load`,
   `results-load-split/` and `results-load-hold/`.
+- **Endurance, phase L6 (PRO-540, 2026-11-27):** `lab/culvert/ENDURANCE.md`. One 30-minute run of the `ef94311`
+  lab, both lab patches, detector `9944158` (the PRO-516 branch, child apps on); content 2026.11.8, then 2026.11.9
+  after the second restart.
+  - P2 to P5 pass: no growth slope (at most 0.55%/min), 0 panics, 0 active, reserved or retained bytes after
+    load, and the intended content release in every pd block.
+  - P1 fails as defined:
+    - heap +58%: Culvert's request-log ring 2.94 MB, the lazy child-app classifier 0.58 MB, and 0.29 MB not
+      attributed. It is the same after 2 and after 30 minutes.
+    - goroutines −14%: two keep-alive connections close about 85 s after start, with or without load.
+  - Thresholds unchanged. A re-run needs the documented revision in the report first.
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
 - **Lab:**
@@ -64,12 +74,28 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
     tests and the lab tests pass, 198 under `-race`.
   - **First lab:** on `52eb9d1`, branch `lab/protocol-detector`, with the restriction demonstration. Kept
     unchanged: 84 of 84 checks on 2026-11-17.
+  - **Child applications (PRO-504, 2026-11-27):** `culvert-lab-ef94311-childapp.patch` on top of the 4-commit
+    patch (local branch `lab/childapp-ef94311`, `88d2c0a4`). `CULVERT_LAB_CHILDAPP=real` classifies each decrypted
+    request of an inspected tunnel (H1 and H2) with `go/detector` `AppClassifier` (engine PR #163). The verdicts
+    ride a log-only `TUNNEL_CLOSED` entry as `pd.apps` (`internal/pdobs` vocabularies, no host or path). Off adds 0
+    allocations. Cost on: 23 allocations and about 2.7 µs per child-matched request (the library accounts for 20).
+    That is outside ADR-0011's 1 per session, and the ADR draft's section 6 needs a per-request row. See
+    `docs/integration/CHILDAPP-LAB.md`.
+  - **Child apps under load (PRO-516, 2026-11-27):** vegeta at 200/1,000/3,000 req/s, H1 and H2, off vs on, 3×60 s:
+    +16.2 allocations and +0.8 KB per request on the mix, +8 to +12 µs CPU per request (H1), latency and throughput
+    within noise; every request classified. Within PRO-504's proposed per-request row (≤ 24, ≤ 1.5 KB), outside
+    ADR-0011's 1 per session. Top costs: `strings.Split`/`ToLower` in the library, H2 stack growth from
+    `normalizeHost`, the lab hook's header-name append. Baseline for PRO-514. `docs/integration/CHILDAPP-LOAD.md`.
 - **Load test (PRO-269, 2026-11-24):** `docs/integration/LOAD-TEST.md`. vegeta v12.12.0, a test tool only, against
   A, B and D on `ef94311`, HTTPS (observed) and HTTP (control), at 100/300/600/1,000 req/s, three rounds, one
   connection per request. Observe minus off: p50 +5 to +113 µs, p95 +84 to +424 µs, p99 within noise;
   +0.15 to +0.22 CPU-s per 1,000 flows; RSS within the 0.3 to 2.7 MiB noise floor; throughput unchanged. 1,000 req/s
   saturates the 4-vCPU harness in every configuration. Tools: `lab/culvert/tools/loadtest.py`,
   `loadtest_summary.py` and `loadorigin/`; data in `lab/culvert/results-loadtest/`.
+- **Culvert ADR draft** (PRO-496, 2026-11-27): `docs/integration/adr/ADR-DRAFT-protodetect-in-process.md`, the ADR that
+  working plan section 12 requires, in Culvert's format (ADR-0006 injection, ADR-0051 admission, the `pd` block, the
+  ADR-0011 budget amendment with the load-test numbers, `alpnpeek` as the one TLS fact source, kill switch and abort
+  criteria). Local draft only; proposing it upstream is Lee's decision, after the licence and signed-tag items.
 - **Culvert team request** (`docs/integration/CULVERT-TEAM-REQUEST.md`): anchors refreshed at `ef94311`. It
   covers the SNI finding, UDP/HTTP3 and the allocation gap. It is not sent; Lee decides.
 - **Allocations per flow, two figures** (`docs/integration/ENGINE-DRIFT-2026-11-21.md`):
@@ -179,10 +205,21 @@ Culvert's allocation gates need `-tags benchgate`.
   `claude/culvert-land-main`; PR leenadav/protocol-detector#97. Then `60b2305` (merge of main `e5ac90f`) and the
   brief commit that records the PRO-235 decision, then the commit that fixes the 12 CodeQL alerts in
   `lab/culvert/tools/` (TLS 1.2 minimum on the lab clients, files closed, one unused assignment).
+- **Queued for Codex (PRO-504):** `35f1e25` (adds `lab/culvert/culvert-lab-ef94311-childapp.patch`,
+  `docs/integration/CHILDAPP-LAB.md` and `lab/culvert/results-childapp/`; lab and docs only, no detector code) and
+  the brief commit that records it, on
+  `claude/culvert-PRO-504-childapp-lab`, based on `claude/engine-PRO-492-child-apps` `dadc6bd`.
+- **Queued for Codex (PRO-516):** `5470746` (adds `lab/culvert/tools/childappload/`,
+  `lab/culvert/results-childapp-load/` and `docs/integration/CHILDAPP-LOAD.md`; lab tools, results and docs only, no
+  detector code), `4f0c20f` (the CodeQL fixes: files and responses closed) and the brief commits that record them, on
+  `claude/culvert-PRO-516-childapp-load`, stacked on
+  `claude/culvert-PRO-504-childapp-lab` `9a4226b`.
 - **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
   The second run, `69434b8` and `1f3e94f` on `claude/vigilant-sagan-i3rlse` (PR leenadav/protocol-detector#120),
   and the merge of `main` that moves its tools to `lab/culvert/tools/loadsplit/` (lab tooling and docs only).
+- **Queued for Codex (PRO-540):** `fd0c122` on `claude/culvert-PRO-540-endurance`, the endurance run, and the commit
+  that records it (lab tools, results and docs only; no detector code).
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
@@ -235,5 +272,11 @@ Culvert's allocation gates need `-tags benchgate`.
   conflicted add/add on `loadtest.py`, `loadorigin/main.go` and `LOAD-TEST.md`. The merge kept main's paths and
   moved the second run to `lab/culvert/tools/loadsplit/` and `LOAD-TEST-SPLIT.md`. Check `origin/main` for the
   task's files before starting a lab tool.
+- **A Culvert restart is a cold start in the lab.** Admin, rules and the inspection CA are in memory, so
+  `tools/endurance/run.py` sets them up again after every start, and a client must reload the new CA. SIGTERM
+  drains tunnels for 15 s before exit, so a restart refuses new tunnels for about 16 s.
+- **An idle baseline needs Culvert at its steady state.** Two internal keep-alive connections close about 85 s
+  after start (29 to 25 goroutines), and the 5,000-entry request-log ring and the lazy child-app classifier fill
+  after the first traffic. Take a baseline only after these, or name them.
 - **Go's `ReadHeaderTimeout` also bounds the TLS handshake.** A silent CONNECT tunnel to a Go HTTPS origin is
   closed by the origin after that timeout, so a hold test needs it longer than the window.

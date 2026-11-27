@@ -34,6 +34,14 @@ var (
 	matchKeys = set("apps", "categories", "subcategories", "technologies", "characteristics", "risks", "port_usage",
 		"transports", "server_ports", "encryption", "shifted_from", "risk_min", "risk_max",
 		"identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions", "observation")
+	// childMatchKeys adds "containers" (Go only, PRO-492) when the policy is parsed with child applications.
+	childMatchKeys = func() map[string]bool {
+		keys := set("containers")
+		for k := range matchKeys {
+			keys[k] = true
+		}
+		return keys
+	}()
 	ruleKeys = set("name", "action", "match", "application_default", "description")
 	// Closed vocabularies of the D04 predicates; there is deliberately no ordering among identity bases.
 	predicateVocabularies = map[string][]string{
@@ -84,7 +92,7 @@ type Rule struct {
 	Name, Action       string
 	Description        string
 	ApplicationDefault bool
-	apps, categories, subcategories, technologies, characteristics, risks,
+	apps, containers, categories, subcategories, technologies, characteristics, risks,
 	portUsage, transports, encryption, shiftedFrom map[string]bool
 	serverPorts      map[string]*portTable
 	predicates       map[string]map[string]bool
@@ -96,6 +104,9 @@ type Policy struct {
 	Rules       []*Rule
 	Default     string
 	Description string
+	// owners is the catalog a child verdict's host owner is looked up in; set only by FromJSONWithChildren, so
+	// the reference path (FromJSON) never evaluates a second identity (SEC-CHILD-7).
+	owners map[string]*content.Application
 }
 
 // Decision is the outcome of one evaluation.
@@ -256,7 +267,11 @@ func ports(value interface{}) (map[string]*portTable, *Error) {
 	return table, nil
 }
 
-func newRule(document interface{}, index int, pack *content.Pack) (*Rule, *Error) {
+// Children names the child applications (internal/childapp) a policy may name; nil keeps the reference's
+// vocabulary, where "containers" is an unknown key and child names are unknown applications.
+type Children interface{ Has(name string) bool }
+
+func newRule(document interface{}, index int, pack *content.Pack, children Children) (*Rule, *Error) {
 	doc, ok := document.(map[string]interface{})
 	if !ok {
 		return nil, fail("Rule %d must be an object", index)
@@ -287,7 +302,11 @@ func newRule(document interface{}, index int, pack *content.Pack) (*Rule, *Error
 		}
 		match = m
 	}
-	if unknown := sortedKeys(match, matchKeys); len(unknown) > 0 {
+	keys := matchKeys
+	if children != nil {
+		keys = childMatchKeys
+	}
+	if unknown := sortedKeys(match, keys); len(unknown) > 0 {
 		return nil, fail("Rule '%s' has unknown match keys: %s", name, strings.Join(unknown, ", "))
 	}
 	r := &Rule{Name: name, Action: action}
@@ -315,6 +334,9 @@ func newRule(document interface{}, index int, pack *content.Pack) (*Rule, *Error
 		if canonical, ok := pack.Aliases[name]; ok {
 			return canonical, nil
 		}
+		if children != nil && children.Has(name) {
+			return name, nil
+		}
 		return "", fail("Unknown application: %s", name)
 	}
 	subcategory := func(v string) bool {
@@ -333,6 +355,7 @@ func newRule(document interface{}, index int, pack *content.Pack) (*Rule, *Error
 	}
 	// The reference evaluates the conditions in this order; the first invalid one is reported.
 	load("apps", &r.apps, nil, resolveApp)
+	load("containers", &r.containers, nil, resolveApp)
 	load("categories", &r.categories, func(v string) bool { _, ok := pack.Categories[v]; return ok }, nil)
 	load("subcategories", &r.subcategories, subcategory, nil)
 	load("technologies", &r.technologies, func(v string) bool { return pack.Technologies[v] }, nil)
@@ -386,6 +409,13 @@ func anyIn(set map[string]bool, values []string) bool {
 // met" probe.
 func (r *Rule) matches(v *appid.Verdict, portUsageValue, transport string, serverPort int, hasPort bool, context map[string]string, skipPredicates bool) bool {
 	if r.apps != nil && !r.apps[v.App] {
+		return false
+	}
+	// containers holds for the named application itself, for every child whose container it is, and for every
+	// child matched on a host it owns in the catalog (graph.microsoft.com is ms-base's, so containers:[ms-base]
+	// covers outlook-sending there; SEC-CHILD-2).
+	if r.containers != nil && !r.containers[v.App] && (v.BaseApp == nil || !r.containers[*v.BaseApp]) &&
+		(v.HostOwner == nil || !r.containers[*v.HostOwner]) {
 		return false
 	}
 	if len(r.predicates) > 0 && !skipPredicates {
@@ -460,6 +490,12 @@ func (r *Rule) matches(v *appid.Verdict, portUsageValue, transport string, serve
 
 // FromJSON is Policy.from_json over the content pack's vocabularies.
 func FromJSON(text []byte, pack *content.Pack) (*Policy, error) {
+	return FromJSONWithChildren(text, pack, nil)
+}
+
+// FromJSONWithChildren is FromJSON over the pack plus child applications: rules may name a child in apps and
+// match a parent with its children through containers (Go only, PRO-492).
+func FromJSONWithChildren(text []byte, pack *content.Pack, children Children) (*Policy, error) {
 	decoder := json.NewDecoder(bytes.NewReader(text))
 	decoder.UseNumber()
 	var document interface{}
@@ -505,7 +541,7 @@ func FromJSON(text []byte, pack *content.Pack) (*Policy, error) {
 	seen := map[string]bool{}
 	duplicate := false
 	for index, raw := range rules {
-		rule, err := newRule(raw, index, pack)
+		rule, err := newRule(raw, index, pack, children)
 		if err != nil {
 			return nil, err
 		}
@@ -518,7 +554,46 @@ func FromJSON(text []byte, pack *content.Pack) (*Policy, error) {
 	if duplicate {
 		return nil, fail("Rule names must be unique")
 	}
+	if children != nil {
+		p.owners = pack.Applications
+	}
 	return p, nil
+}
+
+// ownerView is the verdict seen as its host owner (SEC-CHILD-7): a child matched on a host the catalog gives
+// another application (outlook-sending on ms-base's graph.microsoft.com, dropbox-uploading on dropbox's
+// content.dropboxapi.com) is still that application, so every rule keyed on the owner's identity (apps,
+// categories, subcategories, technologies, characteristics, risk) keeps holding. The view takes the owner's name,
+// category, subcategory and technology, the union of both characteristic sets and the higher risk; everything
+// else is the child verdict's. It is nil when the verdict is not a child on an owned host, or outside
+// FromJSONWithChildren.
+func (p *Policy) ownerView(v *appid.Verdict) *appid.Verdict {
+	if p.owners == nil || v == nil || v.HostOwner == nil || *v.HostOwner == v.App {
+		return nil
+	}
+	owner := p.owners[*v.HostOwner]
+	if owner == nil {
+		return nil
+	}
+	view := *v
+	view.App, view.Category, view.Subcategory, view.Technology = owner.Name, owner.Category, owner.Subcategory, owner.Technology
+	if owner.Risk > view.Risk {
+		view.Risk = owner.Risk
+	}
+	view.Characteristics = append([]string{}, v.Characteristics...)
+	for _, c := range owner.Characteristics {
+		if !contains(view.Characteristics, c) {
+			view.Characteristics = append(view.Characteristics, c)
+		}
+	}
+	return &view
+}
+
+// holds is rule.matches over the verdict and, for a child on an owned host, its owner view: the rule applies when
+// either identity satisfies it, so a child never narrows the policy of the host it was matched on.
+func (r *Rule) holds(v, owner *appid.Verdict, portUsageValue, transport string, serverPort int, hasPort bool, context map[string]string, skipPredicates bool) bool {
+	return r.matches(v, portUsageValue, transport, serverPort, hasPort, context, skipPredicates) ||
+		(owner != nil && r.matches(owner, portUsageValue, transport, serverPort, hasPort, context, skipPredicates))
 }
 
 // equalsOne is Python's `value == 1` for a JSON value: 1, 1.0 and true compare equal.
@@ -633,8 +708,9 @@ func sortedPredicates(r *Rule) []string {
 // reference's server_port None; transport "" its transport None.
 func (p *Policy) Evaluate(v *appid.Verdict, transport string, serverPort int, hasPort bool, layers map[string]interface{}, observation string) Decision {
 	context := Context(v, layers, "", observation)
+	owner := p.ownerView(v)
 	for _, rule := range p.Rules {
-		if rule.matches(v, v.PortUsage, transport, serverPort, hasPort, context, false) {
+		if rule.holds(v, owner, v.PortUsage, transport, serverPort, hasPort, context, false) {
 			reasons := []string{fmt.Sprintf("rule '%s' matched %s", rule.Name, v.App)}
 			if rule.ApplicationDefault {
 				reasons = append(reasons, "application-default: port usage "+v.PortUsage)
@@ -653,13 +729,13 @@ func (p *Policy) Evaluate(v *appid.Verdict, transport string, serverPort int, ha
 	reasons := []string{fmt.Sprintf("no rule matched %s; policy default", v.App)}
 	for _, rule := range p.Rules {
 		if rule.ApplicationDefault && rule.Action == "allow" && v.PortUsage == "nonstandard" &&
-			rule.matches(v, "standard", transport, serverPort, hasPort, context, false) {
+			rule.holds(v, owner, "standard", transport, serverPort, hasPort, context, false) {
 			reasons = append(reasons, fmt.Sprintf("rule '%s' would allow %s on its application-default ports only", rule.Name, v.App))
 			break
 		}
 	}
 	for _, rule := range p.Rules {
-		if len(rule.predicates) > 0 && rule.matches(v, v.PortUsage, transport, serverPort, hasPort, context, true) {
+		if len(rule.predicates) > 0 && rule.holds(v, owner, v.PortUsage, transport, serverPort, hasPort, context, true) {
 			var missing []string
 			for _, key := range sortedPredicates(rule) {
 				if !rule.predicates[key][context[key]] {

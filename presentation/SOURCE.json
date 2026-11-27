@@ -1,14 +1,14 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "68dcfbe5bdfedf03611694e45e4f5f1de985db47",
+  "commit": "ca261ab9fbf9da697cccaf6f3b8d81fe2a9c1eab",
   "branch": "claude/vigilant-maxwell-gub33g",
-  "build_digest": "a785e38714fea0c28129ce2373e8a0b8227b3088a99fa0b59815571396398221",
+  "build_digest": "7c6003a418be1c9fa2274fce98571287a5cfd4c6e346d6132c73aec89959ddec",
   "components": {
     "engine": {
       "root": "go",
       "version": "0.66.0",
-      "files": 133
+      "files": 136
     },
     "launchers": {
       "root": ".",
@@ -78,6 +78,11 @@
       "sha256": "8202988496545d005a1d55fd6af551e63f1b65479fb4ac31bb4d4b598273c2fc"
     },
     {
+      "path": "go/detector/apps.go",
+      "component": "engine",
+      "sha256": "9b17f991aabff16bb0135e43f61a311b42301e5981738f7b93a230f039b28fae"
+    },
+    {
       "path": "go/detector/detector.go",
       "component": "engine",
       "sha256": "7bfa413d4f058fbc197a6f1648cce5e49fcf7d3d88e761989dedc935a1f64042"
@@ -85,7 +90,7 @@
     {
       "path": "go/detector/doc.go",
       "component": "engine",
-      "sha256": "dfb9e0a1cd23e219b39fa844278fe01689b79b6d15496cd368f96761417aae4a"
+      "sha256": "25b96e8d55d787b22e068ee7d2d4ece0c2a4405d2cb07dd0a63c4ce2d844bbb2"
     },
     {
       "path": "go/detector/evidence.go",
@@ -115,7 +120,7 @@
     {
       "path": "go/internal/appid/appid.go",
       "component": "engine",
-      "sha256": "be3ee45258f7277a682fcb7508e3967022b6ad5dec2f6dbbf1938fd47cf65d2c"
+      "sha256": "d172e73768cc75bf23d02ac1b094622aee5be57f031ce10c418c74a8664b3661"
     },
     {
       "path": "go/internal/appid/layers.go",
@@ -151,6 +156,16 @@
       "path": "go/internal/capture/capture.go",
       "component": "engine",
       "sha256": "d9961863bf1293d8f0013399ae5e5cced3b0a3881313eb0979f6179c5fd4cd0e"
+    },
+    {
+      "path": "go/internal/childapp/childapp.go",
+      "component": "engine",
+      "sha256": "783e3e9b94355e2432f8ac1180120bc042caf8dac123ba5530a72141fe69b878"
+    },
+    {
+      "path": "go/internal/childapp/load.go",
+      "component": "engine",
+      "sha256": "543583f062ba1ba813e5c99033d9dd26269e27f528961d99c7ce905cdda60543"
     },
     {
       "path": "go/internal/clock/clock.go",
@@ -355,7 +370,7 @@
     {
       "path": "go/internal/policy/policy.go",
       "component": "engine",
-      "sha256": "e469e87cc88f412137ca10dcb92c7bbfc9657347e84a24b9e6b90c3fe5e8c95e"
+      "sha256": "2c074e3b7b359d4ebadca34e72469bb79b2db6c5a2d211601991414b9363ed74"
     },
     {
       "path": "go/internal/protocols/dnsx/dns.go",
@@ -410,7 +425,7 @@
     {
       "path": "go/internal/protocols/framed/framed.go",
       "component": "engine",
-      "sha256": "bff216916f8846d5152ee3e6a55aadfb468f77416669fc03b6773adf123cbc5d"
+      "sha256": "b03158524fd527a563dfe9fc3cad6a3ae999bd720c3ca21cfee5ee021140718c"
     },
     {
       "path": "go/internal/protocols/framed/git.go",
@@ -455,7 +470,7 @@
     {
       "path": "go/internal/protocols/framed/messaging.go",
       "component": "engine",
-      "sha256": "dc1cb07daaf206568c5e4e6b10a0b12c113de0cad2a5c357d366a77b76f64f29"
+      "sha256": "c1f462fad45c17231b00d83cd11202bf1fe34b5cbea9bc1297fc8728d71374d5"
     },
     {
       "path": "go/internal/protocols/framed/routing.go",
@@ -465,7 +480,7 @@
     {
       "path": "go/internal/protocols/framed/rpc.go",
       "component": "engine",
-      "sha256": "d35b102478c8e08100e73cc195d51d65658001fe21d339c4148bdd65588eb27a"
+      "sha256": "01598ed1937345540fc2de39d3bf22d1159b81f84986a16614fdb160263dcd6f"
     },
     {
       "path": "go/internal/protocols/framed/services.go",
@@ -480,7 +495,7 @@
     {
       "path": "go/internal/protocols/framed/smb.go",
       "component": "engine",
-      "sha256": "63e50a965e49beb89454d14e63cf6cf6a4b38d12fa971db3fd9e263f232e5971"
+      "sha256": "3f08c02c039a8567cbefdf327b60e4ccecf909c57615957e1d179da7e2da6158"
     },
     {
       "path": "go/internal/protocols/framed/snmp.go",

@@ -32,6 +32,10 @@ type Verdict struct {
 	ShiftedFrom     *string
 	Risks           []string
 	Attribution     map[string]interface{}
+	// HostOwner is the catalog application that owns the server name when a child application (Go only,
+	// internal/childapp, PRO-492) refined it; nil on every reference path and never serialized. Policy
+	// "containers" matches it so a child never moves a request out from under its host's owner (SEC-CHILD-2).
+	HostOwner *string
 }
 
 // Identified reports whether the verdict names an application rather than an outcome.
