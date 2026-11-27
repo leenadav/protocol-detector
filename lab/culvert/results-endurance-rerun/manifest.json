@@ -1,0 +1,73 @@
+{
+ "task": "PRO-564",
+ "written_before_the_run": "2026-11-27",
+ "binary_before": "culvert-lab-v8",
+ "binary_after": "culvert-lab-v9",
+ "idle_s": 60,
+ "load_s": 1800,
+ "sample_s": 30,
+ "post_s": 180,
+ "corpus_dirs": [
+  "/home/user/protocol-detector/go/detector/testdata/fuzz",
+  "/home/user/protocol-detector/go/internal/engine/testdata/fuzz"
+ ],
+ "actions": [
+  {
+   "name": "restart",
+   "at_s": 600,
+   "binary": "culvert-lab-v8",
+   "proc": "p2"
+  },
+  {
+   "name": "content_change",
+   "at_s": 1200,
+   "binary": "culvert-lab-v9",
+   "proc": "p3"
+  }
+ ],
+ "expected_release": {
+  "culvert-lab-v8": "content=2026.11.8 child=2026.11.1",
+  "culvert-lab-v9": "content=2026.11.9 child=2026.11.1"
+ },
+ "mix_new_tunnels_per_s": {
+  "tls": 60,
+  "http1": 25,
+  "ssh": 20,
+  "inspect": 10,
+  "adverse": 10,
+  "quiet": 2,
+  "blocked": 0.5,
+  "total": 127.5
+ },
+ "holds_s": {
+  "quiet": 15,
+  "blocked": 20,
+  "observation_window": 10
+ },
+ "thresholds": {
+  "recovery_pct": 10,
+  "recovery_within_s": 60,
+  "steady_skip_s": 120,
+  "steady_slope_pct_per_min": 1.0
+ },
+ "revision": {
+  "id": 1,
+  "decided_by": "Hermes (CTO), PRO-564: candidate 1 of lab/culvert/ENDURANCE.md (PRO-540)",
+  "what_changed": [
+   "P1 baseline timing only: process p1 is driven with the same mix (endurance-load drive, unchanged) for warmup.load_s right after it is ready, then left idle.",
+   "The 3 baseline samples (forced GC, median, as before) start no earlier than warmup.baseline_after_ready_s after p1 was ready and no earlier than warmup.min_idle_s after the warm-up driver exited (every warm-up flow finished, past the 10 s observation window).",
+   "Between warm-up and baseline the run records 'settle' samples (forced GC, every 15 s); they are not pass-condition inputs."
+  ],
+  "why": {
+   "D1": "With no load, Culvert drops from 29 to 25 goroutines about 85 s after start: two net/http client keep-alive connections close when idle. The PRO-540 baseline (60-70 s after start) was taken before that.",
+   "D2": "With logTraffic off the heap returns to +0.87 MB, of which 0.58 MB is the child-app classifier built lazily (sync.Once) on the first inspected request, after the old baseline.",
+   "D3": "With logTraffic on (as in production and in this run) 2 minutes of load leave +3.80 MB, the same as 30 minutes: the bounded reqlog ring (MaxRing 5,000, full after about 40 s at this rate). The warm-up fills it before the baseline."
+  },
+  "unchanged": "Thresholds (recovery_pct 10, recovery_within_s 60, steady_skip_s 120, steady_slope_pct_per_min 1.0), mix and rates, load_s 1800, actions at 600 s and 1200 s, sampling, binaries' sources, verdict code. Traffic logging stays on."
+ },
+ "warmup": {
+  "load_s": 60,
+  "baseline_after_ready_s": 120,
+  "min_idle_s": 30
+ }
+}
