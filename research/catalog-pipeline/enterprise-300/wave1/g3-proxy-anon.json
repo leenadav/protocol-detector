@@ -1,0 +1,414 @@
+[
+ {
+  "id": "hola-vpn",
+  "name": "Hola VPN",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "hola.org",
+    "role": "web",
+    "source_url": "https://hola.org/faq",
+    "quote": "Hola for iOS; My Account; support team"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "zagent*.hola.org",
+    "how_seen": "unofficial Go client hola-proxy (pkg.go.dev) output; agent/proxy hosts; unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://hola.org/faq",
+    "path_or_host": "hola.org",
+    "separable": "sni",
+    "note": "Web/account distinct host"
+   },
+   {
+    "name": "download",
+    "evidence_url": "https://hola.org/faq",
+    "path_or_host": "hola.org/download/android",
+    "separable": "http",
+    "note": "Path on main host; needs HTTP visibility"
+   },
+   {
+    "name": "proxy-tunnel",
+    "evidence_url": "https://hola.org/faq",
+    "path_or_host": "HTTPS proxy / IKEv2, no hostname published",
+    "separable": "pattern",
+    "note": "Official FAQ names protocol but no hosts"
+   }
+  ],
+  "notes": "Official docs publish no network-requirements list; proxy agent hostnames not officially documented. Hola FAQ also references Bright Data as commercial arm.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "support.hola.org",
+    "role": "web",
+    "source_url": "https://hola.org/faq",
+    "quote": "Help center (https://support.hola.org)",
+    "excluded_reason": "documentation/support page"
+   },
+   {
+    "domain": "cdn4.hola.org",
+    "role": "cdn",
+    "source_url": "https://hola.org/faq",
+    "quote": "//cdn4.hola.org/www/hola/pub/img/hola_logo_letters.svg",
+    "excluded_reason": "CDN"
+   }
+  ],
+  "priority_rank": 12
+ },
+ {
+  "id": "urban-vpn",
+  "name": "Urban VPN",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "www.urban-vpn.com",
+    "role": "web",
+    "source_url": "https://www.urban-vpn.com/support/",
+    "quote": "https://www.urban-vpn.com/features/"
+   },
+   {
+    "domain": "premium.urban-vpn.com",
+    "role": "auth",
+    "source_url": "https://www.urban-vpn.com/support/",
+    "quote": "[Sign in](https://premium.urban-vpn.com/)"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://www.urban-vpn.com/support/",
+    "path_or_host": "www.urban-vpn.com",
+    "separable": "sni",
+    "note": "Marketing/support site"
+   },
+   {
+    "name": "login",
+    "evidence_url": "https://www.urban-vpn.com/support/",
+    "path_or_host": "premium.urban-vpn.com",
+    "separable": "sni",
+    "note": "Account portal"
+   },
+   {
+    "name": "proxy-tunnel",
+    "evidence_url": "https://www.urban-vpn.com/support/",
+    "path_or_host": "not published",
+    "separable": "pattern",
+    "note": "Extension/app proxy hosts not in official docs"
+   }
+  ],
+  "notes": "No official allowlist or network doc found; tunnel endpoints undocumented. Distributed via browser extensions and apps.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 11
+ },
+ {
+  "id": "torguard",
+  "name": "TorGuard",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "torguard.net",
+    "role": "web",
+    "source_url": "https://torguard.net/support/articles/TorGuard-Software-Features/getting-started-port-forwarding.php",
+    "quote": "TorGuard Port Forwarding - Complete Setup Guide"
+   },
+   {
+    "domain": "www.torguard.net",
+    "role": "web",
+    "source_url": "https://www.torguard.net/support/",
+    "quote": "TorGuard support"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://torguard.net/support/",
+    "path_or_host": "torguard.net",
+    "separable": "sni",
+    "note": "Web/support/account"
+   },
+   {
+    "name": "vpn-tunnel",
+    "evidence_url": "https://torguard.net/support/articles/TorGuard-Software-Features/getting-started-port-forwarding.php",
+    "path_or_host": "per-server hostnames, not enumerated in fetched docs",
+    "separable": "pattern",
+    "note": "OpenVPN/WireGuard on varied ports; IP/port based"
+   }
+  ],
+  "notes": "Official fetch blocked (403) for some pages; no network-requirements doc found. Server hostnames not verified.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 17
+ },
+ {
+  "id": "browsec",
+  "name": "Browsec",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "browsec.com",
+    "role": "web",
+    "source_url": "https://browsec.com/en/faq",
+    "quote": "support@browsec.com"
+   },
+   {
+    "domain": "browsec.zendesk.com",
+    "role": "web",
+    "source_url": "https://browsec.com/en/faq",
+    "quote": "Help Center"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://browsec.com/en/faq",
+    "path_or_host": "browsec.com",
+    "separable": "sni",
+    "note": "Marketing/FAQ"
+   },
+   {
+    "name": "help",
+    "evidence_url": "https://browsec.com/en/faq",
+    "path_or_host": "browsec.zendesk.com",
+    "separable": "sni",
+    "note": "Support portal"
+   },
+   {
+    "name": "proxy-tunnel",
+    "evidence_url": "https://browsec.com/en/faq",
+    "path_or_host": "HTTP Proxy over TLS, host not named",
+    "separable": "pattern",
+    "note": "FAQ states protocol; no hostname published"
+   }
+  ],
+  "notes": "FAQ says extension uses HTTP proxy over TLS but names no proxy/API host. Download mirrors are s3/browsec.cx; mirror domains may rotate.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "browsec.cx",
+    "role": "download",
+    "source_url": "https://browsec.com/en/faq",
+    "quote": "our download page",
+    "excluded_reason": "download mirror"
+   },
+   {
+    "domain": "bs-dl.s3.eu-central-1.amazonaws.com",
+    "role": "download",
+    "source_url": "https://browsec.com/en/faq",
+    "quote": "download the APK from a direct link",
+    "excluded_reason": "shared cloud storage"
+   }
+  ],
+  "priority_rank": 13
+ },
+ {
+  "id": "croxyproxy",
+  "name": "CroxyProxy",
+  "class": "proxy-anonymizer",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "croxyproxy.com",
+    "how_seen": "WebSearch results/third-party reviews and Chrome Web Store listing; no official domain doc fetched; unsourced"
+   },
+   {
+    "domain": "croxyproxy.id",
+    "how_seen": "mentioned by third party as another domain; possibly lookalike; unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "web-proxy",
+    "evidence_url": "https://chromewebstore.google.com/detail/croxyproxy-free-web-proxy/lmmpgfjnchldhcieiiegcpdmaidkaanb",
+    "path_or_host": "croxyproxy.com (browser-based web proxy)",
+    "separable": "http",
+    "note": "Rotating server subdomains likely; target URL carried in requests; not verified officially"
+   }
+  ],
+  "notes": "No official vendor docs fetched; only third-party descriptions. Lookalike phishing domains reported. Rotating hostnames possible but unverified.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 20
+ },
+ {
+  "id": "bright-data",
+  "name": "Bright Data",
+  "class": "proxy-anonymizer",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "brd.superproxy.io",
+    "role": "relay",
+    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "quote": "--proxy brd.superproxy.io:44445"
+   },
+   {
+    "domain": "api.brightdata.com",
+    "role": "api",
+    "source_url": "https://docs.brightdata.com/api-reference/account-management-api/allowlist-or-denylist-domains",
+    "quote": "POST /zone/domain_perm"
+   },
+   {
+    "domain": "brightdata.com",
+    "role": "web",
+    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "quote": "https://brightdata.com/cp/zones"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "proxy-gateway",
+    "evidence_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "path_or_host": "brd.superproxy.io:33335/44445 (HTTP/S), 22228 (SOCKS5)",
+    "separable": "sni",
+    "note": "Distinct hostname and nonstandard ports; CONNECT target hidden"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://docs.brightdata.com/api-reference/account-management-api/allowlist-or-denylist-domains",
+    "path_or_host": "api.brightdata.com POST /zone/domain_perm",
+    "separable": "sni",
+    "note": "Management API on its own host"
+   },
+   {
+    "name": "control-panel",
+    "evidence_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "path_or_host": "brightdata.com/cp/zones",
+    "separable": "http",
+    "note": "Path on main host"
+   }
+  ],
+  "notes": "Well documented. Gateway ports 33335 per search summary and 44445 per FAQ. Proxy exit IPs are residential and not enumerable.",
+  "confidence": "high",
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "docs.brightdata.com",
+    "role": "web",
+    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "quote": "docs.brightdata.com/proxy-networks/errorCatalog.md",
+    "excluded_reason": "documentation/support page"
+   },
+   {
+    "domain": "geo.brdtest.com",
+    "role": "other",
+    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "quote": "https://geo.brdtest.com/mygeo.json",
+    "excluded_reason": "test host"
+   },
+   {
+    "domain": "brdtest.com",
+    "role": "other",
+    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "quote": "https://brdtest.com/myip.json",
+    "excluded_reason": "test host"
+   }
+  ],
+  "priority_rank": 10
+ },
+ {
+  "id": "x-vpn",
+  "name": "X-VPN",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "xvpn.io",
+    "role": "web",
+    "source_url": "https://xvpn.io/help-center",
+    "quote": "mailto:support@xvpn.io; Contact us directly to get help!"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://xvpn.io/help-center",
+    "path_or_host": "xvpn.io/help-center",
+    "separable": "sni",
+    "note": "Web/help site"
+   },
+   {
+    "name": "vpn-tunnel",
+    "evidence_url": "https://xvpn.io/help-center",
+    "path_or_host": "not published",
+    "separable": "pattern",
+    "note": "No endpoint hosts in official docs"
+   }
+  ],
+  "notes": "Help center has no network-requirements or allowlist; tunnel endpoints undocumented.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 16
+ },
+ {
+  "id": "opera-vpn",
+  "name": "Opera VPN",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "api.sec-tunnel.com",
+    "how_seen": "DNSFilter help article and Opera forum thread (third party/community); unsourced"
+   },
+   {
+    "domain": "api.surfeasy.com",
+    "how_seen": "Check Point community thread; unsourced"
+   },
+   {
+    "domain": "de0.opera-proxy.net",
+    "how_seen": "Check Point community thread; unsourced"
+   },
+   {
+    "domain": "sitecheck2.opera.com",
+    "how_seen": "Check Point community thread; unsourced"
+   },
+   {
+    "domain": "opera-mini.net",
+    "how_seen": "Check Point community thread; unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api-bootstrap",
+    "evidence_url": "https://forums.opera.com/post/329740",
+    "path_or_host": "api.sec-tunnel.com (community-reported)",
+    "separable": "sni",
+    "note": "Unofficial evidence; credentials/server list fetch"
+   },
+   {
+    "name": "proxy-tunnel",
+    "evidence_url": "https://forums.opera.com/post/329740",
+    "path_or_host": "opera-proxy.net / surfeasy hosts (community-reported)",
+    "separable": "pattern",
+    "note": "Reports say blocking domains alone insufficient; traffic shifts to IPs"
+   }
+  ],
+  "notes": "No official Opera network doc; domains only from third-party/community. Built-in browser VPN (SurfEasy backend); operacdn pattern unconfirmed.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 19
+ }
+]

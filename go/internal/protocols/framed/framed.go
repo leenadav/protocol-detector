@@ -96,6 +96,10 @@ func be(b []byte) int {
 	return n
 }
 
+// bits32 is the 32-bit field be or le read, as an unsigned value: on a 32-bit int (GOARCH=386) a field at or above
+// 2^31 reads negative, and the widening to int64 plus the mask restores it; on 64-bit int it is the value itself.
+func bits32(v int) int64 { return int64(v) & 0xFFFFFFFF }
+
 func allZero(b []byte) bool {
 	for _, c := range b {
 		if c != 0 {

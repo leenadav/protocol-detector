@@ -209,7 +209,7 @@ func NewRPC(maxBytes int) *Parser {
 	return newParser(maxBytes, spec{header: 4,
 		size: func(h []byte) (int, error) {
 			mark := be(h[:4])
-			if mark&0x80000000 == 0 {
+			if bits32(mark)&0x80000000 == 0 {
 				return 0, parsing.Unsupported("Multi-fragment RPC records are outside the profile")
 			}
 			size := mark & 0x7fffffff
