@@ -202,7 +202,7 @@ Culvert's allocation gates need `-tags benchgate`.
 - **The public package's allocations:** done for the copies that bought nothing (PRO-148). The lower floor described
   in the drift report §4 waits for Culvert's budget and, for two of its three steps, the engine lane.
 - Codex's review of the frozen milestone and the queued commits (Sunday).
-- **Hosted `ci` red on `2fdc5e9`** from another lane's commits (secret scan, see §7). Asked App Research and
+- **Hosted `ci` red on `2fdc5e9`** from another lane's commits (secret scan, see §7; PRO-539 scopes the PR scan). Asked App Research and
   Platform & CI on PRO-148; this lane's own jobs are green.
 - The Culvert team's answers (request items 1 to 6), and Lee's decision to send the request.
 - Repository settings and the first `go/v0.x.y` tag (Lee).
@@ -266,11 +266,18 @@ Culvert's allocation gates need `-tags benchgate`.
 - **Lab flows are held only for the observation window** (SEC-CULV-1). A tunnel's engine flow is finished at
   window end or handoff, never at tunnel close, and a refused admission still logs a record. The window timer's
   callback must not read `o.timer`: with a short window it can run before the assignment (a race `-race` caught).
-- **The CI secret scan covers every branch.** The `ci` checkout fetches all history, and gitleaks scans all of it, so
-  another lane's commit can fail this branch's gate. Seen on `2fdc5e9` (run 44971293208): `generic-api-key` matched
-  in `research/live-results-2026-11-21-r5.tsv` (App Research, commits `655d440`, `75695d3`). Reproduce with
-  gitleaks 8.30.1 (`git --ignore-gitleaks-allow --redact --exit-code 1 .`) and check `git merge-base --is-ancestor`
-  before changing anything. Never edit `.gitleaks.toml` (CI/CD lane) or another lane's files; ask them instead.
+- **The CI secret scan's scope depends on the event (PRO-539, PR #195; check it has merged before relying on
+  it).** Until #195 merges, `ci` runs gitleaks' default (`git log --full-history --all`) over a full fetch on every
+  event, so another lane's commit can fail this lane's pull request. After #195: a `pull_request` run scans
+  `--log-opts=HEAD`, meaning every commit the PR merge commit reaches (this PR's own history plus `main`'s), and no
+  other branch. A push to `main`, the schedule and a dispatch keep the full default scan. Every branch is covered by
+  the nightly `secret-scan.yml` (`--all`, fetch-depth 0). That job is not a required check, so a leak on a branch with
+  no open PR shows up within about a day, not on the next PR. Before #195, `2fdc5e9` (run 44971293208) failed on
+  `generic-api-key` in `research/live-results-2026-11-21-r5.tsv` (App Research, commits `655d440`, `75695d3`), which is
+  not in this lane's history. A secret that a PR adds and later deletes still fails its own scan. Reproduce with
+  gitleaks 8.30.1 (`git --ignore-gitleaks-allow --redact --exit-code 1 --log-opts=HEAD .` for a PR,
+  without `--log-opts` for the full scan) and check `git merge-base --is-ancestor` before changing anything. Never
+  edit `.gitleaks.toml` (CI/CD lane) or another lane's files; ask them instead.
 - **Merge trials go in a worktree.** Use `git worktree add --detach /home/user/pd-drift <lane head>` and merge
   there; never on the lane branch.
 - **A conflict-free merge can still change the reference.** Lane edits to `protocol_engine/` and `test_*.py`
