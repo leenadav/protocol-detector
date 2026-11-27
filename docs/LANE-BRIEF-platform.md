@@ -221,6 +221,9 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   requirements gate and neither head held both, so each PR still passed the other's attack. Cut one branch, merge
   (never rebase) the second fix in, and keep a joint self-test case that runs both attacks on one table, plus a
   mutation of the repository's own table.
+- **`cmd | tail` in a commit chain hides the failure (PRO-568):** `build_ledgers.py --check | tail -1 && git commit`
+  committed and pushed a note the check had refused (`967270c`, fixed in the next commit). Set `set -o pipefail`
+  in every shell that chains a check into a commit or push.
 
 - **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
   `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
