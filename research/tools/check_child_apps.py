@@ -3,6 +3,7 @@
 
 Usage:
   python3 -B research/tools/check_child_apps.py research/child-apps/wave-0.json
+  python3 -B research/tools/check_child_apps.py research/child-apps/wave-1.json
   python3 -B research/tools/check_child_apps.py --self-test
 
 Rules checked (PRO-495):
@@ -11,7 +12,9 @@ Rules checked (PRO-495):
 - verified=false: every signals field and citation_url is null (a proposal, never a rule);
 - verified=true: an http(s) citation_url and at least one non-null signal;
 - direction and separability take known values; signals carry exactly the schema's fields;
-- the "Result" line of the sibling .md states the same counts as the JSON.
+- the "Result" line of the sibling .md states the same counts as the JSON;
+- optional sec_child_3 evidence items (PRO-524): unique item names, a finding and an engine_impact; verified items
+  carry http(s) citations, unverified ones carry none and say UNVERIFIED.
 Python 3.9, standard library only.
 """
 import json
@@ -79,6 +82,7 @@ def check(doc, known_ids, md_text=None):
                     errors.append("%s: unverified child carries signals or a citation" % where)
             else:
                 errors.append("%s: verified must be true or false" % where)
+    errors.extend(check_evidence(doc.get("sec_child_3", [])))
     if md_text is not None and doc.get("services"):
         n = counts(doc)
         want = ("%(services)d services, %(children)d proposed children, **%(verified)d verified with an official "
@@ -86,6 +90,30 @@ def check(doc, known_ids, md_text=None):
         if want not in md_text:
             found = re.search(r"\d+ services, \d+ proposed children[^\n]*", md_text)
             errors.append("md Result line out of date: want %r, found %r" % (want, found.group(0) if found else None))
+    return errors
+
+
+def check_evidence(items):
+    errors, seen = [], set()
+    if not isinstance(items, list):
+        return ["sec_child_3 is not a list"]
+    for it in items:
+        name = it.get("item")
+        where = "sec_child_3/%s" % name
+        if not name or name in seen:
+            errors.append("%s: missing or duplicate item" % where)
+        seen.add(name)
+        if not it.get("finding") or not it.get("engine_impact"):
+            errors.append("%s: finding and engine_impact are required" % where)
+        urls = [it.get("citation_url")] + list(it.get("also", []))
+        if it.get("verified") is True:
+            if not all(isinstance(u, str) and u.startswith(("https://", "http://")) for u in urls):
+                errors.append("%s: verified evidence without an http(s) citation" % where)
+        elif it.get("verified") is False:
+            if any(u is not None for u in urls) or "UNVERIFIED" not in it.get("finding", ""):
+                errors.append("%s: unverified evidence must have no citation and say UNVERIFIED" % where)
+        else:
+            errors.append("%s: verified must be true or false" % where)
     return errors
 
 
@@ -117,7 +145,24 @@ def _self_test():
         errs = check(bad, ids, md)
         assert any(expect in e for e in errs), (expect, errs)
     assert any("Result line" in e for e in check(good, ids, "0 services"))
-    print("check_child_apps self-test: ok (%d tamper cases)" % (len(cases) + 1))
+    good["sec_child_3"] = [
+        {"item": "a", "verified": True, "citation_url": "https://x", "finding": "f", "engine_impact": "e"},
+        {"item": "b", "verified": False, "citation_url": None, "finding": "UNVERIFIED: f", "engine_impact": "e"}]
+    assert check(good, ids, md) == [], check(good, ids, md)
+    ev_cases = [
+        (lambda d: d["sec_child_3"][0].update(citation_url=None), "without an http(s) citation"),
+        (lambda d: d["sec_child_3"][1].update(citation_url="https://x"), "must have no citation"),
+        (lambda d: d["sec_child_3"][1].update(finding="f"), "say UNVERIFIED"),
+        (lambda d: d["sec_child_3"][1].update(item="a"), "duplicate item"),
+        (lambda d: d["sec_child_3"][0].pop("engine_impact"), "engine_impact are required"),
+        (lambda d: d["sec_child_3"][0].update(verified="yes"), "verified must be"),
+    ]
+    for mutate, expect in ev_cases:
+        bad = json.loads(json.dumps(good))
+        mutate(bad)
+        errs = check(bad, ids, md)
+        assert any(expect in e for e in errs), (expect, errs)
+    print("check_child_apps self-test: ok (%d tamper cases)" % (len(cases) + len(ev_cases) + 1))
     return 0
 
 
