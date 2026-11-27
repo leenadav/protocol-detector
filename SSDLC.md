@@ -162,6 +162,34 @@ the current plan:
   reviewer on the publish job so a pushed tag still waits for a person before
   anything is attested or published.
 
+## Dependabot security update PRs
+
+`.github/dependabot.yml` (PRO-270, Lee 2026-11-23) opens security updates only: every entry
+(GitHub Actions, pip `requirements-dev.txt`, the Go modules `go/`, `go/oracle`, `tools/scanners`,
+`tools/golint/*` and `migration/mutation/gremlins`, npm `tools/ui-test-deps`) sets
+`open-pull-requests-limit: 0`, which turns version updates off and keeps the entry's settings for
+security updates. Each ecosystem has one `applies-to: security-updates` group, and every title starts
+`deps(security):`. Nothing opens until the owner enables Dependabot alerts and security updates
+(previous section); this file changes no setting. Version-update PRs opened before the change stay
+open until they are closed or superseded by hand.
+
+Review of a `deps(security):` PR, the same as any other change:
+
+1. Read the advisory it names (GHSA/CVE) and check that the bumped version fixes it, and that the
+   vulnerable code is reachable from this repository (govulncheck and pip-audit in `toolchain-audit`
+   report this for Go and pip).
+2. Actions stay pinned by full SHA: Dependabot rewrites the SHA and its tag comment together.
+   Rule 7 (one SHA per action repository) and `supply-chain-drift` (the tag comment resolves to that
+   SHA) must pass; regenerate `tools/workflows.lock.json` with `--write-workflow-lock` in a follow-up
+   commit on the PR branch when the policy asks for it.
+3. Go: the engine is vendored (`-mod=vendor`, `GOPROXY=off`), so the PR must update `go/vendor/` with
+   `go.mod` and `go.sum`; `go-engine` and `make go-check` show it. A `tools/scanners` or
+   `tools/golint` bump also advances `tools/scanner_config.lock.json` (`--write-scanner-lock`, rule 16).
+4. pip: `requirements-dev.txt` is hash-pinned; the PR must carry the new hashes, and the Python 3.9
+   pins stay installable.
+5. All required checks green, and Codex's GitHub review findings handled, before Lee merges. A bump
+   that needs code changes moves to a lane task; never weaken a check to take one.
+
 ## Pull request events
 
 CI runs on pull requests and on pushes to `main`, once per change: a branch push no longer starts a
