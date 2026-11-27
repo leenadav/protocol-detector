@@ -152,6 +152,8 @@ its own notes file, and the section is refreshed after merge.
 1. `CLAUDE.md` (imports `AGENTS.md`) and `AGENTS.md` on `main`: lanes, ownership, mailbox rules. It may be stale on old branches, so read it from `main`.
 2. `SSDLC.md`: controls, the required-checks table, the CI/CD backlog (items 18–34 are the recent ones).
 3. `docs/review-packet/INDEX.md`: what awaits Codex, chunked.
+   `REVIEW.md` (PRO-74): the review policy every reviewer follows (three passes, the Code Review Rules, Important
+   vs at most 5 nits, what not to report); `AGENTS.md` "Review guidelines" points to it.
 4. `docs/RELEASING.md`: the release controller and dry runs.
 5. `tools/check_workflow_policy.py` docstring: rules 1–16 every workflow change must pass.
 6. Issue #7 (mailbox) and `migration/MERGE-READINESS.md` on `claude/go-migration` (the Engine lane's merge plan).
