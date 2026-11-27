@@ -234,7 +234,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **PRO-545 (#178):** `81ec7b37071711d59aa1a869dd1dbc1a86a68544` (SR gate: unparsable rows, duplicates, pinned id set; SR-70..SR-75 renumbered).
   Fix round (SEC-PYRM-10): `b80580f544278e5ffd4b1c2b11c771532ed3fa5d` (rows without a leading pipe, look-alike ids).
 - **PRO-75 (#170):** `e179654a0933a3dbe093eb4ebc62817755f44bc7` (guardrail hooks), `6204d9bf5e4a7a2d5f296db821c2643026049919` (CodeQL empty-except fix).
-- **PRO-539:** `4154bbd7207cde1ad1975567b0b451be0b5b26b9` and CodeQL fix `8212ab7a6f1d9f56001dd631c24eecf0b94df51b` (secret scan: pull request `--log-opts=HEAD`, main full, nightly
+- **PRO-539:** `4154bbd7207cde1ad1975567b0b451be0b5b26b9` and CodeQL fixes `8212ab7a6f1d9f56001dd631c24eecf0b94df51b`, `53439e33c93550827fee7e838ba3eacbe14786f7` (secret scan: pull request `--log-opts=HEAD`, main full, nightly
   `secret-scan.yml` of every branch; rule 15 pins, scope proof in `tools/check_gitleaks_allowlist.py`).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
