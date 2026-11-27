@@ -179,6 +179,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Gitleaks hex HTTP/1 allowlist scoped (PRO-183/PRO-184, the gitleaks SEC-CI-1): branch `claude/cicd-gitleaks-hex-scope`, base main. Own `[[allowlists]]` entry, AND of path `^go/.*_test\.go$` and the hex regex; `check_gitleaks_allowlist.py` proves a hex request with a cookie still flags in .py, .json and non-test .go. `claude/go-migration` keeps its own repo-wide copy until it merges main | Hermes's review, then Lee |
 | Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
 | Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
+| PRO-75 guardrail hooks: branch `claude/platform-PRO-75-hooks`. `.claude/settings.json` + `.claude/hooks/guard.py` (PreToolUse; force-push, main, rebase/reset of shared `claude/*`, merge/approve/close, settings, secrets); tests in `make workflow-policy` and ci `workflow-lint` (SSDLC item 44). A false positive is a `guard.py` change with a test | Hermes's review, then Lee |
 | 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 6 packages test, 2 have no tests, `framed` is excluded; an excluded package that compiles fails the target | Hermes's review, then Lee; Engine to make `framed` (5 constant overflows of `int`) build on 386, then drop it from `GO_386_EXCLUDE` |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -189,6 +190,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
 - **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #37 `7d04266`, #38 `7c33b1a`, #39 `37b3c84`.
 - **PRO-480 (#154):** `8e13f57a1303fca696db674da6414b833c4ad544` (strict docs counts on a tag only, ledgers refresh) and `031f23635834f4a42fa226b4adf8589c5ed2c7d8` (Go binary before the release gate).
+- **PRO-75:** `e179654a0933a3dbe093eb4ebc62817755f44bc7` (guardrail hooks).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
