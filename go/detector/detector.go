@@ -669,6 +669,10 @@ func (f *Flow) copyObservation(ds *direction, o contracts.Observation, revision 
 	}
 	previousEvidence := s.Evidence
 	s.Evidence, s.EvidenceTruncated = s.Evidence[:0], false
+	if want := min(len(o.Evidence), MaxEvidence); cap(s.Evidence) < want {
+		// Sized once (PRO-596) rather than grown row by row; previousEvidence keeps the old rows readable.
+		s.Evidence = make([]Evidence, 0, want)
+	}
 	offers := 0
 	for _, ev := range o.Evidence {
 		if ev.Field == "offered_alpn" { // the same export bound as OfferedALPN, signalled the same way

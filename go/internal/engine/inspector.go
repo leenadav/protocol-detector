@@ -555,15 +555,6 @@ func (in *Inspector) identified() contracts.Observation {
 	if encryption != nil && r.ALPN != nil {
 		alpn = r.ALPN
 	}
-	var evidence []contracts.Evidence
-	if encryption != nil {
-		evidence = append(evidence, contracts.Evidence{Field: "encryption", Value: "tls", Source: in.source, Strength: "structural"})
-	} else {
-		evidence = append(evidence, contracts.Evidence{Field: "application_protocol", Value: r.ProtocolName, Source: in.source, Strength: "structural"})
-	}
-	if in.hint != "" {
-		evidence = append(evidence, contracts.Evidence{Field: "candidate_hint", Value: in.hint, Source: in.hintSource, Strength: "context"})
-	}
 	hostSource := r.HostSource
 	if hostSource == "" {
 		if encryption != nil {
@@ -572,25 +563,44 @@ func (in *Inspector) identified() contracts.Observation {
 			hostSource = "http_host"
 		}
 	}
+	// Sized once (PRO-596): the rows below are counted exactly up front, so the slice never grows row by row.
+	// The signature is evaluated here, before the rows are built, only to count its row; the order is unchanged.
+	match := in.signature(in.candidate, r.Contexts)
+	rows := 1 + len(alpn) + len(r.Extra) + len(r.Fingerprints)
+	if in.hint != "" {
+		rows++
+	}
 	if hostname != nil && *hostname != "" {
-		evidence = append(evidence, contracts.Evidence{Field: "hostname", Value: *hostname, Source: in.source + ":" + hostSource, Strength: "asserted"})
+		rows++
+	}
+	if match != nil {
+		rows++
+	}
+	evidence := make([]contracts.Evidence, 0, rows)
+	if encryption != nil {
+		evidence = append(evidence, contracts.Evidence{Field: "encryption", Value: "tls", Source: in.source, Strength: "structural"})
+	} else {
+		evidence = append(evidence, contracts.Evidence{Field: "application_protocol", Value: r.ProtocolName, Source: in.source, Strength: "structural"})
+	}
+	if in.hint != "" {
+		evidence = append(evidence, contracts.Evidence{Field: "candidate_hint", Value: in.hint, Source: in.hintSource, Strength: "context"})
+	}
+	if hostname != nil && *hostname != "" {
+		evidence = append(evidence, contracts.Evidence{Field: "hostname", Value: *hostname, Source: sourceLabel(in.source, hostSource), Strength: "asserted"})
 	}
 	var application *string
-	if match := in.signature(in.candidate, r.Contexts); match != nil {
+	if match != nil {
 		application = str(match.Name)
-		evidence = append(evidence, contracts.Evidence{Field: "application", Value: match.Name, Source: "signature:" + in.candidate, Strength: "configured_signature"})
+		evidence = append(evidence, contracts.Evidence{Field: "application", Value: match.Name, Source: sourceLabel("signature", in.candidate), Strength: "configured_signature"})
 	}
 	for _, offered := range alpn {
-		evidence = append(evidence, contracts.Evidence{Field: "offered_alpn", Value: offered, Source: in.source + ":client_hello", Strength: "offered"})
+		evidence = append(evidence, contracts.Evidence{Field: "offered_alpn", Value: offered, Source: sourceLabel(in.source, "client_hello"), Strength: "offered"})
 	}
 	for _, row := range r.Extra {
-		evidence = append(evidence, contracts.Evidence{Field: row.Field, Value: row.Value, Source: in.source + ":" + row.Provenance, Strength: row.Strength})
+		evidence = append(evidence, contracts.Evidence{Field: row.Field, Value: row.Value, Source: sourceLabel(in.source, row.Provenance), Strength: row.Strength})
 	}
 	for _, row := range r.Fingerprints {
-		evidence = append(evidence, contracts.Evidence{Field: row.Field, Value: row.Value, Source: in.source + ":" + row.Provenance, Strength: "derived"})
-	}
-	if evidence == nil {
-		evidence = []contracts.Evidence{}
+		evidence = append(evidence, contracts.Evidence{Field: row.Field, Value: row.Value, Source: sourceLabel(in.source, row.Provenance), Strength: "derived"})
 	}
 	scope := r.Scope
 	if scope == "" {

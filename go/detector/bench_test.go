@@ -20,9 +20,11 @@ type flowCase struct {
 func flowCases(t testing.TB) []flowCase {
 	hello, reply := tlsFlights(t, "bench.example.test", []string{"h2", "http/1.1"}, nil)
 	return []flowCase{
-		{"tls", hello, reply, 110},              // 89 measured (96 under -race), 191 before PRO-148
-		{"http", httpRequest, httpResponse, 95}, // 76 (84), 128 before
-		{"ssh", sshBanner, sshBanner, 65},       // 53 (55), 89 before
+		// PRO-596: 62 measured (68 under -race); 93 before PRO-596, 191 before PRO-148. The flow's ServerHello
+		// selects X25519MLKEM768 (Go's default), identified since PRO-260; the old 110 ceiling let that +26 pass.
+		{"tls", hello, reply, 80},
+		{"http", httpRequest, httpResponse, 80}, // 61 (69); 73 before PRO-596, 128 before PRO-148
+		{"ssh", sshBanner, sshBanner, 60},       // 45 (47); 51 before PRO-596, 89 before PRO-148
 		{"unknown", junk, junk, 15},             // 11 (11), 15 before
 	}
 }

@@ -7,6 +7,7 @@ package tlsx
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/names"
@@ -208,7 +209,10 @@ func parseHello(body []byte, collect bool) (*helloFields, error) {
 	if pos+extLength != size {
 		return nil, parsing.Malformed(errTrailing)
 	}
-	seen := map[int]bool{}
+	// Duplicate detection (PRO-596): a bit per registered extension below 4096 (every one a stack client sends
+	// in practice), a map only for the rest (GREASE, 0xff01, ECH), which stays within its first, stack-held group.
+	var seenLow [4096 / 64]uint64
+	seenHigh := map[int]bool{}
 	for pos < size {
 		if pos+2 > size {
 			return nil, parsing.Malformed(errField)
@@ -225,10 +229,17 @@ func parseHello(body []byte, collect bool) (*helloFields, error) {
 		}
 		value := body[pos : pos+length]
 		pos += length
-		if seen[kind] {
-			return nil, parsing.Malformed("Duplicate TLS extension")
+		if kind < 4096 {
+			if seenLow[kind>>6]&(1<<(kind&63)) != 0 {
+				return nil, parsing.Malformed("Duplicate TLS extension")
+			}
+			seenLow[kind>>6] |= 1 << (kind & 63)
+		} else {
+			if seenHigh[kind] {
+				return nil, parsing.Malformed("Duplicate TLS extension")
+			}
+			seenHigh[kind] = true
 		}
-		seen[kind] = true
 		if collect {
 			out.info.Extensions = append(out.info.Extensions, kind)
 			if len(out.info.Extensions) > 128 {
@@ -582,6 +593,12 @@ func hasRow(rows []parsing.Row, field, value, provenance, strength string) bool 
 
 // --- ServerHello ----------------------------------------------------------------------------------
 
+// cipherHex is fmt.Sprintf("0x%04x", c) for a two-byte cipher suite, in one allocation (PRO-596).
+func cipherHex(c int) string {
+	const digits = "0123456789abcdef"
+	return string([]byte{'0', 'x', digits[c>>12&15], digits[c>>8&15], digits[c>>4&15], digits[c&15]})
+}
+
 var hrrRandom = []byte{0xcf, 0x21, 0xad, 0x74, 0xe5, 0x9a, 0x61, 0x11, 0xbe, 0x1d, 0x8c, 0x02, 0x1e, 0x65, 0xb8, 0x91,
 	0xc2, 0xa2, 0x11, 0x16, 0x7a, 0xbb, 0x8c, 0x5e, 0x07, 0x9e, 0x09, 0xe2, 0xc8, 0xa8, 0x33, 0x9c}
 
@@ -659,7 +676,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 	if comp[0] != 0 {
 		return nil, "", "", parsing.Unsupported("ServerHello compression outside null-compression profile")
 	}
-	var extensions []ext
+	extensions := make([]ext, 0, 8) // a ServerHello carries a handful; sized so it need not grow (PRO-596)
 	index := map[int][]byte{}
 	if r.pos < len(body) {
 		blockData, err := r.vector(2)
@@ -702,7 +719,8 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 	rowsOf := func(field, value, strength string) parsing.Row {
 		return parsing.Row{Field: field, Value: value, Provenance: source, Strength: strength}
 	}
-	rows := []parsing.Row{rowsOf("tls_handshake", source, "structural")}
+	// A ServerHello yields at most eight rows here (PRO-596): sized once instead of grown four times.
+	rows := append(make([]parsing.Row, 0, 8), rowsOf("tls_handshake", source, "structural"))
 	var selectedRaw [][]byte // TLS 1.2 selected ALPN wire bytes; a TLS 1.3 ServerHello carries none
 	version := "1.2"
 	if tls13 {
@@ -752,7 +770,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 				if _, ok := keySizes[group]; !ok {
 					return nil, "", "", parsing.Unsupported("Retry group outside supported named groups")
 				}
-				rows = append(rows, rowsOf("requested_group", fmt.Sprint(group), "asserted"))
+				rows = append(rows, rowsOf("requested_group", strconv.Itoa(group), "asserted"))
 			}
 		} else {
 			_, has41 := index[41]
@@ -785,7 +803,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 				if len(key) != size || (pointFirstGroup(group) && key[0] != 4) {
 					return nil, "", "", parsing.Malformed("Server key share encoding length or point format invalid")
 				}
-				rows = append(rows, rowsOf("selected_group", fmt.Sprint(group), "asserted"))
+				rows = append(rows, rowsOf("selected_group", strconv.Itoa(group), "asserted"))
 				exchange = "ecdhe"
 				if group >= 256 && group <= 260 {
 					exchange = "dhe"
@@ -866,7 +884,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 		}
 		rows = append(rows, rowsOf("selected_key_exchange", tls12KeyExchange(cipher), "asserted"), rowsOf("selected_cipher_mode", mode, "asserted"))
 	}
-	rows = append(rows, rowsOf("selected_tls_version", version, "asserted"), rowsOf("selected_cipher", fmt.Sprintf("0x%04x", cipher), "asserted"))
+	rows = append(rows, rowsOf("selected_tls_version", version, "asserted"), rowsOf("selected_cipher", cipherHex(cipher), "asserted"))
 	if opts.Fingerprints && !retry {
 		negotiated := 0x0303
 		if tls13 {
