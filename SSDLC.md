@@ -107,13 +107,14 @@ push to `main`:
 | ci | `Go dependency licences (go-licenses; forbidden, restricted, unknown fail)` | `tools/go_deep.py licenses`: go-licenses 2.0.1 from `tools/golint/go-licenses/go.mod` and go.sum, built outside the checkout; any linked module whose licence is forbidden, restricted or unidentified fails; the engine's own module is excluded (item 36) |
 | ci | `Go coverage floors (module and every protocol parser)` | `tools/go_cover.py`: `go test -coverpkg=./... -coverprofile` on the pinned Go and the vendored tree; the module total and each `internal/protocols/*` package at or above its floor in `tools/golint/coverage-floors.json`, every parser package floored (item 38) |
 | ci | `Go API compatibility (apidiff; public breaks need the api-break label)` | `tools/go_api.py`: apidiff from `tools/golint/apidiff/go.mod` and go.sum, built outside the checkout, compares the module API at the base with this commit; an incompatible change to a public (non-internal, non-main) package fails without the `api-break` label; internal changes are reported (item 39) |
+| ci | `Go benchmarks against the merge base (benchstat; hot path +10 % at p<0.05 or more allocs fails)` | `tools/go_bench.py`: benchstat from `tools/golint/benchstat/go.mod` and go.sum, built outside the checkout, compares every existing Go benchmark at the head with its merge base (6 interleaved rounds per side, vendored, offline) when go/ changed; a hot-path benchmark more than 10 % slower with p < 0.05, or with more allocs/op, fails (item 44) |
 | ci | `External contract compatibility (JSON schemas, protodetect CLI; breaks need the api-break label)` | `tools/contract_check.py`: schemas/*.schema.json ($ref resolved) and the protodetect CLI from its own help output, base vs this commit; a breaking change fails without the `api-break` label, additions are reported (item 40) |
 | ci | `content pack (lock, release history, ids, Python/Go parity)` | `tools/content_gate.py`: `make content`, `make content-pack` (while the Python content and its lock exist; PRO-401), the Go pack identical to the export, no duplicate or conflicting id, `go test ./internal/content/...` (every component and release digest recomputed); nothing to check without the Go content pack (item 30) |
 | ci | `security requirements gate` | every SR row names an existing test |
 | ci | `ledgers (generated sections not hand-edited, notes well-formed)` | `tools/build_ledgers.py --self-test` and `--check`: every `migration/notes/PRO-<n>.md` parses, and every generated section (lane-brief and STATUS recent work, README/REVIEW-SCOPE test counts) is exactly what its notes render to, possibly lagging behind this pull request's own note; a hand edit fails with the command that rebuilds them (item 43) |
 
-Not required checks, by design: `ledgers.yml` (the nightly strict ledger check and refresh patch, item 43), `nightly-fuzz` (the Python mutation fuzz and every Go fuzz target
-for minutes, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
+Not required checks, by design: `ledgers.yml` (the nightly strict ledger check and refresh patch, item 43), `nightly-fuzz` (the Python mutation fuzz, every Go fuzz target
+for minutes and the Go mutation testing, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
 into main, item 31) are scheduled and never run on a pull request. Nor is `scorecard` (weekly OpenSSF
 Scorecard, item 42), which runs only on the schedule or by hand.
 
@@ -757,6 +758,16 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    the ci Go jobs (pinned 1.27.4, `GOPROXY=off`, vendor aware). `contents: read`, harden-runner,
    no credential kept, timeouts 60 and 130 minutes. The schedule runs from main's copy only; the
    file exists on main, so `workflow_dispatch` runs the branch's version before the merge.
+   PRO-176 adds `mutation`: gremlins v0.6.0 (Apache-2.0; dependencies MIT, BSD-3-Clause, Apache-2.0)
+   runs `make mutation` on the Go parser packages and fails when a package's efficacy falls more
+   than 5 points below `migration/mutation/baseline.json` (mutation.py's TOLERANCE, a placeholder
+   until Research Lab's stability check, PRO-173). Its one networked step builds gremlins from a
+   RUNNER_TEMP copy of `migration/mutation/gremlins` and fills the module cache from a copy of
+   go/go.mod and go.sum (gremlins always runs `go mod download`), hashes checked against go.sum
+   and the checksum database, before any repository code; `make mutation` then runs with
+   `GOPROXY=off` and `MUTATION_BIN`. 30 minutes, `contents: read`; `build/mutation/*.json` and the
+   logs are uploaded on every run (90 days, the efficacy trend). Policy `check_mutation_build`
+   pins the job's first four steps, its permissions and its timeout.
 30. Content-pack gate for research batches (`content-pack` ci job, in the gate's needs;
    `tools/content_gate.py`). A content release is checked five ways: `make content` (schema,
    lock, every earlier release reproducing its published digest, the engine's C11 fix
@@ -1002,6 +1013,33 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      controller, the repository setting that lets Actions create pull requests, and a token whose pull requests
      trigger ci (one opened with `GITHUB_TOKEN` starts no workflow, so the required `ci gate` never reports).
      That is Lee's decision; until then the patch is applied as a docs-only pull request by hand (Deputy).
+44. Go performance regressions (`go-bench` ci job, in the gate's needs; PRO-268, Lee, 2026-11-23). benchstat
+   (golang.org/x/perf/cmd/benchstat at `4febdb082b2c`, 2026-11-17, past the 7-day cooldown; BSD-3, with
+   github.com/aclements/go-moremath, MIT; test tooling only, never linked into the engine) is built from
+   `tools/golint/benchstat/go.mod` and go.sum outside the checkout (rule 15 pins the build; rule 16 locks the
+   go.mod).
+   - **Comparison:** `tools/go_bench.py` runs every existing `func BenchmarkXxx(*testing.B)` under go/ at the
+     pull request's head (`pull_request.head.sha`) and at its merge base with `pull_request.base.sha`; a push,
+     schedule or dispatch compares HEAD with its first parent. Each side's test binaries are built once
+     (`go test -c`, `-mod=vendor`, `GOPROXY=off`), then run in 6 interleaved rounds (base, head; head, base; ...)
+     with `-benchmem -benchtime 500ms`, and benchstat compares each package (median, Mann-Whitney U, alpha 0.05).
+   - **Thresholds (hot path only):** sec/op more than **+10 %** with **p < 0.05** fails; allocs/op whose head
+     median is above the base median fails whatever p (allocation counts are deterministic). The hot path is
+     `HOT` in the tool: `detector` BenchmarkFlow and BenchmarkFlowBytewise (per-flow inspect: TLS, HTTP, SSH and
+     unknown flows through the engine's parsers, whole and one byte per Feed) and `internal/protocols/quicx`
+     BenchmarkAssemblerDatagram (QUIC). A hot pattern with no benchmark at head fails, so renaming or deleting
+     one cannot switch the gate off; changing `HOT` or a threshold is a reviewed change to the tool.
+   - **Reported only:** the other benchmarks (signatures' hostile document load, contracts' observation
+     compare), B/op, improvements and benchmarks new at head. A head build or benchmark failure fails; the same
+     at the base drops that package's comparison and says so.
+   - **Cost:** the tool measures only when the diff touches go/, `tools/go_bench.py` or
+     `tools/golint/benchstat/`; otherwise it reports that and passes in seconds (there is no `if:`, rule 13).
+     A measured run takes about 5 minutes, alongside the other Go jobs.
+   - **Noise:** shared runners are noisy; interleaving keeps runner drift on both sides, and a time failure
+     needs both the 10 % effect and significance. A red result is diagnosed from the benchstat table in the
+     job summary, never re-run to green (AGENTS.md, "Flaky tests").
+   - **Negative control:** the self-test fails a hot benchmark at +20 % with p=0.002, passes +20 % at p=0.18,
+     fails one more allocation, and fails a missing hot benchmark.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
