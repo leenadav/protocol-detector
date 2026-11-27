@@ -224,10 +224,14 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **PRO-270:** `7863692f382c39c5da592493e8047cfb3d68963d` (Dependabot security-only).
 - **PRO-503:** `9b7e79aecdca5a40717bd35d289b42d0503ed0e6` (framed builds and tests on GOARCH=386; `GO_386_EXCLUDE` empty; RESP length wrap on 386). Fix round: `23458ef6fa27d71e6b5d67489b20f299752440f4` (gosec G115: `bits32` int64 widening instead of `uint32`).
 - **PRO-545 (#178):** `81ec7b37071711d59aa1a869dd1dbc1a86a68544` (SR gate: unparsable rows, duplicates, pinned id set; SR-70..SR-75 renumbered).
+- **PRO-546 (SEC-PYRM-2, #181, stacked on #174):** see `migration/notes/PRO-546.md` for the frozen SHA.
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
 
+- **Python test references must run (PRO-546):** a grepped `def` is not evidence. The requirements gate runs every
+  referenced `test_*::test_*` method under `--run` and fails on a skip; tests that drive `go/bin/protodetect` need
+  `tools/go_ci.py build` (or `make go-build`) first, in every job that runs `--run`.
 - **Line numbers of Go sources (PRO-187):** gosec counts `\n` only; Python's `str.splitlines()` also splits on form
   feed and U+2028, so a source with one of them shifts every later line. `go_lint.enclosing_function` uses
   `split("\n")`. Rewriting the gosec baseline is a reviewed change and needs `--write-scanner-lock` in the same commit.

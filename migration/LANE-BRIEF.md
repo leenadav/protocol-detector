@@ -233,6 +233,8 @@ PRO-448 (PR #148, against `main` `23bbc0c`): `81b331d` (fix and tests), `0c51e26
 
 PRO-590 (PR #174 with the #166..#169 chain head `97edba3`, merge commits only): `57f68b4410e93b2333f734de446bdf477f6b6f0d` (conflict resolution: ci gate, REVIEW.md rules, Makefile, the SR table and gate) and the documentation commit after it; the #181 merge is recorded in `migration/notes/PRO-590.md`.
 
+PRO-590 on #181 (PRO-546): `81180398ef14c04031639ddf9261e31cbce0c068` merges #174's head `06515ba` (the combined SR gate with the strict Python runner) and the documentation commit after it.
+
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned

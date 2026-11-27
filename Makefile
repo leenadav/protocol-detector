@@ -88,13 +88,14 @@ workflow-policy:
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
-# Every security requirement names Go tests that exist (requirements) and pass when run (requirements-run,
-# which needs the pinned Go): SECURITY-REQUIREMENTS.md, PRO-403.
+# Every security requirement names tests that exist (requirements) and pass when run (requirements-run, which
+# needs the pinned Go and go/bin/protodetect for the Python tests: make go-build): SECURITY-REQUIREMENTS.md,
+# PRO-403, PRO-546.
 requirements:
 	$(PYTHON) -B tools/check_security_requirements.py --self-test
 	$(PYTHON) -B tools/check_security_requirements.py
 
-requirements-run:
+requirements-run: go-build
 	$(PYTHON) -B tools/check_security_requirements.py --run
 
 sbom:
