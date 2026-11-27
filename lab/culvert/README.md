@@ -77,6 +77,18 @@ git -C culvert am lab/culvert/culvert-lab-ef94311.patch lab/culvert/culvert-lab-
 cd culvert && GOWORK=/path/to/go.work go test -race -run 'TestLab' . ./internal/pdobs ./internal/protodetect
 ```
 
+## Drift check on Culvert `a0aecf8` (PRO-578, 2026-11-27)
+
+Both patches above apply to Culvert `main` `a0aecf8e1dbe6fbc2b385896c045759a6f4ce30b` unchanged: 33 of 33 hunks
+clean, no 3-way merge, no conflict. `culvert-lab-a0aecf8.patch` (5 commits) is the same change on the new base;
+local branch `lab/protocol-detector-a0aecf8`, head `3d3769b4`. Lab tests and 74 of 74 smoke checks match the
+`ef94311` results (`results-a0aecf8/`). Report: `DRIFT-a0aecf8.md`.
+
+```sh
+git -C culvert checkout -b lab/protocol-detector-a0aecf8 a0aecf8e1dbe6fbc2b385896c045759a6f4ce30b
+git -C culvert am lab/culvert/culvert-lab-a0aecf8.patch
+```
+
 ## Load test with vegeta (PRO-269, 2026-11-24)
 
 `tools/loadtest.py` sends sustained HTTPS (CONNECT, observed) and HTTP (forward proxy, the control) load with
