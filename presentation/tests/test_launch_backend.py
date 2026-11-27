@@ -57,6 +57,46 @@ class ServerCommandTests(unittest.TestCase):
             self.assertNotIn(name, source)
 
 
+class ReuseTests(unittest.TestCase):
+    """SR-63: a running server is reused only when its catalog names this build's digest (PRO-403: the launcher's
+    own rule, kept in Python with the launcher)."""
+
+    def serve(self, body):
+        import http.server
+        import threading
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):  # noqa: N802 - the http.server hook name
+                payload = body if self.path == "/api/catalog" else b"{}"
+                self.send_response(200 if self.path == "/api/catalog" else 404)
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+
+            def log_message(self, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(thread.join, 5)
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        return "http://127.0.0.1:{}".format(server.server_address[1])
+
+    def test_a_running_server_is_reused_only_on_a_matching_build_digest(self):
+        url = self.serve(json.dumps({"source": {"build_digest": "a" * 64}}).encode())
+        self.assertTrue(launch.matching_server(url, "a" * 64))
+        self.assertFalse(launch.matching_server(url, "b" * 64))
+        self.assertFalse(launch.matching_server(url, None))
+        self.assertFalse(launch.matching_server(self.serve(b"{}"), "a" * 64))
+        self.assertFalse(launch.matching_server(self.serve(b"not json"), "a" * 64))
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            closed = probe.getsockname()[1]
+        self.assertFalse(launch.matching_server("http://127.0.0.1:{}".format(closed), "a" * 64))
+
+
 @unittest.skipUnless(GO_BINARY.is_file(), "the Go binary is not built (make go-build)")
 class GoServiceTests(unittest.TestCase):
     def test_the_go_service_serves_the_build_the_launcher_expects(self):
