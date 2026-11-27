@@ -34,6 +34,14 @@ var (
 	matchKeys = set("apps", "categories", "subcategories", "technologies", "characteristics", "risks", "port_usage",
 		"transports", "server_ports", "encryption", "shifted_from", "risk_min", "risk_max",
 		"identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions", "observation")
+	// childMatchKeys adds "containers" (Go only, PRO-492) when the policy is parsed with child applications.
+	childMatchKeys = func() map[string]bool {
+		keys := set("containers")
+		for k := range matchKeys {
+			keys[k] = true
+		}
+		return keys
+	}()
 	ruleKeys = set("name", "action", "match", "application_default", "description")
 	// Closed vocabularies of the D04 predicates; there is deliberately no ordering among identity bases.
 	predicateVocabularies = map[string][]string{
@@ -84,7 +92,7 @@ type Rule struct {
 	Name, Action       string
 	Description        string
 	ApplicationDefault bool
-	apps, categories, subcategories, technologies, characteristics, risks,
+	apps, containers, categories, subcategories, technologies, characteristics, risks,
 	portUsage, transports, encryption, shiftedFrom map[string]bool
 	serverPorts      map[string]*portTable
 	predicates       map[string]map[string]bool
@@ -256,7 +264,11 @@ func ports(value interface{}) (map[string]*portTable, *Error) {
 	return table, nil
 }
 
-func newRule(document interface{}, index int, pack *content.Pack) (*Rule, *Error) {
+// Children names the child applications (internal/childapp) a policy may name; nil keeps the reference's
+// vocabulary, where "containers" is an unknown key and child names are unknown applications.
+type Children interface{ Has(name string) bool }
+
+func newRule(document interface{}, index int, pack *content.Pack, children Children) (*Rule, *Error) {
 	doc, ok := document.(map[string]interface{})
 	if !ok {
 		return nil, fail("Rule %d must be an object", index)
@@ -287,7 +299,11 @@ func newRule(document interface{}, index int, pack *content.Pack) (*Rule, *Error
 		}
 		match = m
 	}
-	if unknown := sortedKeys(match, matchKeys); len(unknown) > 0 {
+	keys := matchKeys
+	if children != nil {
+		keys = childMatchKeys
+	}
+	if unknown := sortedKeys(match, keys); len(unknown) > 0 {
 		return nil, fail("Rule '%s' has unknown match keys: %s", name, strings.Join(unknown, ", "))
 	}
 	r := &Rule{Name: name, Action: action}
@@ -315,6 +331,9 @@ func newRule(document interface{}, index int, pack *content.Pack) (*Rule, *Error
 		if canonical, ok := pack.Aliases[name]; ok {
 			return canonical, nil
 		}
+		if children != nil && children.Has(name) {
+			return name, nil
+		}
 		return "", fail("Unknown application: %s", name)
 	}
 	subcategory := func(v string) bool {
@@ -333,6 +352,7 @@ func newRule(document interface{}, index int, pack *content.Pack) (*Rule, *Error
 	}
 	// The reference evaluates the conditions in this order; the first invalid one is reported.
 	load("apps", &r.apps, nil, resolveApp)
+	load("containers", &r.containers, nil, resolveApp)
 	load("categories", &r.categories, func(v string) bool { _, ok := pack.Categories[v]; return ok }, nil)
 	load("subcategories", &r.subcategories, subcategory, nil)
 	load("technologies", &r.technologies, func(v string) bool { return pack.Technologies[v] }, nil)
@@ -386,6 +406,10 @@ func anyIn(set map[string]bool, values []string) bool {
 // met" probe.
 func (r *Rule) matches(v *appid.Verdict, portUsageValue, transport string, serverPort int, hasPort bool, context map[string]string, skipPredicates bool) bool {
 	if r.apps != nil && !r.apps[v.App] {
+		return false
+	}
+	// containers holds for the named application itself and for every child whose container it is.
+	if r.containers != nil && !r.containers[v.App] && (v.BaseApp == nil || !r.containers[*v.BaseApp]) {
 		return false
 	}
 	if len(r.predicates) > 0 && !skipPredicates {
@@ -460,6 +484,12 @@ func (r *Rule) matches(v *appid.Verdict, portUsageValue, transport string, serve
 
 // FromJSON is Policy.from_json over the content pack's vocabularies.
 func FromJSON(text []byte, pack *content.Pack) (*Policy, error) {
+	return FromJSONWithChildren(text, pack, nil)
+}
+
+// FromJSONWithChildren is FromJSON over the pack plus child applications: rules may name a child in apps and
+// match a parent with its children through containers (Go only, PRO-492).
+func FromJSONWithChildren(text []byte, pack *content.Pack, children Children) (*Policy, error) {
 	decoder := json.NewDecoder(bytes.NewReader(text))
 	decoder.UseNumber()
 	var document interface{}
@@ -505,7 +535,7 @@ func FromJSON(text []byte, pack *content.Pack) (*Policy, error) {
 	seen := map[string]bool{}
 	duplicate := false
 	for index, raw := range rules {
-		rule, err := newRule(raw, index, pack)
+		rule, err := newRule(raw, index, pack, children)
 		if err != nil {
 			return nil, err
 		}

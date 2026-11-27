@@ -236,6 +236,8 @@ GO_FUZZ_SMOKE := \
 	./internal/engine:FuzzInspectorNeverPanics:10 \
 	./internal/engine:FuzzSelectNeverPanics:5 \
 	./internal/signatures:FuzzPatternNeverPanics:10 \
+	./internal/childapp:FuzzClassifyNeverPanics:10 \
+	./internal/childapp:FuzzLoadNeverPanics:10 \
 	./internal/decrypt:FuzzConnectionNeverPanics:10 \
 	./internal/capture:FuzzDecoderNeverPanics:10 \
 	./internal/keylogcap:FuzzAnalyzeNeverPanics:10 \

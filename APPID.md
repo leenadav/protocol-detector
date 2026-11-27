@@ -186,3 +186,7 @@ names are never mapped, and label boundaries are unchanged. OpenAI is three entr
 (`chatgpt.com`, `chat.openai.com`, assets), `openai-platform` (`api.openai.com`, `platform.openai.com`) and the
 web front `openai.com`/`www.openai.com` (affiliation only), so neither the platform nor the marketing site
 implies ChatGPT usage.
+
+## Child applications (PRO-492, Go only)
+
+A decrypting proxy can classify one HTTP request into a child application per function (for example `app=gmail-uploading`, `container=gmail`) with `go/detector` `AppClassifier`; policies parsed with child applications match a parent and its children with `containers`. The record is `schemas/app-verdict.schema.json`. Data format, limits and the wave process: [docs/CHILD-APPS.md](docs/CHILD-APPS.md).

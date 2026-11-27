@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "960299fc8337560c9319554bd0108f3823a61db5",
-  "branch": "claude/engine-PRO-448-udp-flow-limit",
-  "build_digest": "8d24d8d1b30f15d6e0437215229007df44b873006ef6617fb42dd86cb4bf45d5",
+  "commit": "5cb35d29e6392b1d96d75c3f569baa378a0efe68",
+  "branch": "claude/engine-PRO-492-child-apps",
+  "build_digest": "419b991a02daec0aecfbbbf39479a6f3da7558d4b25eb925a59c72583bb3e2ed",
   "components": {
     "engine": {
       "root": "protocol_engine",
@@ -23,7 +23,7 @@
     "schemas": {
       "root": "schemas",
       "version": "0.66.0",
-      "files": 4
+      "files": 5
     }
   },
   "files": [
@@ -626,6 +626,11 @@
       "path": "presentation/requirements-decryption.txt",
       "component": "presentation",
       "sha256": "8b5c18678b29b5e8e0fb586a35ac1dce3ccd9da321e8f12ace0e118350b4e568"
+    },
+    {
+      "path": "schemas/app-verdict.schema.json",
+      "component": "schemas",
+      "sha256": "8231f5934b3b82a54747fe41977f5c2b0a0ac7ec6138c68f6120d6bd5469cac5"
     },
     {
       "path": "schemas/event-envelope.schema.json",

@@ -1,0 +1,111 @@
+package detector
+
+import (
+	"encoding/json"
+	"os"
+	"reflect"
+	"sort"
+	"sync"
+	"testing"
+)
+
+func TestAppClassifierParentAndChild(t *testing.T) {
+	c, err := NewAppClassifier(AppLimitsConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := c.Classify(HTTPRequest{SNI: "gmail.googleapis.com", Host: "gmail.googleapis.com", Method: "POST",
+		Path: "/upload/gmail/v1/users/me/messages/send", ContentType: "message/rfc822", RequestBodyBytes: 900, ResponseBodyBytes: -1})
+	if v.App != "gmail-uploading" || v.Container != "gmail" || v.Basis != "request_rule" || !v.Matches("gmail") ||
+		!v.Matches("gmail-uploading") || v.Matches("google-base") || v.Schema != AppSchemaVersion {
+		t.Fatalf("verdict %+v", v)
+	}
+	if v := c.Classify(HTTPRequest{Host: "mail.google.com", Method: "GET", Path: "/"}); v.App != "gmail" || v.Container != "" || !v.Matches("gmail") {
+		t.Fatalf("parent verdict %+v", v)
+	}
+	if len(c.ChildApps()) == 0 {
+		t.Fatal("no child apps")
+	}
+	if _, err := NewAppClassifier(AppLimitsConfig{MaxRuleEvaluations: -1}); err == nil {
+		t.Fatal("negative ceiling accepted")
+	}
+}
+
+// TestAppClassifierLimitIsReported: a ceiling of one evaluation on a host with several rules is reported.
+func TestAppClassifierLimitIsReported(t *testing.T) {
+	c, err := NewAppClassifier(AppLimitsConfig{MaxRuleEvaluations: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	v := c.Classify(HTTPRequest{Host: "gmail.googleapis.com", Method: "GET", Path: "/gmail/v1/users/me/labels"})
+	if v.Limit != "child_rule_evaluations" || v.Container != "" || v.App != "google-base" || v.Evaluated != 1 {
+		t.Fatalf("verdict %+v", v)
+	}
+}
+
+func enumOf(t *testing.T, node interface{}) []string {
+	var out []string
+	for _, x := range node.(map[string]interface{})["enum"].([]interface{}) {
+		out = append(out, x.(string))
+	}
+	sort.Strings(out)
+	return out
+}
+
+// TestAppVerdictMatchesItsSchema keeps the record, its JSON keys and the closed vocabularies equal to
+// schemas/app-verdict.schema.json.
+func TestAppVerdictMatchesItsSchema(t *testing.T) {
+	data, err := os.ReadFile("../../schemas/app-verdict.schema.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var schema map[string]interface{}
+	if err := json.Unmarshal(data, &schema); err != nil {
+		t.Fatal(err)
+	}
+	c, _ := NewAppClassifier(AppLimitsConfig{})
+	record, _ := json.Marshal(c.Classify(HTTPRequest{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload"}))
+	var fields map[string]interface{}
+	_ = json.Unmarshal(record, &fields)
+	var keys, required []string
+	for k := range fields {
+		keys = append(keys, k)
+	}
+	for _, k := range schema["required"].([]interface{}) {
+		required = append(required, k.(string))
+	}
+	sort.Strings(keys)
+	sort.Strings(required)
+	if !reflect.DeepEqual(keys, required) {
+		t.Fatalf("record keys %v, schema %v", keys, required)
+	}
+	props := schema["properties"].(map[string]interface{})
+	sorted := func(l []string) []string { l = append([]string{}, l...); sort.Strings(l); return l }
+	if got := enumOf(t, props["basis"]); !reflect.DeepEqual(got, sorted(AppBases())) {
+		t.Errorf("basis %v vs %v", got, AppBases())
+	}
+	if got := enumOf(t, props["reasons"].(map[string]interface{})["items"]); !reflect.DeepEqual(got, sorted(AppReasons())) {
+		t.Errorf("reasons %v vs %v", got, AppReasons())
+	}
+	if got := enumOf(t, props["limit"]); !reflect.DeepEqual(got, sorted(append(AppLimits(), ""))) {
+		t.Errorf("limits %v vs %v", got, AppLimits())
+	}
+}
+
+func TestAppClassifierIsSafeForConcurrentUse(t *testing.T) {
+	c, _ := NewAppClassifier(AppLimitsConfig{})
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 200; j++ {
+				if v := c.Classify(HTTPRequest{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload"}); v.App != "dropbox-uploading" {
+					t.Errorf("verdict %+v", v)
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+}

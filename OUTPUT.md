@@ -95,3 +95,7 @@ Compatibility: fields are added, never renamed or removed, within a major
 version; enumerations (`status`, `kind`, `strength`, `port_usage`, policy
 actions) are closed sets listed in the schemas. Readable (non-JSON) output is
 for people and carries no compatibility promise.
+
+## Child applications (PRO-492, Go only)
+
+A decrypting proxy can classify one HTTP request into a child application per function (for example `app=gmail-uploading`, `container=gmail`) with `go/detector` `AppClassifier`; policies parsed with child applications match a parent and its children with `containers`. The record is `schemas/app-verdict.schema.json`. Data format, limits and the wave process: [docs/CHILD-APPS.md](docs/CHILD-APPS.md).
