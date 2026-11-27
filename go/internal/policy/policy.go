@@ -408,8 +408,11 @@ func (r *Rule) matches(v *appid.Verdict, portUsageValue, transport string, serve
 	if r.apps != nil && !r.apps[v.App] {
 		return false
 	}
-	// containers holds for the named application itself and for every child whose container it is.
-	if r.containers != nil && !r.containers[v.App] && (v.BaseApp == nil || !r.containers[*v.BaseApp]) {
+	// containers holds for the named application itself, for every child whose container it is, and for every
+	// child matched on a host it owns in the catalog (graph.microsoft.com is ms-base's, so containers:[ms-base]
+	// covers outlook-sending there; SEC-CHILD-2).
+	if r.containers != nil && !r.containers[v.App] && (v.BaseApp == nil || !r.containers[*v.BaseApp]) &&
+		(v.HostOwner == nil || !r.containers[*v.HostOwner]) {
 		return false
 	}
 	if len(r.predicates) > 0 && !skipPredicates {

@@ -17,7 +17,7 @@ func TestAppClassifierParentAndChild(t *testing.T) {
 	v := c.Classify(HTTPRequest{SNI: "gmail.googleapis.com", Host: "gmail.googleapis.com", Method: "POST",
 		Path: "/upload/gmail/v1/users/me/messages?uploadType=media", ContentType: "message/rfc822", RequestBodyBytes: 900, ResponseBodyBytes: -1})
 	if v.App != "gmail-uploading" || v.Container != "gmail" || v.Basis != "request_rule" || !v.Matches("gmail") ||
-		!v.Matches("gmail-uploading") || v.Matches("google-base") || v.Schema != AppSchemaVersion {
+		!v.Matches("gmail-uploading") || !v.Matches("google-base") || v.HostOwner != "google-base" || v.Matches("gmail-sending") || v.Schema != AppSchemaVersion {
 		t.Fatalf("verdict %+v", v)
 	}
 	if v := c.Classify(HTTPRequest{Host: "mail.google.com", Method: "GET", Path: "/"}); v.App != "gmail" || v.Container != "" || !v.Matches("gmail") {

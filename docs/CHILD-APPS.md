@@ -27,7 +27,11 @@ stays equal to the reference.
 ## Policy
 
 `go/internal/policy.FromJSONWithChildren` accepts child names wherever an application is named, and a Go-only match
-key `containers`, which holds for the named application itself and for each of its children:
+key `containers`, which holds for the named application itself, for each of its children, and for each child matched
+on a host it owns in the server-name catalog (`AppVerdict.host_owner`; SEC-CHILD-2). A child never moves a request
+out from under its host's owner: `deny containers:[ms-base]` still denies Graph `sendMail` (outlook-sending, container
+outlook-web, host owner ms-base), and `containers:[google-base]` Gmail send and Drive uploads on `googleapis.com`.
+`AppVerdict.Matches` holds for the same three names:
 
 ```json
 {"version": 1, "default": "allow", "rules": [
@@ -51,12 +55,16 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
 ```
 
 - **Child:** `name` starts with `<container>-` and is not a catalog name or alias; `container` is a catalog
-  application. Category, subcategory and technology come from the container; `risk` and `characteristics` default to
-  the container's. `implicitly_uses` is the container plus the container's own. `evidence` (1 to 8 `https://` links
+  application. Category, subcategory and technology come from the container; `characteristics` default to the
+  container's. `risk` defaults to the highest of the container's and each `depends_on` application's (the owners
+  of the hosts a child may match on), and an explicit `risk` below that is refused, so a child never ranks below an
+  application it is matched under (SEC-CHILD-2). `implicitly_uses` is the container plus the container's own. `evidence` (1 to 8 `https://` links
   to the service's official API reference) is required.
 - **Hosts:** each rule needs `hosts` (exact) or `host_suffixes` (the domain and its subdomains). Every host must be
   claimed in the server-name catalog by the container or by an application in the child's `depends_on` (Gmail's API
-  is on `googleapis.com`, claimed by `google-base`). A web front or unclaimed host is refused.
+  is on `googleapis.com`, claimed by `google-base`). A web front or unclaimed host is refused. At match time a rule only fires when the request host's catalog owner
+  is the container or a `depends_on` application: a `host_suffixes` rule never fires on a more specific host the
+  catalog gives another application (`maps.googleapis.com` is google-maps', not google-base's).
 - **Function conditions** (at least one; all present ones must hold):
   - `methods`: upper-case tokens;
   - `path_prefixes` and `path_patterns`: either list may hit. A pattern is `/`-separated segments: a literal, `*` or

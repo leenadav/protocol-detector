@@ -27,7 +27,10 @@ type HTTPRequest struct {
 // AppVerdict is the application of one request in the enterprise App-ID model. App is the child application
 // (for example dropbox-uploading) when a child rule matched, otherwise the catalog application of the server name
 // (for example dropbox), or "" when the server name names none. Container is App's parent when App is a child,
-// otherwise "". A rule never establishes an application on its own: it only refines the catalog's.
+// otherwise "". HostOwner is the catalog application that owns the server name (google-base for
+// gmail.googleapis.com, ms-base for graph.microsoft.com), the identity a child refines; it equals App when no child
+// matched and is "" when the server name names none. A rule never establishes an application on its own: it only
+// refines the catalog's.
 //
 // Basis, Reasons and Limit are closed vocabularies (AppBases, AppReasons, AppLimits) and may be metric labels;
 // App, Container and Rule come from the content data. A Limit other than "" means a work ceiling was hit: the
@@ -35,6 +38,7 @@ type HTTPRequest struct {
 type AppVerdict struct {
 	App          string   `json:"app"`
 	Container    string   `json:"container"`
+	HostOwner    string   `json:"host_owner"`
 	Rule         string   `json:"rule"`
 	Basis        string   `json:"basis"`
 	Reasons      []string `json:"reasons"`
@@ -45,10 +49,11 @@ type AppVerdict struct {
 	Schema       int      `json:"schema_version"`
 }
 
-// Matches reports whether name is the verdict's application or its container, so one policy entry for a parent
-// covers its children ("gmail" matches gmail and gmail-uploading).
+// Matches reports whether name is the verdict's application, its container or the owner of its host, so one
+// policy entry for a parent covers its children ("gmail" matches gmail and gmail-uploading) and a child never
+// leaves its host owner's entry ("ms-base" matches outlook-sending on graph.microsoft.com; SEC-CHILD-2).
 func (v AppVerdict) Matches(name string) bool {
-	return name != "" && (v.App == name || v.Container == name)
+	return name != "" && (v.App == name || v.Container == name || v.HostOwner == name)
 }
 
 // AppBases, AppReasons and AppLimits list the closed vocabularies of AppVerdict.
@@ -98,7 +103,7 @@ func (c *AppClassifier) Classify(r HTTPRequest) (v AppVerdict) {
 	res := c.set.Classify(childapp.Request{SNI: r.SNI, Host: r.Host, Method: r.Method, Path: r.Path, ContentType: r.ContentType,
 		RequestBodyBytes: r.RequestBodyBytes, ResponseBodyBytes: r.ResponseBodyBytes, WebSocket: r.WebSocket,
 		HeaderNames: r.HeaderNames})
-	return AppVerdict{App: res.App, Container: res.Container, Rule: res.Rule, Basis: res.Basis,
+	return AppVerdict{App: res.App, Container: res.Container, HostOwner: res.HostOwner, Rule: res.Rule, Basis: res.Basis,
 		Reasons: append([]string{}, res.Reasons...), Limit: res.Limit, Evaluated: res.Evaluated, ChildRelease: res.Release,
 		PackRelease: res.PackRelease, Schema: AppSchemaVersion}
 }
