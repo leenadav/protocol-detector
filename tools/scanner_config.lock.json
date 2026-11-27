@@ -947,6 +947,18 @@
    "\twww.velocidex.com/golang/go-ntfs v0.2.1 // indirect",
    "\twww.velocidex.com/golang/regparser v0.0.0-20250203141505-31e704a67ef7 // indirect",
    ")"
+  ],
+  "tools/golint/benchstat/go.mod": [
+   "module protocol-detector/tools/golint/benchstat",
+   "",
+   "go 1.27.4",
+   "",
+   "tool golang.org/x/perf/cmd/benchstat",
+   "",
+   "require (",
+   "\tgithub.com/aclements/go-moremath v0.0.0-20210112150236-f10218a38794 // indirect",
+   "\tgolang.org/x/perf v0.0.0-20261117185222-4febdb082b2c // indirect",
+   ")"
   ]
  }
 }
