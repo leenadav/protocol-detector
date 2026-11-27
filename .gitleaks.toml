@@ -36,6 +36,22 @@ regexes = [
   '''^(?:47455420|504f535420|485454502f312e)(?:[0-9a-f]{2})+$''',
 ]
 
+# The SR-8 security test (go/internal/engine/security_a_test.go on claude/pensive-carson-f94p62 43f37e2, PRO-403, PR
+# #167) builds an LDAP bind and MQTT CONNECT around the synthetic password "s3cr3t-placeholder" and proves it never
+# reaches an observation; generic-api-key reads `secret := "..."` as key=value. gitleaks scans every fetched branch,
+# so that one commit failed the secret scan of every open pull request (PRO-525). Allowed only when BOTH hold: the
+# file is a Go test under go/, and the whole secret is exactly that token. Any other value in a Go test, or the same
+# token in any other file, still flags (tools/check_gitleaks_allowlist.py, negative controls).
+[[allowlists]]
+description = "The synthetic SR-8 password placeholder in Go security tests is not a credential"
+condition = "AND"
+paths = [
+  '''^go/.*_test\.go$''',
+]
+regexes = [
+  '''^s3cr3t-placeholder$''',
+]
+
 # App Research live rounds (research/live-results-YYYY-MM-DD-rN.tsv, PRO-145/PRO-153) record each name's public DNS
 # CNAME chain as "host>host>..." (r5 line 8, 655d440/75695d3, was the first; its one-off exact entry is replaced
 # by this rule). generic-api-key reads a label such as "edgekey" before ">" as key=value and flags

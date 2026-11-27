@@ -7,16 +7,20 @@ key=value. .gitleaks.toml has one [[allowlists]] entry for that, with condition 
 whole match is a chain of lowercase DNS names joined by ">". Go table tests carry synthetic HTTP/1 messages as hex,
 and a case name such as "session key" next to one reads as key=value too; a second AND entry allows an all-hex secret
 decoding to an HTTP/1 start line only in go/**/*_test.go (SEC-CI-1), because the same hex anywhere else could be a
-captured request with a cookie or bearer token. This tool proves both allowlists stay that narrow.
+captured request with a cookie or bearer token. A third AND entry allows exactly the synthetic SR-8 password
+"s3cr3t-placeholder" only in go/**/*_test.go (PRO-525). This tool proves all three allowlists stay that narrow.
 
   --self-test  reads the entry from .gitleaks.toml and checks its path and regex against fixed samples (Python's re
                reads these two patterns as Go's RE2 does): CNAME chains pass only in live-results TSVs; keys,
                tokens and passwords, in that file or anywhere else, do not; hex HTTP/1 passes only in Go tests
-               under go/, and a hex secret that is not an HTTP message passes nowhere.
+               under go/, and a hex secret that is not an HTTP message passes nowhere; the SR-8 placeholder passes
+               only as the whole secret in a Go test under go/.
   --bin DIR    builds a throwaway git repository with the same samples and runs the real gitleaks (DIR/gitleaks)
                with this .gitleaks.toml: exactly the chain in the live-results TSV is allowed; every secret, and the
                same chain in any other file, is still reported; a hex HTTP/1 request is allowed in a Go test under
-               go/ and reported in a Python file, a JSON fixture and a Go file that is not a test.
+               go/ and reported in a Python file, a JSON fixture and a Go file that is not a test; the SR-8
+               placeholder is allowed in a Go test under go/ and reported in a Python file and a Go file that is
+               not a test, and another value in the same Go test is reported.
 
     check_gitleaks_allowlist.py --self-test
     check_gitleaks_allowlist.py --bin DIR
@@ -46,6 +50,10 @@ GO_TEST = "go/internal/protocols/x/hex_test.go"
 # A synthetic captured request carrying a session cookie, hex-encoded at run time (no literal hex in this file).
 HEX_REQUEST = b"GET /a HTTP/1.1\r\nCookie: s=Zq8vT3mW9xKp2LrN\r\n".hex()
 HEX_LINE = '\t{{"session key", "{}"}},\n'
+# The SR-8 synthetic password (PRO-525), assembled at run time like the samples above.
+PLACEHOLDER = "s3cr3t" + "-placeholder"
+PLACEHOLDER_TEST = "go/internal/engine/x_security_test.go"
+PLACEHOLDER_LINE = '\tsecret := "{}"\n'
 
 
 def live_allowlist(text):
@@ -72,6 +80,20 @@ def hex_allowlist(text):
         paths = [item for item in literals if item.startswith("^go/")]
         others = [item for item in literals if not item.startswith("^go/")]
         if len(paths) == 1 and len(others) == 1 and others[0].startswith("^(?:47455420"):
+            return paths[0], others[0]
+    return None
+
+
+def placeholder_allowlist(text):
+    """(path regex, secret regex) of the [[allowlists]] entry for the SR-8 placeholder in Go tests, or None."""
+    for block in text.split("[[allowlists]]")[1:]:
+        block = block.split("\n[")[0]
+        if 'condition = "AND"' not in block or "regexTarget" in block:
+            continue
+        literals = re.findall(r"'''(.*?)'''", block)
+        paths = [item for item in literals if item.startswith("^go/")]
+        others = [item for item in literals if not item.startswith("^go/")]
+        if len(paths) == 1 and len(others) == 1 and "placeholder" in others[0]:
             return paths[0], others[0]
     return None
 
@@ -106,7 +128,19 @@ def self_test():
     for secret in (b"PUT / HTTP/1.1".hex(), "0123456789abcdef0123456789abcdef", HEX_REQUEST.upper(), HEX_REQUEST + "0",
                    HEX_REQUEST + "zz") + tuple(value for _, value in SECRETS):
         assert not allowed(hexed, GO_TEST, secret), secret
+    held = placeholder_allowlist(text)
+    assert held, ".gitleaks.toml has no AND allowlist for the SR-8 placeholder in go/**/*_test.go"
+    assert held[1] == "^" + PLACEHOLDER + "$", "the placeholder entry is not one exact token"
+    for path in (PLACEHOLDER_TEST, "go/internal/engine/security_a_test.go"):
+        assert allowed(held, path, PLACEHOLDER), path
+    for path in ("tools/minimize_example.py", "go/internal/engine/security.go", "go/x_test.go.bak", "vendor/go/x_test.go",
+                 "docs/go/x_test.go", "research/live-results-2026-12-01-r6.tsv"):
+        assert not allowed(held, path, PLACEHOLDER), path
+    for secret in (PLACEHOLDER + "x", "x" + PLACEHOLDER, PLACEHOLDER.upper(), "s3cr3t", PLACEHOLDER + " " + "Zq8vT3mW9xKp",
+                   ) + tuple(value for _, value in SECRETS):
+        assert not allowed(held, PLACEHOLDER_TEST, secret), secret
     print("check_gitleaks_allowlist self-test: ok (live-results CNAME chains only; hex HTTP/1 only in Go tests under go/; "
+          "the SR-8 placeholder only in Go tests under go/; "
           "{} secret shapes, other paths and malformed values still flag)".format(len(SECRETS)))
     return 0
 
@@ -125,6 +159,12 @@ def run(bin_dir):
         for name in hex_files:
             (repo / name).parent.mkdir(parents=True, exist_ok=True)
             (repo / name).write_text(HEX_LINE.format(HEX_REQUEST), encoding="utf-8")
+        placeholder_files = [PLACEHOLDER_TEST, "tools/bind.py", "go/internal/engine/bind.go"]
+        for name in placeholder_files:
+            (repo / name).parent.mkdir(parents=True, exist_ok=True)
+            (repo / name).write_text(PLACEHOLDER_LINE.format(PLACEHOLDER), encoding="utf-8")
+        with (repo / PLACEHOLDER_TEST).open("a", encoding="utf-8") as handle:
+            handle.write(PLACEHOLDER_LINE.format("Zq8vT3mW9xKp2LrN7sYb4HcJ"))
         git = ["git", "-C", str(repo), "-c", "user.email=ci@example.invalid", "-c", "user.name=ci"]
         for command in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "fixture"]):
             subprocess.run(git + command, check=True)  # noqa: S603,S607
@@ -135,13 +175,16 @@ def run(bin_dir):
         found = sorted((item["File"], item["StartLine"], item["RuleID"]) for item in json.loads(report.read_text()))
     expected = sorted([("docs/notes.tsv", 1, "generic-api-key")]
                       + [(LIVE, number + 3, rule) for number, (rule, _) in enumerate(SECRETS)]
-                      + [(name, 1, "generic-api-key") for name in hex_files[1:]])
+                      + [(name, 1, "generic-api-key") for name in hex_files[1:]]
+                      + [(PLACEHOLDER_TEST, 2, "generic-api-key")]
+                      + [(name, 1, "generic-api-key") for name in placeholder_files[1:]])
     if found != expected:
         print("FAILED: gitleaks reported {}, expected {}".format(found, expected))
         return 1
     print("check_gitleaks_allowlist: ok with the real gitleaks (the chain in {} and the hex HTTP/1 request in {} allowed; "
-          "{} secrets there, the chain in docs/notes.tsv and the hex request in {} other files reported)".format(
-              LIVE, GO_TEST, len(SECRETS), len(hex_files) - 1))
+          "{} secrets there, the chain in docs/notes.tsv and the hex request in {} other files reported; the SR-8 "
+          "placeholder allowed in {}, another value there and the placeholder in {} other files reported)".format(
+              LIVE, GO_TEST, len(SECRETS), len(hex_files) - 1, PLACEHOLDER_TEST, len(placeholder_files) - 1))
     return 0
 
 
