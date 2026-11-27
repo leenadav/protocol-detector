@@ -6,66 +6,13 @@ Run `python3 -B -m unittest discover -q` from the repository root.
 Do not capture external or user traffic. Live smoke tests are opt-in and local
 synthetic IPv4 loopback only. Ordinary tests need no capture privileges.
 
-## Review priorities
+## Review guidelines
 
-- Report reproducible correctness and security bugs, with file/line, triggering
-  input or sequence, observable consequence, and severity. Identify missing
-  regression tests. Do not treat a passing suite as proof of correctness.
-- A positive classification must satisfy its documented structural profile.
-  Trace malformed lengths, truncated inputs, ambiguity, explicit hints and
-  fragmentation. Hints select candidates; they must never establish identity.
-- Reassembly must feed each contiguous byte once. Conflicting retained overlaps
-  invalidate classification before admitting new bytes. Check wraparound, gaps,
-  FIN/timeout/loss ordering, and both traffic directions.
-- Parsing and reassembly must respect configured byte/count/depth budgets. Trace
-  attacker-controlled CPU/allocation amplification, not just average performance.
-  Do not recommend optimizing a hot path without preserving its error semantics.
-- Do not emit payloads, credentials or opaque identifiers as application identity.
-  TLS ClientHello metadata is an offer, not authenticated application identity.
-
-## Code Review Rules
-
-Automatic pull-request review flags P0/P1 findings only. Lint, formatting and
-style are left to CI. Each rule names what to flag, why, and the safe path.
-
-1. **Parsers of untrusted traffic** (`go/`, `protocol_engine/`, `protocol_adapters/`).
-   - Flag: an allocation, slice or read sized by a length or count field before it
-     is checked against the bytes present and the configured budget; a panic,
-     index error or uncaught exception on malformed or truncated input; a loop or
-     recursion with no byte, count, depth or work limit.
-   - Why: every byte is attacker-controlled, so these become memory or CPU
-     amplification, or a crash of the classifier.
-   - Safe path: bound the read first, then return the existing errors. In Go that
-     is `errs.Exceeded` / `parsing.Budget` and `parsing.Malformed`; in Python,
-     `BudgetError` and `ParseError` (`protocol_engine/parsers.py`). A failure must
-     never become a positive result.
-2. **Content packs** (`protocol_engine/content.py`, `content_lock.json`,
-   `go/internal/content/`, `migration/fixtures/content.json`).
-   - Flag: anything that weakens digest verification (or any signature check
-     added later); a rollback that stops reproducing an earlier release's
-     published digest (C11); version ordering that is not numeric per component
-     (2026.11.9 sorts before 2026.11.10).
-   - Why: records pin a content release, and a silent digest or ordering change
-     breaks that pin or makes an older pack look newer.
-   - Safe path: keep `make content` and `tools/content_gate.py` passing. Change
-     a release only by adding a new version.
-3. **The Python reference** (product code outside `go/` and `migration/`).
-   - Flag: any edit not in the Lee-approved list. That list is "Frozen-Python
-     exceptions" in `migration/STATUS.md` on `claude/go-migration`: the
-     launchers, the parity case generator, the CoAP profile, and the C11 and
-     numeric version compare in `content.py`.
-   - Why: Go is judged against the Python reference, so an unapproved change
-     moves the parity target.
-   - Safe path: make the change in Go, or get Lee's approval and record it in that list.
-4. **CI** (`.github/`, `tools/workflows.lock.json`).
-   - Flag: an action not pinned to a full commit SHA; a token permission
-     broadened beyond today's set (workflow level `contents: read`; job grants
-     only where `tools/check_workflow_policy.py` allows them, writes only in the
-     CodeQL upload and the `publish-release.yml` publish job);
-     `pull_request_target`; untrusted event text expanded inside `run:`.
-   - Why: these hand repository write access or secrets to code from a pull request.
-   - Safe path: `make workflow-policy` and its lock. A change the policy cannot
-     express goes to the CI/CD lane.
+`REVIEW.md` at the repository root is the single source of truth for reviewing a pull request here. Read it in
+full before any review, automatic or not: it holds the review priorities, the three passes (bugs, security,
+compliance with the task and these rules), the Code Review Rules (parsers, content packs, the Python reference,
+CI), what counts as Important (P0/P1) or Nit (at most 5), and what not to report. The Codex automatic pull-request
+review reports Important (P0/P1) findings only. `REVIEW-SCOPE.md` gives the current release's review focus.
 
 ## Flaky tests and verify skills
 
