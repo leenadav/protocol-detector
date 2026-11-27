@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-24 (PRO-169: specs and batch Q from Research Lab's read of blocked-URL rows 30 to 44).
+Updated 2026-11-27 (PRO-495: child apps wave 0 for PRO-492; earlier: PRO-169, batch Q from blocked-URL rows 30 to 44).
 
 **Rule (PRO-347, 2026-11-24): every task adds its own `migration/notes/PRO-<n>.md`** (front matter: task, lane,
 date, title, PRs, SHAs; then one paragraph; `migration/notes/README.md`) in the same push as the task; it is the
@@ -37,6 +37,11 @@ and content-pack patches for the Engine lane.
   M = six enterprise apps from vendor network pages, PRO-92; N = Sophos, DocuSign, Twilio, Snowflake, PRO-121;
   O = Datto RMM, N-able, FortiClient, PRO-106; P = HubSpot tags (`hubspot-base`), PRO-158; Q = rows 30 to 44 read by
   Research Lab: `manageengine-endpoint-central`, `new-relic-base`, five ids extended, PRO-169).
+- Child apps (PRO-492 App-ID model): wave 0 (PRO-495) is `research/child-apps/wave-0.json` and `wave-0.md`: 30 pack
+  services, 80 children, 50 function children with rule fields (host, method, path, content type, direction, WebSocket)
+  from official API references or the vendor's own SDK/spec repositories, 39 functions recorded as not separable, 10
+  blocked sources (blocked-URL rows 45 to 54). Checked and rendered by `tools/check_child_apps.py`. Rules describe the
+  vendors' public APIs; no vendor publishes its own web client's paths. New services come in waves from PRO-491.
 - D09 (ISCX VPN-nonVPN 2016) has been measured twice: per-family, per-application, and email server names.
 - Live verification rounds 1 to 7 are in (run by Hermes and Research Lab): all 506 spec names have a result: 325 live (140 with a
   certificate naming an organisation), 32 suffixes verified by probe, 114 apexes with no address and no probe, 33 TLS failures (not
@@ -86,7 +91,7 @@ python3 -B -m unittest discover -q
 ```bash
 python3 -B -m unittest discover -s research/tools -q
 ```
-(under 1 s; expect `OK`, 3 tests: the lane's own tool tests, which the root discovery does not collect because
+(under 1 s; expect `OK`, 5 tests: the lane's own tool tests, which the root discovery does not collect because
 `research/` is not a package.)
 
 ```bash
@@ -120,6 +125,7 @@ expected failure is the pinned host count in `test_content.py`, which the Engine
 | Live round 8 (`live-hosts-r8.txt`, 128 names, 24 with a documented probe) | a Research Lab run of `tools/live_verify.py` with TLS; then fold the results into section 9 |
 | Change tracking for the nine new pages | `recheck_sources.py` picks the cited URLs up from section 7; their hosts are not on this session's allowlist, so the first hash needs a server run |
 | Culvert field data for prioritisation | not available yet (placeholder in the backlog) |
+| Child apps wave 0 (PRO-495) | Engine (PRO-492) implements from `child-apps/wave-0.json`; Research Lab reads blocked-URL rows 45 to 54 (Slack, Zoom, Meta, X, Pastebin, Reddit, WeTransfer developer pages), then the rows are confirmed or added in a later wave |
 
 ## 6. Frozen SHAs awaiting Codex
 

@@ -1,6 +1,6 @@
 # Pages this lane cannot read: for Hermes to open and relay
 
-Updated 2026-11-24 (rows 30 to 33, 36, 38, 40 and 42 to 44 resolved, PRO-169; 34, 35, 37, 39 and 41 stay BLOCKED). This lane does not bypass bot challenges, sign-ins or other access
+Updated 2026-11-27 (rows 45 to 54 added by PRO-495, child apps wave 0; rows 30 to 33, 36, 38, 40 and 42 to 44 resolved, PRO-169; 34, 35, 37, 39 and 41 stay BLOCKED). This lane does not bypass bot challenges, sign-ins or other access
 controls. For each page, please open the exact URL in a normal browser and relay the parts named below as text
 (domain names, ports and the page's own date). The relayed text is cited as "read by Hermes, relayed".
 
@@ -22,6 +22,16 @@ controls. For each page, please open the exact URL in a normal browser and relay
 | 37 | LastPass | `https://support.lastpass.com/help/whitelisting-and-firewall-configuration-for-logmein-products` | Research Lab, PRO-168, 2026-11-22: still blocked: the server sends an incomplete TLS certificate chain (no read with verification off without Lee's approval; a browser relay is the alternative) | BLOCKED |
 | 39 | Dialpad | `https://help.dialpad.com/docs/network-setup-recommendations` | Research Lab, PRO-168, 2026-11-22: still blocked: 403 | BLOCKED |
 | 41 | Dashlane | `https://support.dashlane.com/hc/articles/27983351888786` | Research Lab, PRO-168, 2026-11-22: still blocked: 403 | BLOCKED |
+| 45 | WeTransfer (developer API) | `https://developer.wetransfer.com/` | not reachable from this environment (PRO-495, 2026-11-27) | published request paths for creating and downloading a transfer (`research/child-apps/wave-0.json`) |
+| 46 | Slack (upload method) | `https://docs.slack.dev/reference/methods/files.getUploadURLExternal` | not reachable (PRO-495) | method, content type and upload URL host, to confirm what wave 0 took from Slack's own SDK |
+| 47 | Slack (file download) | `https://docs.slack.dev/messaging/working-with-files` | not reachable (PRO-495) | the download URL form (`url_private`, `files.slack.com` path) for `slack-downloading` |
+| 48 | Zoom (developer API) | `https://developers.zoom.us/docs/api/` | not reachable (PRO-495) | chat file upload and recording download endpoints: host, method, path |
+| 49 | Meta Graph API | `https://developers.facebook.com/docs/graph-api/` | not reachable (PRO-495) | reference pages for `/feed`, `/photos`, `/videos`, to confirm what wave 0 took from Meta's Business SDK |
+| 50 | Instagram Platform | `https://developers.facebook.com/docs/instagram-platform/` | not reachable (PRO-495) | content publishing (`/media`, `/media_publish`) and whether `graph.instagram.com` is used |
+| 51 | X API (media upload) | `https://docs.x.com/x-api/media/upload-media` | not reachable (PRO-495) | the media upload reference, to confirm X's SDK and any multipart form |
+| 52 | Pastebin API | `https://pastebin.com/doc_api` | not reachable (PRO-495) | the paste-creation request: method, path, content type, the option field |
+| 53 | Reddit API | `https://www.reddit.com/dev/api/` | not reachable (PRO-495) | submit and media-upload endpoints (host, method, path) |
+| 54 | Reddit help | `https://support.reddithelp.com/` | not reachable (PRO-495) | any official network or firewall page |
 
 Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PRO-29) and are resolved below. Rows 30 to 44 were read by Research Lab on 2026-11-22 (PRO-168): ten are resolved below (PRO-169); rows 34, 35, 37, 39 and 41 stay BLOCKED above.
 

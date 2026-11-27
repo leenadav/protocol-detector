@@ -171,3 +171,5 @@ regenerated; hand-written text stays outside the markers.
 - `tools/`: `live_verify.py`, `observe_web.js`, `recheck_sources.py`, `retrofit_specs.py`.
 - `protocol/app-attributes.md`: proposed attribute schema (ENGINE-FIELD).
 - `observations/`: dependency-mapping outputs (host names, request counts and page status only).
+- `child-apps/`: child applications per function for the App-ID model (PRO-492): `wave-N.json` with citations per
+  row, and `wave-N.md` rendered from it by `tools/check_child_apps.py --write-md` (which also checks the JSON).
