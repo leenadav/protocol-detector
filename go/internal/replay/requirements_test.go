@@ -638,7 +638,7 @@ func recordedResults(t *testing.T) (*parity.Document, map[string]json.RawMessage
 			recorded.err = err
 			return
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 		reader, err := gzip.NewReader(file)
 		if err != nil {
 			recorded.err = err

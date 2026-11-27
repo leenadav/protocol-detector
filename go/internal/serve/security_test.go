@@ -46,7 +46,7 @@ func loopbackExchange(t *testing.T, addr, method, path string, headers []string,
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
 	request := method + " " + path + " HTTP/1.1\r\n" + strings.Join(headers, "\r\n")
 	if len(headers) > 0 {
@@ -63,7 +63,7 @@ func loopbackExchange(t *testing.T, addr, method, path string, headers []string,
 	if err != nil {
 		t.Fatalf("%s %s: no answer: %v", method, path, err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	data, _ := io.ReadAll(response.Body)
 	return response.StatusCode, string(data)
 }
@@ -160,7 +160,7 @@ func TestHandlerPoolRejectsBeyondItsBound(t *testing.T) {
 	if s.rejected.Load() != 1 {
 		t.Fatalf("rejected counter %d, want 1", s.rejected.Load())
 	}
-	held[0].Close()
+	_ = held[0].Close()
 	deadline = time.Now().Add(5 * time.Second)
 	for len(s.slots) >= MaxHandlers && time.Now().Before(deadline) {
 		time.Sleep(5 * time.Millisecond)
@@ -169,6 +169,6 @@ func TestHandlerPoolRejectsBeyondItsBound(t *testing.T) {
 		t.Fatalf("after a slot freed: status %d, want 200", code)
 	}
 	for _, conn := range held[1:] {
-		conn.Close()
+		_ = conn.Close()
 	}
 }
