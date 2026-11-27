@@ -124,14 +124,15 @@ func TestMayBeFailsClosedOnUndetermined(t *testing.T) {
 	if v := c.Classify(upload); v.App != "gmail-uploading" || v.ChildStatus != "matched" || !c.MayBe(v, "gmail-uploading") {
 		t.Fatalf("canonical upload: %+v", v)
 	}
-	for _, path := range []string{"/upl%6fad/gmail/v1/users/me/messages?uploadType=media"} {
+	// SEC-CHILD-3: the upload rule no longer reads uploadType, so repeating it is still the upload.
+	for _, path := range []string{"/upl%6fad/gmail/v1/users/me/messages?uploadType=media", "/upload/gmail/v1/users/me/messages?uploadType=media&uploadType=media"} {
 		bypass := upload
 		bypass.Path = path
 		if v := c.Classify(bypass); v.App != "gmail-uploading" {
 			t.Fatalf("%s: %+v", path, v)
 		}
 	}
-	for _, path := range []string{"/upload//gmail/v1/users/me/messages?uploadType=media", "/upload/gmail/v1/users/me/messages?uploadType=media&uploadType=media"} {
+	for _, path := range []string{"/upload//gmail/v1/users/me/messages?uploadType=media"} {
 		bypass := upload
 		bypass.Path = path
 		v := c.Classify(bypass)
@@ -141,6 +142,11 @@ func TestMayBeFailsClosedOnUndetermined(t *testing.T) {
 		if c.MayBe(v, "dropbox-uploading") || c.MayBe(v, "no-such-child") {
 			t.Fatalf("%s: MayBe holds for a child of another owner", path)
 		}
+	}
+	// An ambiguous request: Drive downloads read alt=media, and a repeated alt is undetermined.
+	drive := HTTPRequest{Host: "www.googleapis.com", Method: "GET", Path: "/drive/v3/files/f1?alt=media&alt=media"}
+	if v := c.Classify(drive); v.ChildStatus != "undetermined" || v.Matches("google-drive-downloading") || !c.MayBe(v, "google-drive-downloading") || c.MayBe(v, "dropbox-uploading") {
+		t.Fatalf("repeated alt: %+v (MayBe %v)", v, c.MayBe(v, "google-drive-downloading"))
 	}
 	if v := c.Classify(HTTPRequest{Host: "gmail.googleapis.com", Method: "GET", Path: "/gmail/v1/users/me/profile"}); v.ChildStatus != "none" || c.MayBe(v, "gmail-uploading") {
 		t.Fatalf("decided request: %+v", v)
