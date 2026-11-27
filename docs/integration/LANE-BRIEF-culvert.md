@@ -71,6 +71,12 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
     allocations. Cost on: 23 allocations and about 2.7 µs per child-matched request (the library accounts for 20).
     That is outside ADR-0011's 1 per session, and the ADR draft's section 6 needs a per-request row. See
     `docs/integration/CHILDAPP-LAB.md`.
+  - **Drift check on Culvert `main` `a0aecf8` (PRO-578, 2026-11-27):** `lab/culvert/DRIFT-a0aecf8.md`. Both
+    patches (5 commits, 33 hunks) apply to `a0aecf8` exactly, 397 commits past `ef94311`, because no upstream commit
+    touches a patched file. `lab/culvert/culvert-lab-a0aecf8.patch` holds the same changed lines on the new base
+    (local `lab/protocol-detector-a0aecf8`, `3d3769b4`). `-race`: 209 root tests (198 unmodified, plus 11 `TestLab`).
+    Smoke: 74 of 74 checks, 0 cells different from `ef94311`. Plan section 3 facts hold; its line numbers are
+    stale (the edits are proposed in the report, not applied).
 - **Load test (PRO-269, 2026-11-24):** `docs/integration/LOAD-TEST.md`. vegeta v12.12.0, a test tool only, against
   A, B and D on `ef94311`, HTTPS (observed) and HTTP (control), at 100/300/600/1,000 req/s, three rounds, one
   connection per request. Observe minus off: p50 +5 to +113 µs, p95 +84 to +424 µs, p99 within noise;
@@ -194,6 +200,9 @@ Culvert's allocation gates need `-tags benchgate`.
   `docs/integration/CHILDAPP-LAB.md` and `lab/culvert/results-childapp/`; lab and docs only, no detector code) and
   the brief commit that records it, on
   `claude/culvert-PRO-504-childapp-lab`, based on `claude/engine-PRO-492-child-apps` `dadc6bd`.
+- **Queued for Codex (PRO-578):** the drift-check commit (adds `lab/culvert/DRIFT-a0aecf8.md`,
+  `lab/culvert/culvert-lab-a0aecf8.patch` and `lab/culvert/results-a0aecf8/`; lab and docs only) and the brief
+  commit that records it, on `claude/culvert-PRO-578-drift`; SHAs in `migration/notes/PRO-578.md`.
 - **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
   The second run, `69434b8` and `1f3e94f` on `claude/vigilant-sagan-i3rlse` (PR leenadav/protocol-detector#120),
