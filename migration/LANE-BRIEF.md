@@ -241,6 +241,10 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 
 ## 7. Pitfalls learned
 
+- **Pin the key exchange in a TLS benchmark (PRO-596).** Flights built from crypto/tls defaults follow the
+  library: they became X25519MLKEM768, and a parser change (PRO-260) then looked like a 46 % regression. Pass
+  explicit `CurvePreferences` (`tls-classical`, `tls-hybrid` in `go/detector/bench_test.go`) and bisect a perf
+  regression with the flights pinned before blaming the hot path.
 - **An SR row's id is not its Go test's name (PRO-590).** `TestSR58RDPSecurityPosture`..`TestSR63ServerNameCatalog`
   verify SR-70..SR-75 since PRO-545 renumbered the duplicates; the names key `requirements.json.gz`, so renaming a
   test means re-recording its cases at `python-final`. Change the row id (and the lock), not the test name.
