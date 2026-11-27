@@ -36,8 +36,9 @@ their decisions, the policy locks, and the release controller.
   `test_ui.GoServiceBrowserTests` runs the Playwright dashboard suite against the Go service with no Python engine
   reachable. PR C (PRO-403) deletes `presentation/server.py` and the Python engine.
 - **PRO-503 (framed on 386):** branch `claude/platform-PRO-503-framed-386`. `framed` builds and tests on
-  `GOARCH=386`, so `GO_386_EXCLUDE` is empty (the guard stays). The five overflowing constants are compared as
-  `uint32` (RPC last-fragment bit, SMB `STATUS_MORE_PROCESSING_REQUIRED`) and `respHuge` is `math.MaxInt>>1 + 1`
+  `GOARCH=386`, so `GO_386_EXCLUDE` is empty (the guard stays). The five overflowing constants are compared on
+  `bits32(v) = int64(v) & 0xFFFFFFFF` (RPC last-fragment bit, SMB `STATUS_MORE_PROCESSING_REQUIRED`; a widening, so
+  gosec G115 stays clean, where a `uint32` conversion failed the go-lint job) and `respHuge` is `math.MaxInt>>1 + 1`
   (1<<62 on amd64, as before). The 386 run then showed a real wrap: `strconv.Atoi` clamps a RESP bulk length of
   10 to 18 digits to MaxInt32, and `total+n+2` went negative past the byte budget; `respNumber` now maps it to
   `respHuge`. `framed/int32_test.go` covers all three; amd64 behaviour and parity are unchanged.

@@ -22,8 +22,8 @@ func TestRPCLastFragmentBitOn32BitInt(t *testing.T) {
 
 func TestSMBMoreProcessingStatusOn32BitInt(t *testing.T) {
 	status := le([]byte{0x16, 0x00, 0x00, 0xC0}, 0, 4)
-	if uint32(status) != statusMoreProcessing {
-		t.Fatalf("STATUS_MORE_PROCESSING_REQUIRED read as %#x", uint32(status))
+	if bits32(status) != statusMoreProcessing {
+		t.Fatalf("STATUS_MORE_PROCESSING_REQUIRED read as %#x", bits32(status))
 	}
 }
 
