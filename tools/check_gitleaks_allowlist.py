@@ -70,6 +70,9 @@ CI_SCOPE = re.compile(r"^          GITLEAKS_LOG_OPTS: \$\{\{ github\.event_name 
 CI_SCAN = ' git --log-opts="$GITLEAKS_LOG_OPTS" --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . '
 NIGHTLY_SCAN = " git --log-opts=--all --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . "
 GITLEAKS_RUN = re.compile(r'"\$RUNNER_TEMP/bin/gitleaks" git ')
+# The scope proof's own synthetic leaks (the aws-access-token and github-pat shapes above), assembled at run time.
+LANE_LEAK = "AKIA" + "Q2ZJ7XKP4MWN6RTB"
+PR_LEAK = "ghp" + "_" + "ZqY8mN2pR4tV6xB9cD1fG3hJ5kL7nP0sQ2wE"
 
 
 def live_allowlist(text):
@@ -259,14 +262,13 @@ def run_scope(bin_dir):
             sh("add", "-A")
             sh("commit", "-qm", message)
 
-        lane_leak, pr_leak = SECRETS[2][1], SECRETS[3][1]
         sh("init", "-q", "-b", "main")
         commit("README", "clean\n", "main")
         sh("checkout", "-q", "-b", "lane-a")
-        commit("lane/config.txt", "aws = {}\n".format(lane_leak), "lane leak")
+        commit("lane/config.txt", "aws = {}\n".format(LANE_LEAK), "lane leak")
         sh("checkout", "-q", "main")
         sh("checkout", "-q", "-b", "pr-leak")
-        commit("pr/config.txt", "token = {}\n".format(pr_leak), "pull request leak")
+        commit("pr/config.txt", "token = {}\n".format(PR_LEAK), "pull request leak")
         commit("pr/config.txt", "token = removed\n", "delete it again: the history still holds it")
         sh("checkout", "-q", "main")
         sh("checkout", "-q", "-b", "pr-clean")
