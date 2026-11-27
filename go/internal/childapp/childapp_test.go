@@ -33,7 +33,7 @@ func TestEmbeddedComponentLoads(t *testing.T) {
 		t.Fatalf("component not loaded: %d children, release %q", len(s.Children()), s.Release.Version)
 	}
 	for _, c := range s.Children() {
-		if !strings.HasPrefix(c.Name, c.Container+"-") || len(c.Evidence) == 0 || c.ImplicitlyUses[0] != c.Container {
+		if c.Name == c.Container || len(c.Evidence) == 0 || c.ImplicitlyUses[0] != c.Container {
 			t.Errorf("child %s: container %s, evidence %v, implicitly_uses %v", c.Name, c.Container, c.Evidence, c.ImplicitlyUses)
 		}
 		if a := s.Application(c.Name); a == nil || a.Container == nil || *a.Container != c.Container {
@@ -52,8 +52,13 @@ func TestClassifyExamples(t *testing.T) {
 		reason    string
 	}{
 		{"gmail upload", Request{SNI: "gmail.googleapis.com", Host: "gmail.googleapis.com", Method: "POST",
-			Path: "/upload/gmail/v1/users/me/messages/send?uploadType=multipart", ContentType: "message/rfc822",
+			Path: "/upload/gmail/v1/users/me/messages?uploadType=multipart", ContentType: "message/rfc822",
 			RequestBodyBytes: 4096, ResponseBodyBytes: -1}, "gmail-uploading", "gmail", BasisRequestRule, ReasonChildMatched},
+		{"gmail upload without uploadType", Request{Host: "gmail.googleapis.com", Method: "POST",
+			Path: "/upload/gmail/v1/users/me/messages", ContentType: "message/rfc822"}, "google-base", "", BasisServerName, ReasonNoChildMatched},
+		{"gmail send through the upload path is sending (more specific)", Request{Host: "gmail.googleapis.com", Method: "POST",
+			Path: "/upload/gmail/v1/users/me/messages/send?uploadType=multipart", ContentType: "message/rfc822"},
+			"gmail-sending", "gmail", BasisRequestRule, ReasonChildMatched},
 		{"gmail send", Request{Host: "gmail.googleapis.com:443", Method: "POST", Path: "/gmail/v1/users/me/messages/send"},
 			"gmail-sending", "gmail", BasisRequestRule, ReasonChildMatched},
 		{"gmail attachment", Request{Host: "GMAIL.googleapis.com", Method: "GET", Path: "/gmail/v1/users/me/messages/m1/attachments/a1"},
@@ -62,14 +67,25 @@ func TestClassifyExamples(t *testing.T) {
 			"gmail", "", BasisServerName, ReasonNoChildMatched},
 		{"googleapis other path stays google-base", Request{Host: "www.googleapis.com", Method: "GET", Path: "/youtube/v3/videos"},
 			"google-base", "", BasisServerName, ReasonNoChildMatched},
-		{"wrong method", Request{Host: "content.dropboxapi.com", Method: "DELETE", Path: "/2/files/upload"},
+		{"wrong method", Request{Host: "content.dropboxapi.com", Method: "DELETE", Path: "/2/files/upload",
+			HeaderNames: []string{"Dropbox-API-Arg"}},
 			"dropbox", "", BasisServerName, ReasonNoChildMatched},
-		{"dropbox upload session", Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload_session/start"},
-			"dropbox-uploading", "dropbox", BasisRequestRule, ReasonChildMatched},
-		{"discord websocket", Request{Host: "gateway.discord.gg", Method: "GET", Path: "/?v=10&encoding=json", WebSocket: true},
-			"discord-gateway", "discord", BasisRequestRule, ReasonChildMatched},
-		{"discord without upgrade", Request{Host: "gateway.discord.gg", Method: "GET", Path: "/"},
-			"discord", "", BasisServerName, ReasonNoChildMatched},
+		{"dropbox upload session", Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload_session/start",
+			ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}}, "dropbox-uploading", "dropbox", BasisRequestRule, ReasonChildMatched},
+		{"dropbox upload without its argument header", Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload",
+			ContentType: "application/octet-stream"}, "dropbox", "", BasisServerName, ReasonNoChildMatched},
+		{"onedrive upload through a colon path", Request{Host: "graph.microsoft.com", Method: "PUT",
+			Path: "/v1.0/me/drive/items/root-id:/report.pdf:/content"}, "ms-onedrive-uploading", "ms-onedrive", BasisRequestRule, ReasonChildMatched},
+		{"telegram bot upload, token matched by shape", Request{Host: "api.telegram.org", Method: "POST", Path: "/bot123:abc/sendDocument",
+			ContentType: "multipart/form-data; boundary=x"},
+			"telegram-bot-uploading", "telegram", BasisRequestRule, ReasonChildMatched},
+		{"git push", Request{Host: "github.com", Method: "POST", Path: "/o/r.git/git-receive-pack",
+			ContentType: "application/x-git-receive-pack-request"},
+			"github-git-push", "github", BasisRequestRule, ReasonChildMatched},
+		{"git push advertisement", Request{Host: "github.com", Method: "GET", Path: "/o/r.git/info/refs?service=git-receive-pack"},
+			"github-git-push", "github", BasisRequestRule, ReasonChildMatched},
+		{"git fetch advertisement", Request{Host: "github.com", Method: "GET", Path: "/o/r.git/info/refs?service=git-upload-pack"},
+			"github-git-fetch", "github", BasisRequestRule, ReasonChildMatched},
 		{"unowned host never gets a child", Request{Host: "upload.example.org", Method: "POST", Path: "/upload/gmail/v1/users/me/messages"},
 			"", "", BasisNone, ReasonHostUnowned},
 		{"no host", Request{Method: "POST", Path: "/x"}, "", "", BasisNone, ReasonNoHost},
@@ -153,8 +169,11 @@ func TestLoadRefuses(t *testing.T) {
 		"min_bytes alone":       child(`{"hosts": ["content.dropboxapi.com"], "methods": ["POST"], "min_bytes": 5}`),
 		"websocket false":       child(`{"hosts": ["content.dropboxapi.com"], "websocket": false}`),
 		"bad content type":      child(`{"hosts": ["content.dropboxapi.com"], "content_types": ["*/*"]}`),
-		"name outside container": header + `{"name": "gmail-x", "container": "dropbox", "description": "d",
-			"evidence": ["https://e.org"], "rules": [{"hosts": ["content.dropboxapi.com"], "methods": ["POST"]}]}]}`,
+		"adjacent placeholders": child(`{"hosts": ["content.dropboxapi.com"], "path_patterns": ["/{a}{b}"]}`),
+		"unbalanced template":   child(`{"hosts": ["content.dropboxapi.com"], "path_patterns": ["/bot{token"]}`),
+		"encoded query value":   child(`{"hosts": ["content.dropboxapi.com"], "methods": ["GET"], "query": ["alt=me%64ia"]}`),
+		"query alone":           child(`{"hosts": ["content.dropboxapi.com"], "query": ["alt=media"], "websocket": true}`),
+		"bad header name":       child(`{"hosts": ["content.dropboxapi.com"], "methods": ["POST"], "header_present": ["A B"]}`),
 		"name of a catalog app": header + `{"name": "dropbox", "container": "dropbox", "description": "d",
 			"evidence": ["https://e.org"], "rules": [{"hosts": ["content.dropboxapi.com"], "methods": ["POST"]}]}]}`,
 		"unknown container": header + `{"name": "nope-x", "container": "nope", "description": "d",
@@ -243,7 +262,8 @@ func TestEvaluationOrderIsFileOrderAcrossBuckets(t *testing.T) {
 
 func TestVerdictCarriesParentAndChild(t *testing.T) {
 	s := embeddedSet(t)
-	v := s.Verdict(s.Classify(Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload"}))
+	v := s.Verdict(s.Classify(Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload",
+		ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}}))
 	if v == nil || v.App != "dropbox-uploading" || v.BaseApp == nil || *v.BaseApp != "dropbox" || v.Category == "" ||
 		v.ImplicitlyUses[0] != "dropbox" || v.Status != "identified" {
 		t.Fatalf("verdict %+v", v)
@@ -253,5 +273,78 @@ func TestVerdictCarriesParentAndChild(t *testing.T) {
 	}
 	if v := s.Verdict(s.Classify(Request{Host: "content.dropboxapi.com", Method: "PUT", Path: "/"})); v == nil || v.App != "dropbox" || v.BaseApp != nil {
 		t.Fatalf("parent verdict %+v", v)
+	}
+}
+
+func TestPatternTemplates(t *testing.T) {
+	for _, c := range []struct {
+		pattern, path string
+		want          bool
+	}{
+		{"/bot{token}/sendDocument", "/bot123:abc/sendDocument", true},
+		{"/bot{token}/sendDocument", "/bot/sendDocument", false}, // a placeholder is never empty
+		{"/{owner}/{repo}.git/info/refs", "/o/r.git/info/refs", true},
+		{"/{owner}/{repo}.git/info/refs", "/o/.git/info/refs", false},
+		{"/v1beta/models/{model}:generateContent", "/v1beta/models/gemini-pro:generateContent", true},
+		{"/v1beta/models/{model}:generateContent", "/v1beta/models/:generateContent", false},
+		{"/v1.0/me/drive/items/{p}:/{f}:/content", "/v1.0/me/drive/items/42:/a.txt:/content", true},
+		{"/x/{a}:{b}", "/x/a:b", true},
+		{"/x/{a}:{b}", "/x/a:", false},
+		{"/x/{a}:{b}", "/x/:b", false},
+		{"/x/{a}.{b}", "/x/a.b.c", true}, // leftmost '.' then any non-empty rest
+		{"/files/**", "/files", true},
+		{"/files/**", "/files/a/b", true},
+		{"/files/*", "/files/a/b", false},
+	} {
+		segs, err := parsePattern(c.pattern)
+		if err != nil {
+			t.Fatalf("%s: %v", c.pattern, err)
+		}
+		if got := matchPattern(segs, c.path); got != c.want {
+			t.Errorf("%s on %s: %v", c.pattern, c.path, got)
+		}
+	}
+}
+
+func TestMostSpecificChildWins(t *testing.T) {
+	doc := header + `{"name": "dropbox-broad", "container": "dropbox", "description": "d", "evidence": ["https://e.org"],
+		"rules": [{"hosts": ["content.dropboxapi.com"], "methods": ["POST"], "path_prefixes": ["/2/files/"]}]},
+		{"name": "dropbox-narrow", "container": "dropbox", "description": "d", "evidence": ["https://e.org"],
+		"rules": [{"hosts": ["content.dropboxapi.com"], "methods": ["POST"], "path_patterns": ["/2/files/upload_session/{step}"]}]},
+		{"name": "dropbox-query", "container": "dropbox", "description": "d", "evidence": ["https://e.org"],
+		"rules": [{"hosts": ["content.dropboxapi.com"], "methods": ["POST"], "path_prefixes": ["/2/files/"], "query": ["mode=fast"],
+		"header_present": ["Dropbox-API-Arg"]}]}]}`
+	s, err := Load([]byte(doc), pack(t), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for path, want := range map[string]string{
+		"/2/files/upload":                     "dropbox-broad",
+		"/2/files/upload_session/start":       "dropbox-narrow", // longer literal path wins although it comes later
+		"/2/files/upload?mode=fast":           "dropbox-broad",  // the header is missing
+		"/2/files/upload?mode=fast&x=1":       "dropbox-broad",
+		"/2/files/upload?mode=fast&mode=fast": "dropbox-broad", // a repeated parameter never satisfies a condition
+	} {
+		if got := s.Classify(Request{Host: "content.dropboxapi.com", Method: "POST", Path: path}); got.App != want {
+			t.Errorf("%s: %s, want %s", path, got.App, want)
+		}
+	}
+	got := s.Classify(Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload?mode=fast",
+		HeaderNames: []string{"dropbox-api-arg"}})
+	if got.App != "dropbox-query" {
+		t.Errorf("query and header: %+v", got)
+	}
+}
+
+func TestWebSocketCondition(t *testing.T) {
+	s, err := Load([]byte(child(`{"hosts": ["content.dropboxapi.com"], "websocket": true}`)), pack(t), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s.Classify(Request{Host: "content.dropboxapi.com", Method: "GET", Path: "/?v=10", WebSocket: true}); got.App != "dropbox-x" {
+		t.Fatalf("upgrade: %+v", got)
+	}
+	if got := s.Classify(Request{Host: "content.dropboxapi.com", Method: "GET", Path: "/?v=10"}); got.App != "dropbox" {
+		t.Fatalf("no upgrade: %+v", got)
 	}
 }

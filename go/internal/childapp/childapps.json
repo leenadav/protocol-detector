@@ -1,150 +1,53 @@
 {
  "schema": 1,
- "release": {
-  "version": "2026.11.0",
-  "note": "PRO-492 seed: child applications per function for gmail, google-drive, dropbox, slack, github, box and discord, from their official API references",
-  "review": "engine-lane self-review; Hermes review stage on the PRO-492 pull request"
- },
+ "release": {"note": "child applications from App Research PRO-495 wave 0 (2026-11-27); converted by tools/child_apps_wave.py", "review": "engine-lane conversion review (PRO-492); citations by App Research (PRO-495)", "version": "2026.11.1"},
  "children": [
-  {
-   "name": "gmail-uploading",
-   "container": "gmail",
-   "description": "Gmail API media upload of a message or draft with attachments",
-   "characteristics": ["widely-used", "transfers-files"],
-   "depends_on": ["google-base"],
-   "evidence": ["https://developers.google.com/workspace/gmail/api/guides/uploads"],
-   "rules": [
-    {"hosts": ["gmail.googleapis.com", "www.googleapis.com"], "methods": ["POST", "PUT"], "path_prefixes": ["/upload/gmail/v1/users/"]}
-   ]
-  },
-  {
-   "name": "gmail-sending",
-   "container": "gmail",
-   "description": "Gmail API message or draft send",
-   "depends_on": ["google-base"],
-   "evidence": ["https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/send",
-                "https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.drafts/send"],
-   "rules": [
-    {"hosts": ["gmail.googleapis.com", "www.googleapis.com"], "methods": ["POST"],
-     "path_patterns": ["/gmail/v1/users/*/messages/send", "/gmail/v1/users/*/drafts/send"]}
-   ]
-  },
-  {
-   "name": "gmail-downloading",
-   "container": "gmail",
-   "description": "Gmail API attachment download",
-   "characteristics": ["widely-used", "transfers-files"],
-   "depends_on": ["google-base"],
-   "evidence": ["https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages.attachments/get"],
-   "rules": [
-    {"hosts": ["gmail.googleapis.com", "www.googleapis.com"], "methods": ["GET"],
-     "path_patterns": ["/gmail/v1/users/*/messages/*/attachments/*"]}
-   ]
-  },
-  {
-   "name": "google-drive-uploading",
-   "container": "google-drive",
-   "description": "Google Drive API file upload (simple, multipart or resumable)",
-   "depends_on": ["google-base"],
-   "evidence": ["https://developers.google.com/workspace/drive/api/guides/manage-uploads"],
-   "rules": [
-    {"hosts": ["www.googleapis.com"], "methods": ["POST", "PATCH", "PUT"], "path_prefixes": ["/upload/drive/v3/files"]}
-   ]
-  },
-  {
-   "name": "google-drive-downloading",
-   "container": "google-drive",
-   "description": "Google Drive API export of a Google Workspace document",
-   "depends_on": ["google-base"],
-   "evidence": ["https://developers.google.com/workspace/drive/api/reference/rest/v3/files/export"],
-   "rules": [
-    {"hosts": ["www.googleapis.com"], "methods": ["GET"], "path_patterns": ["/drive/v3/files/*/export"]}
-   ]
-  },
-  {
-   "name": "dropbox-uploading",
-   "container": "dropbox",
-   "description": "Dropbox API file upload, including upload sessions",
-   "evidence": ["https://www.dropbox.com/developers/documentation/http/documentation"],
-   "rules": [
-    {"hosts": ["content.dropboxapi.com"], "methods": ["POST"], "path_prefixes": ["/2/files/upload"]}
-   ]
-  },
-  {
-   "name": "dropbox-downloading",
-   "container": "dropbox",
-   "description": "Dropbox API file and folder download",
-   "evidence": ["https://www.dropbox.com/developers/documentation/http/documentation"],
-   "rules": [
-    {"hosts": ["content.dropboxapi.com"], "methods": ["POST", "GET"], "path_prefixes": ["/2/files/download"]}
-   ]
-  },
-  {
-   "name": "dropbox-sharing",
-   "container": "dropbox",
-   "description": "Dropbox API sharing of files, folders and links",
-   "evidence": ["https://www.dropbox.com/developers/documentation/http/documentation"],
-   "rules": [
-    {"hosts": ["api.dropboxapi.com"], "methods": ["POST"], "path_prefixes": ["/2/sharing/"]}
-   ]
-  },
-  {
-   "name": "slack-file-transfer",
-   "container": "slack",
-   "description": "Slack Web API external file upload",
-   "evidence": ["https://api.slack.com/methods/files.getUploadURLExternal",
-                "https://api.slack.com/methods/files.completeUploadExternal"],
-   "rules": [
-    {"hosts": ["slack.com"], "methods": ["POST", "GET"],
-     "path_patterns": ["/api/files.getUploadURLExternal", "/api/files.completeUploadExternal"]}
-   ]
-  },
-  {
-   "name": "slack-posting",
-   "container": "slack",
-   "description": "Slack Web API message post",
-   "evidence": ["https://api.slack.com/methods/chat.postMessage"],
-   "rules": [
-    {"hosts": ["slack.com"], "methods": ["POST"], "path_patterns": ["/api/chat.postMessage"]}
-   ]
-  },
-  {
-   "name": "github-uploading",
-   "container": "github",
-   "description": "GitHub REST API release asset upload",
-   "evidence": ["https://docs.github.com/en/rest/releases/assets"],
-   "rules": [
-    {"hosts": ["uploads.github.com"], "methods": ["POST"], "path_patterns": ["/repos/*/*/releases/*/assets"]}
-   ]
-  },
-  {
-   "name": "box-uploading",
-   "container": "box",
-   "description": "Box API file upload and new file version upload",
-   "evidence": ["https://developer.box.com/reference/post-files-content/",
-                "https://developer.box.com/reference/post-files-id-content/"],
-   "rules": [
-    {"hosts": ["upload.box.com"], "methods": ["POST"],
-     "path_patterns": ["/api/2.0/files/content", "/api/2.0/files/*/content"]}
-   ]
-  },
-  {
-   "name": "box-downloading",
-   "container": "box",
-   "description": "Box API file download",
-   "evidence": ["https://developer.box.com/reference/get-files-id-content/"],
-   "rules": [
-    {"hosts": ["api.box.com"], "methods": ["GET"], "path_patterns": ["/2.0/files/*/content"]}
-   ]
-  },
-  {
-   "name": "discord-gateway",
-   "container": "discord",
-   "description": "Discord Gateway real-time WebSocket session",
-   "evidence": ["https://discord.com/developers/docs/events/gateway"],
-   "rules": [
-    {"hosts": ["gateway.discord.gg"], "websocket": true}
-   ]
-  }
+  {"name": "gmail-sending", "container": "gmail", "description": "Gmail posting (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://gmail.googleapis.com/$discovery/rest?version=v1"], "rules": [{"hosts": ["gmail.googleapis.com"], "methods": ["POST"], "path_patterns": ["/gmail/v1/users/{userId}/messages/send", "/gmail/v1/users/{userId}/drafts/send", "/upload/gmail/v1/users/{userId}/messages/send", "/upload/gmail/v1/users/{userId}/drafts/send", "/resumable/upload/gmail/v1/users/{userId}/messages/send", "/resumable/upload/gmail/v1/users/{userId}/drafts/send"]}]},
+  {"name": "gmail-uploading", "container": "gmail", "description": "Gmail uploading (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://gmail.googleapis.com/$discovery/rest?version=v1"], "rules": [{"hosts": ["gmail.googleapis.com"], "methods": ["POST"], "path_prefixes": ["/upload/gmail/v1/users/", "/resumable/upload/gmail/v1/users/"], "content_types": ["message/*"], "query": ["uploadType=media|multipart|resumable"]}]},
+  {"name": "gmail-downloading", "container": "gmail", "description": "Gmail downloading (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://gmail.googleapis.com/$discovery/rest?version=v1"], "rules": [{"hosts": ["gmail.googleapis.com"], "methods": ["GET"], "path_patterns": ["/gmail/v1/users/{userId}/messages/{messageId}/attachments/{id}"]}]},
+  {"name": "outlook-sending", "container": "outlook-web", "description": "Outlook.com posting (api scope; App Research PRO-495 0)", "depends_on": ["ms-base"], "evidence": ["https://learn.microsoft.com/en-us/graph/api/user-sendmail"], "rules": [{"hosts": ["graph.microsoft.com"], "methods": ["POST"], "path_patterns": ["/v1.0/me/sendMail", "/v1.0/users/{id}/sendMail"]}]},
+  {"name": "outlook-uploading", "container": "outlook-web", "description": "Outlook.com uploading (api scope; App Research PRO-495 0)", "depends_on": ["ms-base"], "evidence": ["https://learn.microsoft.com/en-us/graph/api/message-post-attachments", "https://learn.microsoft.com/en-us/graph/api/attachment-createuploadsession"], "rules": [{"hosts": ["graph.microsoft.com"], "methods": ["POST"], "path_patterns": ["/v1.0/me/messages/{id}/attachments", "/v1.0/users/{id}/messages/{id}/attachments", "/v1.0/me/messages/{id}/attachments/createUploadSession", "/v1.0/users/{id}/messages/{id}/attachments/createUploadSession"], "content_types": ["application/json"]}]},
+  {"name": "outlook-downloading", "container": "outlook-web", "description": "Outlook.com downloading (api scope; App Research PRO-495 0)", "depends_on": ["ms-base"], "evidence": ["https://learn.microsoft.com/en-us/graph/api/attachment-get"], "rules": [{"hosts": ["graph.microsoft.com"], "methods": ["GET"], "path_patterns": ["/v1.0/me/messages/{id}/attachments/{id}/$value", "/v1.0/users/{id}/messages/{id}/attachments/{id}/$value"]}]},
+  {"name": "google-drive-uploading", "container": "google-drive", "description": "Google Drive uploading (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"], "rules": [{"hosts": ["www.googleapis.com"], "methods": ["POST"], "path_prefixes": ["/upload/drive/v3/files", "/resumable/upload/drive/v3/files"], "query": ["uploadType=media|multipart|resumable"]}, {"hosts": ["www.googleapis.com"], "methods": ["PATCH"], "path_patterns": ["/upload/drive/v3/files/{fileId}", "/resumable/upload/drive/v3/files/{fileId}"]}]},
+  {"name": "google-drive-downloading", "container": "google-drive", "description": "Google Drive downloading (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"], "rules": [{"hosts": ["www.googleapis.com"], "methods": ["GET"], "path_patterns": ["/drive/v3/files/{fileId}"], "query": ["alt=media"]}, {"hosts": ["www.googleapis.com"], "methods": ["GET"], "path_patterns": ["/drive/v3/files/{fileId}/export"]}, {"hosts": ["www.googleapis.com"], "methods": ["POST"], "path_patterns": ["/drive/v3/files/{fileId}/download"]}]},
+  {"name": "google-drive-sharing", "container": "google-drive", "description": "Google Drive sharing (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"], "rules": [{"hosts": ["www.googleapis.com"], "methods": ["POST"], "path_patterns": ["/drive/v3/files/{fileId}/permissions"]}]},
+  {"name": "ms-onedrive-uploading", "container": "ms-onedrive", "description": "OneDrive uploading (api scope; App Research PRO-495 0)", "depends_on": ["ms-base"], "evidence": ["https://learn.microsoft.com/en-us/graph/api/driveitem-put-content", "https://learn.microsoft.com/en-us/graph/api/driveitem-createuploadsession"], "rules": [{"hosts": ["graph.microsoft.com"], "methods": ["PUT"], "path_patterns": ["/v1.0/me/drive/items/{parent-id}:/{filename}:/content", "/v1.0/me/drive/items/{item-id}/content", "/v1.0/drives/{drive-id}/items/{item-id}/content"]}, {"hosts": ["graph.microsoft.com"], "methods": ["POST"], "path_patterns": ["/v1.0/me/drive/items/{itemId}/createUploadSession", "/v1.0/me/drive/items/{parentItemId}:/{fileName}:/createUploadSession", "/v1.0/drives/{driveId}/items/{itemId}/createUploadSession"], "content_types": ["application/json"]}]},
+  {"name": "ms-onedrive-downloading", "container": "ms-onedrive", "description": "OneDrive downloading (api scope; App Research PRO-495 0)", "depends_on": ["ms-base"], "evidence": ["https://learn.microsoft.com/en-us/graph/api/driveitem-get-content"], "rules": [{"hosts": ["graph.microsoft.com"], "methods": ["GET"], "path_patterns": ["/v1.0/me/drive/items/{item-id}/content", "/v1.0/drives/{drive-id}/items/{item-id}/content", "/v1.0/shares/{shareIdOrEncodedSharingUrl}/driveItem/content"]}]},
+  {"name": "ms-onedrive-sharing", "container": "ms-onedrive", "description": "OneDrive sharing (api scope; App Research PRO-495 0)", "depends_on": ["ms-base"], "evidence": ["https://learn.microsoft.com/en-us/graph/api/driveitem-createlink"], "rules": [{"hosts": ["graph.microsoft.com"], "methods": ["POST"], "path_patterns": ["/v1.0/me/drive/items/{itemId}/createLink", "/v1.0/drives/{driveId}/items/{itemId}/createLink"], "content_types": ["application/json"]}]},
+  {"name": "dropbox-uploading", "container": "dropbox", "description": "Dropbox uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/dropbox/dropbox-api-spec/main/files.stone", "https://raw.githubusercontent.com/dropbox/dropbox-api-spec/main/stone_cfg.stone", "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/session.py", "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/dropbox_client.py"], "rules": [{"hosts": ["content.dropboxapi.com"], "methods": ["POST"], "path_patterns": ["/2/files/upload", "/2/files/upload_session/start", "/2/files/upload_session/append_v2", "/2/files/upload_session/finish", "/2/files/upload_session/append_batch"], "content_types": ["application/octet-stream"], "header_present": ["Dropbox-API-Arg"]}]},
+  {"name": "dropbox-downloading", "container": "dropbox", "description": "Dropbox downloading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/dropbox/dropbox-api-spec/main/files.stone", "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/dropbox_client.py"], "rules": [{"hosts": ["content.dropboxapi.com"], "methods": ["POST"], "path_patterns": ["/2/files/download", "/2/files/download_zip", "/2/files/export"], "header_present": ["Dropbox-API-Arg"]}]},
+  {"name": "dropbox-sharing", "container": "dropbox", "description": "Dropbox sharing (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/dropbox/dropbox-api-spec/main/sharing.stone", "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/dropbox_client.py"], "rules": [{"hosts": ["api.dropboxapi.com"], "methods": ["POST"], "path_patterns": ["/2/sharing/create_shared_link_with_settings"], "content_types": ["application/json"]}]},
+  {"name": "box-uploading", "container": "box", "description": "Box uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/box/box-openapi/main/openapi.json"], "rules": [{"hosts": ["upload.box.com"], "methods": ["POST"], "path_patterns": ["/api/2.0/files/content", "/api/2.0/files/{file_id}/content"], "content_types": ["multipart/form-data"]}, {"hosts": ["upload.box.com"], "methods": ["POST"], "path_patterns": ["/api/2.0/files/upload_sessions", "/api/2.0/files/{file_id}/upload_sessions"], "content_types": ["application/json"]}]},
+  {"name": "box-downloading", "container": "box", "description": "Box downloading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/box/box-openapi/main/openapi.json"], "rules": [{"hosts": ["api.box.com"], "methods": ["GET"], "path_patterns": ["/2.0/files/{file_id}/content"]}]},
+  {"name": "slack-uploading", "container": "slack", "description": "Slack uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/slackapi/python-slack-sdk/main/slack_sdk/web/client.py", "https://raw.githubusercontent.com/slackapi/python-slack-sdk/main/slack_sdk/web/base_client.py"], "rules": [{"hosts": ["slack.com"], "methods": ["POST"], "path_patterns": ["/api/files.getUploadURLExternal", "/api/files.completeUploadExternal"]}, {"hosts": ["files.slack.com"], "methods": ["POST"], "path_prefixes": ["/upload/v1/"]}]},
+  {"name": "slack-posting", "container": "slack", "description": "Slack posting (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/slackapi/python-slack-sdk/main/slack_sdk/web/client.py", "https://raw.githubusercontent.com/slackapi/slack-api-specs/master/web-api/slack_web_openapi_v2.json"], "rules": [{"hosts": ["slack.com"], "methods": ["POST"], "path_patterns": ["/api/chat.postMessage"], "content_types": ["application/json", "application/x-www-form-urlencoded"]}]},
+  {"name": "ms-teams-posting", "container": "ms-teams", "description": "Microsoft Teams posting (api scope; App Research PRO-495 0)", "depends_on": ["ms-base"], "evidence": ["https://learn.microsoft.com/en-us/graph/api/channel-post-messages", "https://learn.microsoft.com/en-us/graph/api/chat-post-messages"], "rules": [{"hosts": ["graph.microsoft.com"], "methods": ["POST"], "path_patterns": ["/v1.0/teams/{team-id}/channels/{channel-id}/messages", "/v1.0/chats/{chat-id}/messages"], "content_types": ["application/json"]}]},
+  {"name": "telegram-bot-uploading", "container": "telegram", "description": "Telegram Web uploading (api scope; App Research PRO-495 0)", "evidence": ["https://core.telegram.org/bots/api"], "rules": [{"hosts": ["api.telegram.org"], "methods": ["POST"], "path_patterns": ["/bot{token}/sendDocument", "/bot{token}/sendPhoto", "/bot{token}/sendVideo", "/bot{token}/sendAudio"], "content_types": ["multipart/form-data"]}]},
+  {"name": "discord-posting", "container": "discord", "description": "Discord posting (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json"], "rules": [{"hosts": ["discord.com"], "methods": ["POST"], "path_patterns": ["/api/v10/channels/{channel_id}/messages", "/api/webhooks/{webhook_id}/{webhook_token}"], "content_types": ["application/json", "application/x-www-form-urlencoded"]}]},
+  {"name": "discord-uploading", "container": "discord", "description": "Discord uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json", "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx"], "rules": [{"hosts": ["discord.com"], "methods": ["POST"], "path_patterns": ["/api/v10/channels/{channel_id}/messages", "/api/webhooks/{webhook_id}/{webhook_token}"], "content_types": ["multipart/form-data"]}]},
+  {"name": "discord-downloading", "container": "discord", "description": "Discord downloading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx"], "rules": [{"hosts": ["cdn.discordapp.com"], "methods": ["GET"], "path_prefixes": ["/attachments/"]}]},
+  {"name": "facebook-posting", "container": "facebook", "description": "Facebook posting (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/adobjects/page.py", "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/apiconfig.py"], "rules": [{"hosts": ["graph.facebook.com"], "methods": ["POST"], "path_patterns": ["/v{version}/{page-id}/feed"]}]},
+  {"name": "facebook-uploading", "container": "facebook", "description": "Facebook uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/adobjects/page.py", "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/video_uploader.py", "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/api.py"], "rules": [{"hosts": ["graph.facebook.com"], "methods": ["POST"], "path_patterns": ["/v{version}/{page-id}/photos"]}, {"hosts": ["graph-video.facebook.com"], "methods": ["POST"], "path_patterns": ["/v{version}/{ad-account-id}/advideos"]}]},
+  {"name": "instagram-posting", "container": "instagram", "description": "Instagram posting (api scope; App Research PRO-495 0)", "depends_on": ["facebook"], "evidence": ["https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/adobjects/iguser.py"], "rules": [{"hosts": ["graph.facebook.com"], "methods": ["POST"], "path_patterns": ["/v{version}/{ig-user-id}/media", "/v{version}/{ig-user-id}/media_publish"]}]},
+  {"name": "twitter-posting", "container": "twitter", "description": "X/Twitter posting (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/posts/client.py"], "rules": [{"hosts": ["api.x.com"], "methods": ["POST"], "path_patterns": ["/2/tweets"], "content_types": ["application/json"]}]},
+  {"name": "twitter-uploading", "container": "twitter", "description": "X/Twitter uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/media/client.py"], "rules": [{"hosts": ["api.x.com"], "methods": ["POST"], "path_patterns": ["/2/media/upload/initialize", "/2/media/upload/{id}/append", "/2/media/upload/{id}/finalize"], "content_types": ["application/json"]}]},
+  {"name": "linkedin-posting", "container": "linkedin", "description": "LinkedIn posting (api scope; App Research PRO-495 0)", "evidence": ["https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api"], "rules": [{"hosts": ["api.linkedin.com"], "methods": ["POST"], "path_patterns": ["/rest/posts"], "content_types": ["application/json"]}]},
+  {"name": "linkedin-uploading", "container": "linkedin", "description": "LinkedIn uploading (api scope; App Research PRO-495 0)", "evidence": ["https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api", "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api", "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/documents-api"], "rules": [{"hosts": ["api.linkedin.com"], "methods": ["POST"], "path_patterns": ["/rest/images", "/rest/videos", "/rest/documents"], "content_types": ["application/json"], "query": ["action=initializeUpload"]}]},
+  {"name": "youtube-uploading", "container": "youtube", "description": "YouTube uploading (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://youtube.googleapis.com/$discovery/rest?version=v3"], "rules": [{"hosts": ["youtube.googleapis.com"], "methods": ["POST"], "path_prefixes": ["/upload/youtube/v3/videos", "/resumable/upload/youtube/v3/videos"], "content_types": ["application/octet-stream", "video/*"], "query": ["uploadType=resumable|multipart|media"]}, {"hosts": ["youtube.googleapis.com"], "methods": ["POST"], "path_prefixes": ["/upload/youtube/v3/thumbnails/set", "/upload/youtube/v3/captions"], "content_types": ["application/octet-stream", "image/jpeg", "image/png", "text/xml"]}]},
+  {"name": "youtube-posting", "container": "youtube", "description": "YouTube posting (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://youtube.googleapis.com/$discovery/rest?version=v3"], "rules": [{"hosts": ["youtube.googleapis.com"], "methods": ["POST"], "path_patterns": ["/youtube/v3/commentThreads"]}]},
+  {"name": "openai-platform-uploading", "container": "openai-platform", "description": "ChatGPT uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"], "rules": [{"hosts": ["api.openai.com"], "methods": ["POST"], "path_patterns": ["/v1/files", "/v1/uploads/{upload_id}/parts"], "content_types": ["multipart/form-data"]}, {"hosts": ["api.openai.com"], "methods": ["POST"], "path_patterns": ["/v1/uploads"], "content_types": ["application/json"]}]},
+  {"name": "openai-platform-downloading", "container": "openai-platform", "description": "ChatGPT downloading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"], "rules": [{"hosts": ["api.openai.com"], "methods": ["GET"], "path_patterns": ["/v1/files/{file_id}/content"]}]},
+  {"name": "openai-platform-prompting", "container": "openai-platform", "description": "ChatGPT posting (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"], "rules": [{"hosts": ["api.openai.com"], "methods": ["POST"], "path_patterns": ["/v1/responses", "/v1/chat/completions"], "content_types": ["application/json"]}]},
+  {"name": "anthropic-api-uploading", "container": "anthropic-api", "description": "Claude uploading (api scope; App Research PRO-495 0)", "evidence": ["https://docs.claude.com/en/api/files-create"], "rules": [{"hosts": ["api.anthropic.com"], "methods": ["POST"], "path_patterns": ["/v1/files"], "content_types": ["multipart/form-data"]}]},
+  {"name": "anthropic-api-downloading", "container": "anthropic-api", "description": "Claude downloading (api scope; App Research PRO-495 0)", "evidence": ["https://docs.claude.com/en/api/files-content"], "rules": [{"hosts": ["api.anthropic.com"], "methods": ["GET"], "path_patterns": ["/v1/files/{file_id}/content"]}]},
+  {"name": "anthropic-api-prompting", "container": "anthropic-api", "description": "Claude posting (api scope; App Research PRO-495 0)", "evidence": ["https://platform.claude.com/docs/en/api/messages"], "rules": [{"hosts": ["api.anthropic.com"], "methods": ["POST"], "path_patterns": ["/v1/messages"]}]},
+  {"name": "github-git-push", "container": "github", "description": "GitHub uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/git/git/master/Documentation/gitprotocol-http.adoc", "https://docs.github.com/en/get-started/git-basics/about-remote-repositories"], "rules": [{"hosts": ["github.com"], "methods": ["POST"], "path_patterns": ["/{owner}/{repo}.git/git-receive-pack"], "content_types": ["application/x-git-receive-pack-request"]}, {"hosts": ["github.com"], "methods": ["GET"], "path_patterns": ["/{owner}/{repo}.git/info/refs"], "query": ["service=git-receive-pack"]}]},
+  {"name": "github-git-fetch", "container": "github", "description": "GitHub downloading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/git/git/master/Documentation/gitprotocol-http.adoc", "https://docs.github.com/en/get-started/git-basics/about-remote-repositories"], "rules": [{"hosts": ["github.com"], "methods": ["POST"], "path_patterns": ["/{owner}/{repo}.git/git-upload-pack"], "content_types": ["application/x-git-upload-pack-request"]}, {"hosts": ["github.com"], "methods": ["GET"], "path_patterns": ["/{owner}/{repo}.git/info/refs"], "query": ["service=git-upload-pack"]}]},
+  {"name": "github-uploading", "container": "github", "description": "GitHub uploading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"], "rules": [{"hosts": ["uploads.github.com"], "methods": ["POST"], "path_patterns": ["/repos/{owner}/{repo}/releases/{release_id}/assets"], "content_types": ["application/octet-stream"], "query": ["name={name}"]}]},
+  {"name": "github-downloading", "container": "github", "description": "GitHub downloading (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"], "rules": [{"hosts": ["api.github.com"], "methods": ["GET"], "path_patterns": ["/repos/{owner}/{repo}/zipball/{ref}", "/repos/{owner}/{repo}/tarball/{ref}", "/repos/{owner}/{repo}/releases/assets/{asset_id}"]}]},
+  {"name": "github-posting", "container": "github", "description": "GitHub posting (api scope; App Research PRO-495 0)", "evidence": ["https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json"], "rules": [{"hosts": ["api.github.com"], "methods": ["POST"], "path_patterns": ["/gists", "/repos/{owner}/{repo}/issues/{issue_number}/comments"], "content_types": ["application/json"]}]},
+  {"name": "google-docs-editing", "container": "google-drive", "description": "Google Docs posting (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://docs.googleapis.com/$discovery/rest?version=v1"], "rules": [{"hosts": ["docs.googleapis.com"], "methods": ["POST"], "path_patterns": ["/v1/documents", "/v1/documents/{documentId}:batchUpdate"]}]},
+  {"name": "google-docs-reading", "container": "google-drive", "description": "Google Docs downloading (api scope; App Research PRO-495 0)", "depends_on": ["google-base"], "evidence": ["https://docs.googleapis.com/$discovery/rest?version=v1"], "rules": [{"hosts": ["docs.googleapis.com"], "methods": ["GET"], "path_patterns": ["/v1/documents/{documentId}"]}]},
+  {"name": "icloud-cloudkit-uploading", "container": "icloud", "description": "iCloud uploading (api scope; App Research PRO-495 0)", "evidence": ["https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/UploadAssets.html"], "rules": [{"hosts": ["api.apple-cloudkit.com"], "methods": ["POST"], "path_patterns": ["/database/1/{container}/{environment}/{database}/assets/upload"], "content_types": ["application/json"]}]}
  ]
 }

@@ -59,19 +59,28 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
   is on `googleapis.com`, claimed by `google-base`). A web front or unclaimed host is refused.
 - **Function conditions** (at least one; all present ones must hold):
   - `methods`: upper-case tokens;
-  - `path_prefixes` and `path_patterns`: either list may hit. A pattern is `/`-separated literal segments, `*` for
-    exactly one segment and a final `**` for any rest. No regular expressions;
+  - `path_prefixes` and `path_patterns`: either list may hit. A pattern is `/`-separated segments: a literal, `*` or
+    `{name}` for exactly one non-empty segment, a literal with `{name}` placeholders inside it (`/bot{token}/sendDocument`,
+    `/v1beta/models/{model}:generateContent`, `/{owner}/{repo}.git/info/refs`; each placeholder non-empty, never two in
+    a row), or a final `**` for any rest. No regular expressions; matching is linear in the path;
   - `content_types`: `type/subtype` or `type/*`, against the request Content-Type without parameters;
+  - `query`: `name=v1|v2`, `name={value}` (any non-empty value) or `name` (present). Names and values are unreserved
+    characters compared byte for byte, and a parameter that appears twice never satisfies a condition. Needs a
+    method or path condition too;
+  - `header_present`: header names that must be present (`HTTPRequest.HeaderNames`, any case);
   - `direction`: `upload` (request body at least `min_bytes`, default 1, and larger than a known response body) or
     `download` (the reverse). An unknown size never matches;
   - `websocket: true`: the request is a WebSocket upgrade.
-- **Order:** rules are evaluated in file order; the first match wins. Put a narrow child before a broad one.
+- **Precedence: the most specific rule wins** (App Research's rule for wave 0): the rule whose matched path condition
+  pins the most literal bytes, then the one with more condition kinds; on a tie the earlier rule in the file. So
+  `POST /upload/gmail/v1/users/me/messages/send` is `gmail-sending` (a pattern), not `gmail-uploading` (a prefix).
 - **Load limits:** 4 MiB, 4,096 children, 32 rules per child, 16,384 rules, 32 entries per list, 256 bytes per entry,
   32 pattern segments. Keys are exact and unique; anything else refuses the whole file.
+- **Base children:** research's `<parent>-base` is the parent itself here: `app=<parent>`, `container` empty.
 
 ## Paths are matched only in canonical form
 
-The query and fragment are ignored. A path with a dot segment, an empty segment, a backslash, a control byte or an
+The fragment is ignored and the query is read only by `query` conditions. A path with a dot segment, an empty segment, a backslash, a control byte or an
 encoded `/`, `\`, `.`, `%` or NUL is not matched (reason `path_not_canonical`; the parent is still reported), so a
 filter and a server can never read one path two ways. SNI and Host of different catalog owners give no application
 (`sni_host_owner_mismatch`, domain fronting); a coalesced HTTP/2 connection of one owner is classified on the Host.
@@ -84,11 +93,35 @@ Rules are indexed by host, so a request only meets the rules of its own host and
 `limit` (`child_rule_evaluations`, `child_path_bytes`, `child_field_bytes`) with reason `work_limit` or
 `field_too_long`, and the verdict then names the parent only, never a child.
 
+## Where the rules come from
+
+`childapps.json` is generated, never hand-edited: `tools/child_apps_wave.py` converts App Research's cited wave file
+(wave 0: PRO-495, `migration/fixtures/child-apps/wave-0.json`, a byte copy of
+`research/child-apps/wave-0.json` on `claude/app-research-PRO-495-child-apps-wave0-b` at `5ebe8f5`), and `make check`
+(`make child-apps`) fails when the committed rules differ from a fresh conversion. Per-child outcomes, and every
+condition dropped or skipped, are in [child-apps/wave-0-rules.md](child-apps/wave-0-rules.md). The conversion is
+conservative:
+
+- only `cited` children with an `https://` citation become rules; unverified proposals never do;
+- a host must be claimed in the server-name catalog, and its owner joins `depends_on` (`gmail.googleapis.com` is
+  `google-base`'s, `graph.microsoft.com` `ms-base`'s); a host template such as `{box-upload-server}` is skipped;
+- a placeholder named as a path (`{file_path}`, `{item-path}`) can span segments, so that pattern is skipped;
+- a content type with a scope note or `*/*` drops the content-type condition (broader, recorded);
+- `direction` is recorded, not enforced: a proxy often knows body sizes only after the response, and method plus
+  path already name the function.
+
+Wave 0 gives 47 children over 20 of its 30 services (the other 10 had no separable cited function; the 30 base
+children map to their parents; 3 children are skipped:
+`telegram-bot-downloading`, whose only path is a multi-segment variable, and the two `google-gemini-api` children,
+whose parent is not yet in the pack). Most rules describe vendor APIs (`client_scope: api`): the vendors do not
+publish their own web clients' request paths, so a browser session of Gmail is `gmail`, not a child.
+
 ## Adding a wave
 
-1. Take the services of the wave (Research Lab's enterprise list, PRO-491) whose container is in the catalog.
-2. For each function, read the service's official API reference and write the child with its links in `evidence`.
-   Skip a function the vendor does not document (consumer WhatsApp, for example) and say so in the PR.
-3. `cd go && go test ./internal/childapp/ ./detector/` (load, examples, properties, schema), add example requests to
-   `childapp_test.go` for the new children, raise the release version, and open one PR per wave of about 30
-   services from a fresh branch off `main`.
+1. App Research (wave 0, PRO-495) or Research Lab (later waves, PRO-491) delivers `research/child-apps/wave-N.json`
+   with official citations.
+2. Copy it to `migration/fixtures/child-apps/`, run `python3 -B tools/child_apps_wave.py <file> --version <next>
+   --write`, review `docs/child-apps/wave-N-rules.md`, add example requests for the new children to
+   `childapp_test.go`, and add the file to `make child-apps`.
+3. `cd go && go test ./internal/childapp/ ./detector/`, `make check`, then one PR per wave of about 30 services from a
+   fresh branch off `main`.

@@ -2,8 +2,9 @@
 // model: gmail-uploading, gmail-downloading, whatsapp-voice, ...). A child is data, never code per application:
 // childapps.json lists each child, its container (the parent catalog application), the official documentation it
 // was written from, and request rules over what a decrypting forward proxy (Culvert) sees of one HTTP request:
-// the server name and Host, the method, a path prefix or pattern, the request content type, the size direction
-// (upload or download) and a WebSocket upgrade.
+// the server name and Host, the method, a path prefix or pattern, query parameters, request headers present, the
+// request content type, the size direction (upload or download) and a WebSocket upgrade. When several rules match,
+// the most specific wins (most literal path bytes, then most condition kinds, then file order).
 //
 // A rule only refines an identity the server-name catalog already established: every host a rule names must be
 // claimed in the content pack by the child's container or by an application the child declares in depends_on.
@@ -32,6 +33,8 @@ const (
 	maxHostBytes              = 253
 	maxMethodBytes            = 32
 	maxContentTypeBytes       = 256
+	maxQueryPairs             = 64
+	maxHeaderNames            = 128
 )
 
 // Basis values: what established Result.App.
@@ -78,11 +81,12 @@ type Request struct {
 	SNI               string // TLS server name of the client connection ("" for plaintext)
 	Host              string // HTTP Host or :authority
 	Method            string
-	Path              string // request target in origin form; the query and fragment are ignored
+	Path              string // request target in origin form; query conditions read the query, the fragment is ignored
 	ContentType       string // request Content-Type
 	RequestBodyBytes  int64
 	ResponseBodyBytes int64
-	WebSocket         bool // an HTTP/1.1 Upgrade: websocket or an HTTP/2 extended CONNECT for websocket
+	WebSocket         bool     // an HTTP/1.1 Upgrade: websocket or an HTTP/2 extended CONNECT for websocket
+	HeaderNames       []string // names of the request headers present (any case); only rules with header conditions read them
 }
 
 // Result is the verdict for one request.
@@ -119,8 +123,11 @@ type rule struct {
 	order        int // global evaluation order
 	methods      map[string]bool
 	pathPrefixes []string
-	pathPatterns [][]string
+	pathPatterns [][]segment
 	contentTypes []string
+	query        []queryCond
+	headers      []string // lower case
+	conditions   int      // number of condition kinds present, for precedence
 	direction    string
 	minBytes     int64
 	websocket    bool
@@ -263,50 +270,139 @@ func mediaType(ct string) string {
 	return ct
 }
 
-func matchPattern(pattern []string, path string) bool {
+// segment kinds of a compiled path pattern.
+const (
+	segLiteral  = iota // lits[0] exactly
+	segAny             // '*' or '{name}': one non-empty segment
+	segRest            // final '**': any rest, including none
+	segTemplate        // literals with '{name}' placeholders between them, each placeholder non-empty
+)
+
+type segment struct {
+	kind int
+	lits []string // segLiteral: the segment; segTemplate: the literal parts around the placeholders
+}
+
+// literalBytes is the number of literal bytes a pattern pins, its weight in precedence.
+func literalBytes(pattern []segment) int {
+	n := 0
+	for _, seg := range pattern {
+		n++ // the '/'
+		for _, l := range seg.lits {
+			n += len(l)
+		}
+	}
+	return n
+}
+
+// matchTemplate matches lits[0] {p} lits[1] ... {p} lits[n-1] against seg with every placeholder non-empty. The
+// leftmost choice of each middle literal is optimal for wildcards that match any non-empty run, so this is linear.
+func matchTemplate(lits []string, seg string) bool {
+	first, last := lits[0], lits[len(lits)-1]
+	if !strings.HasPrefix(seg, first) || !strings.HasSuffix(seg, last) {
+		return false
+	}
+	pos, end := len(first), len(seg)-len(last)
+	for _, mid := range lits[1 : len(lits)-1] {
+		pos++ // the placeholder before mid takes at least one byte
+		if pos > end {
+			return false
+		}
+		i := strings.Index(seg[pos:end], mid)
+		if i < 0 {
+			return false
+		}
+		pos += i + len(mid)
+	}
+	return end-pos >= 1
+}
+
+func matchPattern(pattern []segment, path string) bool {
 	segments := strings.Split(strings.TrimPrefix(path, "/"), "/")
 	for i, p := range pattern {
-		if p == "**" { // validated: only last
+		if p.kind == segRest { // validated: only last
 			return true
 		}
 		if i >= len(segments) {
 			return false
 		}
-		if p == "*" {
+		switch p.kind {
+		case segAny:
 			if segments[i] == "" {
 				return false
 			}
-			continue
-		}
-		if p != segments[i] {
-			return false
+		case segLiteral:
+			if p.lits[0] != segments[i] {
+				return false
+			}
+		case segTemplate:
+			if !matchTemplate(p.lits, segments[i]) {
+				return false
+			}
 		}
 	}
 	return len(segments) == len(pattern)
 }
 
-func (r *rule) matches(req *Request, path, ct string) bool {
+// queryCond requires one query parameter: present with one of values, or with any non-empty value when values is
+// nil. A parameter that appears more than once never satisfies a condition (servers disagree on which one wins).
+type queryCond struct {
+	key    string
+	values map[string]bool
+}
+
+// parseQuery splits the raw query (no percent-decoding) into its parameters; ok is false past maxQueryPairs.
+func parseQuery(target string) (map[string][]string, bool) {
+	i := strings.IndexByte(target, '?')
+	if i < 0 {
+		return nil, true
+	}
+	q := target[i+1:]
+	if j := strings.IndexByte(q, '#'); j >= 0 {
+		q = q[:j]
+	}
+	out := map[string][]string{}
+	pairs := 0
+	for _, pair := range strings.Split(q, "&") {
+		if pair == "" {
+			continue
+		}
+		if pairs++; pairs > maxQueryPairs {
+			return nil, false
+		}
+		k, v, _ := strings.Cut(pair, "=")
+		out[k] = append(out[k], v)
+	}
+	return out, true
+}
+
+// matches reports whether every condition holds and, if so, the rule's precedence score for this request: the
+// literal bytes of the path condition that hit, then the number of condition kinds.
+func (r *rule) matches(req *Request, path, ct string, query map[string][]string, headers map[string]bool) (bool, int) {
 	if r.methods != nil && !r.methods[req.Method] {
-		return false
+		return false, 0
 	}
 	if r.websocket && !req.WebSocket {
-		return false
+		return false, 0
 	}
+	pathScore := 0
 	if r.pathPrefixes != nil || r.pathPatterns != nil {
 		hit := false
 		for _, prefix := range r.pathPrefixes {
-			if strings.HasPrefix(path, prefix) {
-				hit = true
-				break
+			if strings.HasPrefix(path, prefix) && len(prefix) > pathScore {
+				hit, pathScore = true, len(prefix)
 			}
 		}
 		for _, pattern := range r.pathPatterns {
-			if !hit && matchPattern(pattern, path) {
+			if matchPattern(pattern, path) {
 				hit = true
+				if n := literalBytes(pattern); n > pathScore {
+					pathScore = n
+				}
 			}
 		}
 		if !hit {
-			return false
+			return false, 0
 		}
 	}
 	if r.contentTypes != nil {
@@ -318,22 +414,33 @@ func (r *rule) matches(req *Request, path, ct string) bool {
 			}
 		}
 		if !hit {
-			return false
+			return false, 0
+		}
+	}
+	for _, q := range r.query {
+		values := query[q.key]
+		if len(values) != 1 || values[0] == "" || (q.values != nil && !q.values[values[0]]) {
+			return false, 0
+		}
+	}
+	for _, h := range r.headers {
+		if !headers[h] {
+			return false, 0
 		}
 	}
 	switch r.direction {
 	case "upload":
 		up, down := req.RequestBodyBytes, req.ResponseBodyBytes
 		if up < 0 || up < r.minBytes || (down >= 0 && up <= down) {
-			return false
+			return false, 0
 		}
 	case "download":
 		up, down := req.RequestBodyBytes, req.ResponseBodyBytes
 		if down < 0 || down < r.minBytes || (up >= 0 && down <= up) {
-			return false
+			return false, 0
 		}
 	}
-	return true
+	return true, pathScore*16 + r.conditions
 }
 
 // candidates are the rule orders indexed under host and its parent domains, merged ascending without repeats.
@@ -409,9 +516,23 @@ func (s *Set) Classify(req Request) Result {
 		return res
 	}
 	ct := mediaType(req.ContentType)
+	query, ok := parseQuery(req.Path)
+	if !ok || len(req.HeaderNames) > maxHeaderNames {
+		res.Reasons, res.Limit = []string{ReasonFieldTooLong}, LimitFieldBytes
+		return res
+	}
+	var headers map[string]bool
+	if len(req.HeaderNames) > 0 {
+		headers = make(map[string]bool, len(req.HeaderNames))
+		for _, h := range req.HeaderNames {
+			headers[strings.ToLower(h)] = true
+		}
+	}
 	lists := s.candidates(host)
 	heads := make([]int, len(lists))
 	last := -1
+	var winner *rule
+	winnerScore := 0
 	for {
 		best := -1
 		for i, l := range lists {
@@ -423,23 +544,29 @@ func (s *Set) Classify(req Request) Result {
 			}
 		}
 		if best < 0 {
-			res.Reasons = []string{ReasonNoChildMatched}
-			return res
+			break
 		}
 		if res.Evaluated >= s.opts.MaxRuleEvaluations {
+			// An unevaluated rule could be more specific than any match so far: the ceiling never picks a child.
 			res.Reasons, res.Limit = []string{ReasonWorkLimit}, LimitRuleEvaluations
 			return res
 		}
 		last = lists[best][heads[best]]
 		r := s.rules[last]
 		res.Evaluated++
-		if r.matches(&req, path, ct) {
-			res.App, res.Container, res.Basis = r.child.Name, r.child.Container, BasisRequestRule
-			res.Rule = fmt.Sprintf("%s#%d", r.child.Name, r.index)
-			res.Reasons = []string{ReasonChildMatched}
-			return res
+		// Precedence: the highest score wins; on a tie the earlier rule (file order) keeps it.
+		if hit, score := r.matches(&req, path, ct, query, headers); hit && (winner == nil || score > winnerScore) {
+			winner, winnerScore = r, score
 		}
 	}
+	if winner == nil {
+		res.Reasons = []string{ReasonNoChildMatched}
+		return res
+	}
+	res.App, res.Container, res.Basis = winner.child.Name, winner.child.Container, BasisRequestRule
+	res.Rule = fmt.Sprintf("%s#%d", winner.child.Name, winner.index)
+	res.Reasons = []string{ReasonChildMatched}
+	return res
 }
 
 // Application is the catalog record of a child: the container's category, subcategory and technology with the

@@ -214,7 +214,7 @@ func validVersion(v string) bool {
 
 var childKeys = []string{"name", "container", "description", "risk", "characteristics", "depends_on", "evidence", "rules"}
 var ruleKeys = []string{"hosts", "host_suffixes", "methods", "path_prefixes", "path_patterns", "content_types",
-	"direction", "min_bytes", "websocket"}
+	"query", "header_present", "direction", "min_bytes", "websocket"}
 
 func (s *Set) addChild(i int, raw json.RawMessage) error {
 	doc, err := object(raw, childKeys, "name", "container", "description", "evidence", "rules")
@@ -243,9 +243,6 @@ func (s *Set) addChild(i int, raw json.RawMessage) error {
 	parent := s.pack.Applications[c.Container]
 	if parent == nil || s.pack.Outcomes[c.Container] {
 		return fail("container '%s' is not a catalog application", c.Container)
-	}
-	if !strings.HasPrefix(c.Name, c.Container+"-") {
-		return fail("name must start with its container '%s-'", c.Container)
 	}
 	if c.Description, err = str(doc["description"]); err != nil || c.Description == "" || len(c.Description) > 512 {
 		return fail("description must be 1..512 bytes")
@@ -370,6 +367,7 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 			r.methods[m] = true
 		}
 		functional = true
+		r.conditions++
 	}
 	if raw, ok := doc["path_prefixes"]; ok {
 		if r.pathPrefixes, err = strs(raw, MaxListEntries); err != nil {
@@ -396,6 +394,9 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 		}
 		functional = true
 	}
+	if r.pathPrefixes != nil || r.pathPatterns != nil {
+		r.conditions++
+	}
 	if raw, ok := doc["content_types"]; ok {
 		if r.contentTypes, err = strs(raw, MaxListEntries); err != nil {
 			return fmt.Errorf("content_types: %v", err)
@@ -406,6 +407,36 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 			}
 		}
 		functional = true
+		r.conditions++
+	}
+	if raw, ok := doc["query"]; ok {
+		list, err := strs(raw, MaxListEntries)
+		if err != nil {
+			return fmt.Errorf("query: %v", err)
+		}
+		seen := map[string]bool{}
+		for _, q := range list {
+			cond, err := parseQueryCond(q)
+			if err != nil || seen[cond.key] {
+				return fmt.Errorf("query '%s' must be name, name={value} or name=v1|v2 with unique names", q)
+			}
+			seen[cond.key] = true
+			r.query = append(r.query, cond)
+		}
+		r.conditions++
+	}
+	if raw, ok := doc["header_present"]; ok {
+		list, err := strs(raw, MaxListEntries)
+		if err != nil {
+			return fmt.Errorf("header_present: %v", err)
+		}
+		for _, h := range list {
+			if !validToken(h) {
+				return fmt.Errorf("header name '%s' must be an HTTP token", h)
+			}
+			r.headers = append(r.headers, strings.ToLower(h))
+		}
+		r.conditions++
 	}
 	r.minBytes = 1
 	if raw, ok := doc["direction"]; ok {
@@ -413,6 +444,7 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 			return fmt.Errorf("direction must be upload or download")
 		}
 		functional = true
+		r.conditions++
 	}
 	if raw, ok := doc["min_bytes"]; ok {
 		if r.direction == "" {
@@ -427,9 +459,13 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 			return fmt.Errorf("websocket must be true when present")
 		}
 		functional = true
+		r.conditions++
 	}
 	if !functional {
 		return fmt.Errorf("a rule needs a function condition (methods, path, content type, direction or websocket)")
+	}
+	if r.query != nil && r.methods == nil && r.pathPrefixes == nil && r.pathPatterns == nil {
+		return fmt.Errorf("a query condition needs a method or path condition")
 	}
 	s.rules = append(s.rules, r)
 	for _, h := range hosts {
@@ -441,28 +477,143 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 	return nil
 }
 
-// parsePattern splits a path pattern into segments: a literal segment, '*' for exactly one non-empty segment,
-// or a final '**' for any rest (including none).
-func parsePattern(p string) ([]string, error) {
-	bad := fmt.Errorf("path pattern '%s' must be /-separated literal, '*' or final '**' segments", p)
+// parsePattern compiles a path pattern of '/'-separated segments: a literal, '*' or '{name}' for exactly one
+// non-empty segment, a literal with '{name}' placeholders inside it (bot{token}, {model}:generateContent; each
+// placeholder non-empty, never two in a row), or a final '**' for any rest including none.
+func parsePattern(p string) ([]segment, error) {
+	bad := fmt.Errorf("path pattern '%s' must be /-separated literal, '*', '{name}' or final '**' segments", p)
 	if !strings.HasPrefix(p, "/") || len(p) < 2 {
 		return nil, bad
 	}
-	segments := strings.Split(p[1:], "/")
-	if len(segments) > MaxPatternSegment {
+	parts := strings.Split(p[1:], "/")
+	if len(parts) > MaxPatternSegment {
 		return nil, bad
 	}
-	for i, seg := range segments {
+	out := make([]segment, 0, len(parts))
+	for i, part := range parts {
 		switch {
-		case seg == "**" && i == len(segments)-1 && i > 0:
-		case seg == "*":
-		case seg == "" || strings.Contains(seg, "*"):
+		case part == "**" && i == len(parts)-1 && i > 0:
+			out = append(out, segment{kind: segRest})
+		case part == "*":
+			out = append(out, segment{kind: segAny})
+		case part == "" || strings.Contains(part, "*"):
 			return nil, bad
-		default:
-			if c, ok := canonicalPath("/" + seg); !ok || c != "/"+seg {
+		case strings.ContainsAny(part, "{}"):
+			lits, err := templateParts(part)
+			if err != nil {
 				return nil, bad
+			}
+			if len(lits) == 2 && lits[0] == "" && lits[1] == "" {
+				out = append(out, segment{kind: segAny})
+			} else {
+				out = append(out, segment{kind: segTemplate, lits: lits})
+			}
+		default:
+			if c, ok := canonicalPath("/" + part); !ok || c != "/"+part {
+				return nil, bad
+			}
+			out = append(out, segment{kind: segLiteral, lits: []string{part}})
+		}
+	}
+	return out, nil
+}
+
+// templateParts splits "a{x}b{y}" into the literals ["a", "b", ""]; placeholder names are letters, digits, '_'
+// and '-', and two placeholders never touch.
+func templateParts(part string) ([]string, error) {
+	var lits []string
+	rest := part
+	for {
+		open := strings.IndexByte(rest, '{')
+		if open < 0 {
+			if strings.IndexByte(rest, '}') >= 0 {
+				return nil, fmt.Errorf("unbalanced")
+			}
+			lits = append(lits, rest)
+			break
+		}
+		lit := rest[:open]
+		if strings.IndexByte(lit, '}') >= 0 || (len(lits) > 0 && lit == "") {
+			return nil, fmt.Errorf("adjacent or unbalanced")
+		}
+		end := strings.IndexByte(rest[open:], '}')
+		if end < 0 {
+			return nil, fmt.Errorf("unbalanced")
+		}
+		if name := rest[open+1 : open+end]; name == "" || !validPlaceholder(name) {
+			return nil, fmt.Errorf("bad name")
+		}
+		lits = append(lits, lit)
+		rest = rest[open+end+1:]
+	}
+	for _, l := range lits {
+		// A literal inside a template is never a whole segment, so only its bytes are checked (a lone "." is fine).
+		if l != "" {
+			if c, ok := canonicalPath("/a" + l + "a"); !ok || c != "/a"+l+"a" {
+				return nil, fmt.Errorf("bad literal")
 			}
 		}
 	}
-	return segments, nil
+	return lits, nil
+}
+
+func validPlaceholder(name string) bool {
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
+			return false
+		}
+	}
+	return len(name) <= 64
+}
+
+// validToken is an RFC 9110 token (header names, query names).
+func validToken(s string) bool {
+	if s == "" || len(s) > 64 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || strings.IndexByte("!#$%&'*+-.^_`|~", c) >= 0) {
+			return false
+		}
+	}
+	return true
+}
+
+// parseQueryCond reads "name", "name={value}" (any non-empty value) or "name=v1|v2".
+func parseQueryCond(q string) (queryCond, error) {
+	key, value, hasValue := strings.Cut(q, "=")
+	if !validQueryPart(key) {
+		return queryCond{}, fmt.Errorf("bad name")
+	}
+	if !hasValue {
+		return queryCond{key: key}, nil
+	}
+	if strings.HasPrefix(value, "{") && strings.HasSuffix(value, "}") && validPlaceholder(value[1:len(value)-1]) && len(value) > 2 {
+		return queryCond{key: key}, nil
+	}
+	values := map[string]bool{}
+	for _, v := range strings.Split(value, "|") {
+		if !validQueryPart(v) || values[v] {
+			return queryCond{}, fmt.Errorf("bad value")
+		}
+		values[v] = true
+	}
+	return queryCond{key: key, values: values}, nil
+}
+
+// validQueryPart is a query name or value matched byte for byte: unreserved characters only, so no
+// percent-encoded form can ever be read two ways.
+func validQueryPart(s string) bool {
+	if s == "" || len(s) > 128 {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_' || c == '~') {
+			return false
+		}
+	}
+	return true
 }

@@ -8,9 +8,10 @@ import (
 const AppSchemaVersion = 1
 
 // HTTPRequest is what a decrypting proxy saw of one HTTP request: the client's TLS server name (empty for
-// plaintext), the Host or :authority, the method, the origin-form path (query and fragment are ignored), the
+// plaintext), the Host or :authority, the method, the origin-form path (with its query), the
 // request Content-Type, and the body sizes in each direction (negative: unknown). WebSocket is an HTTP/1.1
-// Upgrade: websocket or an HTTP/2 extended CONNECT for websocket. Values are borrowed for the call only.
+// Upgrade: websocket or an HTTP/2 extended CONNECT for websocket. The path may carry its query, which query
+// conditions read byte for byte. Values are borrowed for the call only.
 type HTTPRequest struct {
 	SNI               string
 	Host              string
@@ -20,6 +21,7 @@ type HTTPRequest struct {
 	RequestBodyBytes  int64
 	ResponseBodyBytes int64
 	WebSocket         bool
+	HeaderNames       []string // names of the request headers present (any case), for rules with header conditions
 }
 
 // AppVerdict is the application of one request in the enterprise App-ID model. App is the child application
@@ -94,7 +96,8 @@ func (c *AppClassifier) Classify(r HTTPRequest) (v AppVerdict) {
 		}
 	}()
 	res := c.set.Classify(childapp.Request{SNI: r.SNI, Host: r.Host, Method: r.Method, Path: r.Path, ContentType: r.ContentType,
-		RequestBodyBytes: r.RequestBodyBytes, ResponseBodyBytes: r.ResponseBodyBytes, WebSocket: r.WebSocket})
+		RequestBodyBytes: r.RequestBodyBytes, ResponseBodyBytes: r.ResponseBodyBytes, WebSocket: r.WebSocket,
+		HeaderNames: r.HeaderNames})
 	return AppVerdict{App: res.App, Container: res.Container, Rule: res.Rule, Basis: res.Basis,
 		Reasons: append([]string{}, res.Reasons...), Limit: res.Limit, Evaluated: res.Evaluated, ChildRelease: res.Release,
 		PackRelease: res.PackRelease, Schema: AppSchemaVersion}

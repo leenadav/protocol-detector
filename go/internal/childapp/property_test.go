@@ -3,6 +3,7 @@ package childapp
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -19,6 +20,8 @@ type specRule struct {
 	PathPrefixes []string `json:"path_prefixes,omitempty"`
 	PathPatterns []string `json:"path_patterns,omitempty"`
 	ContentTypes []string `json:"content_types,omitempty"`
+	Query        []string `json:"query,omitempty"`
+	Headers      []string `json:"header_present,omitempty"`
 	Direction    string   `json:"direction,omitempty"`
 	MinBytes     int64    `json:"min_bytes,omitempty"`
 	WebSocket    bool     `json:"websocket,omitempty"`
@@ -34,7 +37,11 @@ type specChild struct {
 
 var (
 	propHosts    = []string{"dropbox.com", "www.dropbox.com", "api.dropboxapi.com", "content.dropboxapi.com", "dropboxapi.com"}
-	propSegments = []string{"2", "files", "upload", "download", "x", "sharing"}
+	propSegments = []string{"2", "files", "upload", "download", "x", "sharing", "bot7", "bot", "r.git", ".git", "m:run", ":run", "a:b", ":"}
+	propWild     = []string{"*", "{id}", "bot{t}", "{repo}.git", "{model}:run", "{a}:{b}"}
+	propQuery    = []string{"alt=media", "alt=json", "uploadType=media|resumable", "name={n}", "alt"}
+	propQueryIn  = []string{"alt=media", "alt=json", "uploadType=resumable", "name=f.zip", "alt=", "alt=media&alt=json"}
+	propHeaders  = []string{"Dropbox-API-Arg", "X-Upload"}
 	propMethods  = []string{"GET", "POST", "PUT"}
 	propTypes    = []string{"application/json", "application/octet-stream", "text/plain", "multipart/form-data"}
 )
@@ -53,7 +60,7 @@ func genPath(t *rapid.T, label string, wild bool) string {
 	for i := range parts {
 		choices := propSegments
 		if wild {
-			choices = append(append([]string{}, propSegments...), "*")
+			choices = append(append([]string{}, propSegments...), propWild...)
 			if i == n-1 && i > 0 {
 				choices = append(choices, "**")
 			}
@@ -75,6 +82,13 @@ func genRule(t *rapid.T) specRule {
 	if rapid.Bool().Draw(t, "pattern") {
 		r.PathPatterns = []string{genPath(t, "pattern-path", true)}
 	}
+	if rapid.Bool().Draw(t, "query") {
+		r.Query = []string{rapid.SampledFrom(propQuery).Draw(t, "query-cond")}
+		if r.Methods == nil {
+			r.Methods = []string{"GET"}
+		}
+	}
+	r.Headers = subset(t, "headers", propHeaders)
 	r.Direction = rapid.SampledFrom([]string{"", "upload", "download"}).Draw(t, "direction")
 	if r.Direction != "" && rapid.Bool().Draw(t, "min") {
 		r.MinBytes = rapid.Int64Range(1, 100).Draw(t, "min-bytes")
@@ -104,15 +118,50 @@ func genRequest(t *rapid.T) Request {
 	r := Request{Host: rapid.SampledFrom(propHosts).Draw(t, "host"), Method: rapid.SampledFrom(propMethods).Draw(t, "method"),
 		Path: genPath(t, "path", false), ContentType: rapid.SampledFrom(append(propTypes, "")).Draw(t, "type"),
 		RequestBodyBytes: rapid.Int64Range(-1, 200).Draw(t, "up"), ResponseBodyBytes: rapid.Int64Range(-1, 200).Draw(t, "down"),
-		WebSocket: rapid.Bool().Draw(t, "ws")}
+		WebSocket: rapid.Bool().Draw(t, "ws"), HeaderNames: subset(t, "req-headers", append(propHeaders, "dropbox-api-arg"))}
+	if rapid.Bool().Draw(t, "has-query") {
+		r.Path += "?" + rapid.SampledFrom(propQueryIn).Draw(t, "query-in")
+	}
 	if rapid.Bool().Draw(t, "sni") {
 		r.SNI = r.Host
 	}
 	return r
 }
 
-// oracleRule is the spec read literally, without the matcher's index or helpers.
-func oracleRule(r specRule, req Request) bool {
+// patternRegexp is an independent reading of the pattern language: '*' and '{name}' are one or more non-'/' bytes,
+// a final '**' is any rest, everything else is literal.
+func patternRegexp(p string) (*regexp.Regexp, int) {
+	literal := 0
+	var b strings.Builder
+	b.WriteString("^")
+	parts := strings.Split(p[1:], "/")
+	for i, part := range parts {
+		literal++
+		if part == "**" && i == len(parts)-1 {
+			b.WriteString("(/.*)?")
+			continue
+		}
+		b.WriteString("/")
+		if part == "*" {
+			b.WriteString("[^/]+")
+			continue
+		}
+		for _, piece := range regexp.MustCompile(`\{[^{}]+\}|[^{}]+`).FindAllString(part, -1) {
+			if strings.HasPrefix(piece, "{") {
+				b.WriteString("[^/]+")
+			} else {
+				b.WriteString(regexp.QuoteMeta(piece))
+				literal += len(piece)
+			}
+		}
+	}
+	// "/a/**" also matches "/a": the optional group above covers it once the '/' of '**' is not required.
+	b.WriteString("$")
+	return regexp.MustCompile(b.String()), literal
+}
+
+// oracleRule is the spec read literally, without the matcher's index or helpers: whether it matches and its score.
+func oracleRule(r specRule, req Request) (bool, int) {
 	host := strings.ToLower(req.Host)
 	hostHit := false
 	for _, h := range r.Hosts {
@@ -122,53 +171,90 @@ func oracleRule(r specRule, req Request) bool {
 		hostHit = hostHit || host == h || strings.HasSuffix(host, "."+h)
 	}
 	if !hostHit {
-		return false
+		return false, 0
 	}
+	conditions := 0
 	if r.Methods != nil {
+		conditions++
 		ok := false
 		for _, m := range r.Methods {
 			ok = ok || m == req.Method
 		}
 		if !ok {
-			return false
+			return false, 0
 		}
 	}
-	if r.WebSocket && !req.WebSocket {
-		return false
+	if r.WebSocket {
+		conditions++
+		if !req.WebSocket {
+			return false, 0
+		}
 	}
+	path, rawQuery, _ := strings.Cut(req.Path, "?")
+	best := 0
 	if r.PathPrefixes != nil || r.PathPatterns != nil {
+		conditions++
 		ok := false
 		for _, p := range r.PathPrefixes {
-			ok = ok || strings.HasPrefix(req.Path, p)
-		}
-		for _, p := range r.PathPatterns {
-			ps, qs := strings.Split(p[1:], "/"), strings.Split(req.Path[1:], "/")
-			hit := true
-			for i, seg := range ps {
-				if seg == "**" {
-					break
-				}
-				if i >= len(qs) || (seg != "*" && seg != qs[i]) {
-					hit = false
-					break
-				}
-				if i == len(ps)-1 && len(qs) != len(ps) {
-					hit = false
+			if strings.HasPrefix(path, p) {
+				ok = true
+				if len(p) > best {
+					best = len(p)
 				}
 			}
-			ok = ok || hit
+		}
+		for _, p := range r.PathPatterns {
+			if re, literal := patternRegexp(p); re.MatchString(path) {
+				ok = true
+				if literal > best {
+					best = literal
+				}
+			}
 		}
 		if !ok {
-			return false
+			return false, 0
 		}
 	}
 	if r.ContentTypes != nil {
+		conditions++
 		ok := false
 		for _, ct := range r.ContentTypes {
 			ok = ok || ct == req.ContentType || (ct == "multipart/*" && strings.HasPrefix(req.ContentType, "multipart/"))
 		}
 		if !ok {
-			return false
+			return false, 0
+		}
+	}
+	if r.Query != nil {
+		conditions++
+		params := map[string][]string{}
+		for _, pair := range strings.Split(rawQuery, "&") {
+			if pair != "" {
+				k, v, _ := strings.Cut(pair, "=")
+				params[k] = append(params[k], v)
+			}
+		}
+		for _, q := range r.Query {
+			key, want, hasValue := strings.Cut(q, "=")
+			got := params[key]
+			if len(got) != 1 || got[0] == "" {
+				return false, 0
+			}
+			if hasValue && !strings.HasPrefix(want, "{") && !strings.Contains("|"+want+"|", "|"+got[0]+"|") {
+				return false, 0
+			}
+		}
+	}
+	if r.Headers != nil {
+		conditions++
+		for _, h := range r.Headers {
+			ok := false
+			for _, have := range req.HeaderNames {
+				ok = ok || strings.EqualFold(h, have)
+			}
+			if !ok {
+				return false, 0
+			}
 		}
 	}
 	min := r.MinBytes
@@ -177,24 +263,31 @@ func oracleRule(r specRule, req Request) bool {
 	}
 	switch r.Direction {
 	case "upload":
-		return req.RequestBodyBytes >= min && (req.ResponseBodyBytes < 0 || req.RequestBodyBytes > req.ResponseBodyBytes)
+		conditions++
+		if !(req.RequestBodyBytes >= min && (req.ResponseBodyBytes < 0 || req.RequestBodyBytes > req.ResponseBodyBytes)) {
+			return false, 0
+		}
 	case "download":
-		return req.ResponseBodyBytes >= min && (req.RequestBodyBytes < 0 || req.ResponseBodyBytes > req.RequestBodyBytes)
+		conditions++
+		if !(req.ResponseBodyBytes >= min && (req.RequestBodyBytes < 0 || req.ResponseBodyBytes > req.RequestBodyBytes)) {
+			return false, 0
+		}
 	}
-	return true
+	return true, best*16 + conditions
 }
 
+// oracle is the most specific matching rule (highest score, the first one in file order on a tie).
 func oracle(children []specChild, req Request) (string, int) {
-	evaluated := 0
+	evaluated, winner, top := 0, "", -1
 	for _, c := range children {
 		for j, r := range c.Rules {
 			evaluated++
-			if oracleRule(r, req) {
-				return fmt.Sprintf("%s#%d", c.Name, j), evaluated
+			if ok, score := oracleRule(r, req); ok && score > top {
+				winner, top = fmt.Sprintf("%s#%d", c.Name, j), score
 			}
 		}
 	}
-	return "", evaluated
+	return winner, evaluated
 }
 
 func TestPropertyMatcherAgreesWithOracle(t *testing.T) {
@@ -227,7 +320,7 @@ func TestPropertyMatcherAgreesWithOracle(t *testing.T) {
 		}
 		// Invariances: a query string, host case, a port and a trailing dot change nothing.
 		variant := req
-		variant.Path += "?a=/2/files/upload#f"
+		variant.Path += "#f"
 		variant.Host = strings.ToUpper(req.Host) + ".:443"
 		variant.SNI = ""
 		if again := s.Classify(variant); again.Rule != got.Rule || again.Limit != got.Limit || again.App != got.App {

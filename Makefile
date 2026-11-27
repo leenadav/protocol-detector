@@ -1,4 +1,4 @@
-.PHONY: serve test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation golden-record golden-check property-long
+.PHONY: child-apps serve test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation golden-record golden-check property-long
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -57,7 +57,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts ledgers manifest presentation-check inventory keylogs content sequences capabilities content-pack parity
+check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts ledgers manifest presentation-check inventory keylogs content sequences capabilities content-pack child-apps parity
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -179,6 +179,11 @@ keylogs:
 
 content:
 	python3 -B tools/check_content.py
+
+# PRO-492: the child-app rules are a reproducible conversion of App Research's cited wave files (docs/CHILD-APPS.md).
+child-apps:
+	$(PYTHON) -B tools/child_apps_wave.py --self-test
+	$(PYTHON) -B tools/child_apps_wave.py migration/fixtures/child-apps/wave-0.json --check
 
 # Migration M0: the per-family capability inventory must match the registry (Go statuses are kept as recorded)
 capabilities:

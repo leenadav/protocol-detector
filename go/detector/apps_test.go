@@ -15,7 +15,7 @@ func TestAppClassifierParentAndChild(t *testing.T) {
 		t.Fatal(err)
 	}
 	v := c.Classify(HTTPRequest{SNI: "gmail.googleapis.com", Host: "gmail.googleapis.com", Method: "POST",
-		Path: "/upload/gmail/v1/users/me/messages/send", ContentType: "message/rfc822", RequestBodyBytes: 900, ResponseBodyBytes: -1})
+		Path: "/upload/gmail/v1/users/me/messages?uploadType=media", ContentType: "message/rfc822", RequestBodyBytes: 900, ResponseBodyBytes: -1})
 	if v.App != "gmail-uploading" || v.Container != "gmail" || v.Basis != "request_rule" || !v.Matches("gmail") ||
 		!v.Matches("gmail-uploading") || v.Matches("google-base") || v.Schema != AppSchemaVersion {
 		t.Fatalf("verdict %+v", v)
@@ -64,7 +64,7 @@ func TestAppVerdictMatchesItsSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 	c, _ := NewAppClassifier(AppLimitsConfig{})
-	record, _ := json.Marshal(c.Classify(HTTPRequest{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload"}))
+	record, _ := json.Marshal(c.Classify(HTTPRequest{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload", ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}}))
 	var fields map[string]interface{}
 	_ = json.Unmarshal(record, &fields)
 	var keys, required []string
@@ -100,7 +100,7 @@ func TestAppClassifierIsSafeForConcurrentUse(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 200; j++ {
-				if v := c.Classify(HTTPRequest{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload"}); v.App != "dropbox-uploading" {
+				if v := c.Classify(HTTPRequest{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload", ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}}); v.App != "dropbox-uploading" {
 					t.Errorf("verdict %+v", v)
 					return
 				}

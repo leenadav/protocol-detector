@@ -21,9 +21,9 @@ func TestPolicyMatchesParentOrChild(t *testing.T) {
 		req  Request
 		want string
 	}{
-		{Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload"}, "deny"},
-		{Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/download"}, "alert"}, // child of dropbox
-		{Request{Host: "www.dropbox.com", Method: "GET", Path: "/home"}, "alert"},                     // the parent itself
+		{Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload", ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}}, "deny"},
+		{Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/download", HeaderNames: []string{"Dropbox-API-Arg"}}, "alert"}, // child of dropbox
+		{Request{Host: "www.dropbox.com", Method: "GET", Path: "/home"}, "alert"},                                                               // the parent itself
 		{Request{Host: "mail.google.com", Method: "GET", Path: "/"}, "allow"},
 	} {
 		v := s.Verdict(s.Classify(c.req))
