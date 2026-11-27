@@ -23,7 +23,7 @@ One place to look up every rule the project works by. Hebrew summary for the CEO
 - **Detection only in Culvert.** The detector's verdict is not enforced by the detector itself. *Source: Lee,
   2026-11-xx.* Proxy integration is the Culvert Integration lane's work ([AGENTS.md](../AGENTS.md), "Intended limits").
 - **Evidence, not identity.** SNI, ALPN, port and fingerprints are evidence, never authenticated identity; a
-  TLS ClientHello is an offer. *Source: Lee, 2026-11-xx; [AGENTS.md](../AGENTS.md), "Review priorities".*
+  TLS ClientHello is an offer. *Source: Lee, 2026-11-xx; [REVIEW.md](../REVIEW.md), "Pass 2: security".*
 - **Inputs.** IPv4 and synthetic test inputs. No external or user traffic is captured, and captured traffic is
   never committed. *Source: [AGENTS.md](../AGENTS.md) (header); [CONTRIBUTING.md](../CONTRIBUTING.md), "Before you start"; Lee, 2026-11-xx.*
 - **Upstream Culvert is never pushed to**: no push, PR, merge or release on KidCarmi/Culvert. *Source: Lee, 2026-11-xx.*
@@ -56,7 +56,7 @@ One place to look up every rule the project works by. Hebrew summary for the CEO
 
 ## 4. Security findings
 
-- **Severity sets priority.** P0 and P1 are critical, P2 high, P3 low; routing is automatic. *Source: Lee, 2026-11-xx.* Codex automatic review flags only P0/P1 ([AGENTS.md](../AGENTS.md), "Code Review Rules"). The automatic routing itself is *(not in repo)*.
+- **Severity sets priority.** P0 and P1 are critical, P2 high, P3 low; routing is automatic. *Source: Lee, 2026-11-xx.* Codex automatic review flags only P0/P1 ([REVIEW.md](../REVIEW.md), "Code Review Rules"). The automatic routing itself is *(not in repo)*.
 - **A critical issue must start within 1 hour, or it is escalated.** *Source: Lee, 2026-11-xx.* *(not in repo)*
 - **Small P3 fixes in one lane are batched** into one task and one PR. *Source: Lee, 2026-11-xx.*
 - **Every fix comes with a test that fails first.** *Source: Lee, 2026-11-xx; [CLAUDE.md](../CLAUDE.md), "Skills to use" (`test-driven-development`).*

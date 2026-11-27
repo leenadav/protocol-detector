@@ -17,8 +17,9 @@ their decisions, the policy locks, and the release controller.
   - CI tools in `tools/`: `check_workflow_policy.py`, `check_workflow_yaml.py`, `check_action_pins.py`,
     `check_pin_drift.py`, `check_go_drift.py`, `go_ci.py`, `content_gate.py`, `merge_readiness.py`,
     `go_fuzz_long.py`, `perf_history.py`, `build_go_release.py`, `release_provenance.py`, `codeql_gate.py`,
-    the release checks and the SBOM checks.
-  - The locks `tools/workflows.lock.json` and `tools/scanner_config.lock.json`, and `tools/scanners/`.
+    `check_security_requirements.py`, the release checks and the SBOM checks.
+  - The locks `tools/workflows.lock.json`, `tools/scanner_config.lock.json` and `tools/security_requirements.lock.json`
+    (the pinned SR id set; rows of `SECURITY-REQUIREMENTS.md` belong to the lane that adds them), and `tools/scanners/`.
   - The `Makefile`'s CI targets.
   - `SSDLC.md`, `docs/RELEASING.md`, `docs/review-packet/` and this file.
   - Mailbox issue #7.
@@ -151,6 +152,8 @@ its own notes file, and the section is refreshed after merge.
 1. `CLAUDE.md` (imports `AGENTS.md`) and `AGENTS.md` on `main`: lanes, ownership, mailbox rules. It may be stale on old branches, so read it from `main`.
 2. `SSDLC.md`: controls, the required-checks table, the CI/CD backlog (items 18–34 are the recent ones).
 3. `docs/review-packet/INDEX.md`: what awaits Codex, chunked.
+   `REVIEW.md` (PRO-74): the review policy every reviewer follows (three passes, the Code Review Rules, Important
+   vs at most 5 nits, what not to report); `AGENTS.md` "Review guidelines" points to it.
 4. `docs/RELEASING.md`: the release controller and dry runs.
 5. `tools/check_workflow_policy.py` docstring: rules 1–16 every workflow change must pass.
 6. Issue #7 (mailbox) and `migration/MERGE-READINESS.md` on `claude/go-migration` (the Engine lane's merge plan).
@@ -164,7 +167,7 @@ its own notes file, and the section is refreshed after merge.
 | `python3 -B tools/check_workflow_policy.py --write-workflow-lock` | Regenerates the lock; run after any workflow edit | — |
 | `actionlint`, `zizmor --persona pedantic`, `tools/check_workflow_yaml.py` | Workflow lint via `make workflow-lint`; needs the hash-pinned dev toolchain (`pip install --require-hashes -r requirements-dev.txt` in a venv) and actionlint 1.7.7 | ~30 s |
 | CPython 3.9: `python3.9 -B -m unittest discover -q` | Second-interpreter tests | ~1 min |
-| `make fuzz PYTHON=python3`, `python3 -B tools/check_security_requirements.py` | Fuzz and security requirements | ~20 s |
+| `make fuzz PYTHON=python3`, `make requirements PYTHON=python3` | Fuzz; security requirements (self-test, then every `SR` row parses, no duplicate, id set equals the lock) | ~20 s |
 | Hosted: push the branch; ci, codeql and supply-chain-drift run | | ~15 min |
 | Hosted, new workflow | Dispatch with the GitHub `run_workflow` tool | |
 
@@ -179,6 +182,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | PRO-347: the nightly `ledgers` workflow is read-only (strict check, refresh patch as an artifact). Opening the docs-only refresh pull request from it needs `contents: write` + `pull-requests: write` (rule 5 forbids both outside the release controller), the repository setting that lets Actions create pull requests, and a token whose pull requests trigger ci (`GITHUB_TOKEN` ones start no workflow). Until then Deputy applies the patch | Lee's decision (SSDLC item 43) |
 | PRO-480: branch `claude/platform-PRO-480-release-dryrun-counts` refreshes the generated ledgers (895 → 909) and runs `check_docs_counts.py --strict` in `publish-release.yml` for a tag only (policy `check_release_docs_counts`); the release build job also builds the Go binary before its gate (PRO-402 made `analyze` Go-only). After it merges: merge `main` into #149 (`claude/determined-mayer-cyjpa0`, PRO-194) and refresh Dependabot #151 (PRO-478) | Hermes's review, then Lee; PRO-194 and PRO-478 owners for the refresh |
 | PRO-268: branch `claude/platform-PRO-268-benchstat` adds the `go-bench` ci job (`tools/go_bench.py`, benchstat from `tools/golint/benchstat`): hot-path Go benchmarks at the PR head against the merge base, +10 % sec/op at p < 0.05 or more allocs/op fails (SSDLC item 44). First real CI run (`f16f75a` against `765feee`): 2 min 58 s, no hot-path regression; changing `HOT` or a threshold is a reviewed change to the tool | Hermes's review, then Lee |
+| PRO-545 (SEC-PYRM-1): #178, branch `claude/platform-PRO-545-sr-gate`. The requirements gate fails on any `SR` row that does not parse, on duplicate ids and on an id set that differs from `tools/security_requirements.lock.json` (`--write-lock`, `--retire SR-n`); SR-58..SR-63 were duplicated on `main` and the newer six are now SR-70..SR-75. SEC-PYRM-10 follow-up: every `|` line must be the header, a separator or a strict row, so a missing leading pipe or a Cyrillic/fullwidth id fails (self-test 27 cases). SEC-PYRM-2 (references grepped, not run) and SEC-PYRM-4 (`go test -json` outcome) are separate tasks; #181/PRO-568 must take this follow-up too | Hermes's review, then Lee |
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
@@ -198,6 +202,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Gitleaks hex HTTP/1 allowlist scoped (PRO-183/PRO-184, the gitleaks SEC-CI-1): branch `claude/cicd-gitleaks-hex-scope`, base main. Own `[[allowlists]]` entry, AND of path `^go/.*_test\.go$` and the hex regex; `check_gitleaks_allowlist.py` proves a hex request with a cookie still flags in .py, .json and non-test .go. `claude/go-migration` keeps its own repo-wide copy until it merges main | Hermes's review, then Lee |
 | Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
 | Nightly mutation job (PRO-176): #155, branch `claude/platform-PRO-176-nightly-mutation`, the `mutation` job of `nightly-fuzz.yml` (gremlins and the module cache from one isolated networked step, then `make mutation` offline with `MUTATION_BIN`, results uploaded every run; policy `check_mutation_build`). The 5-point threshold is a placeholder in Engine's `mutation.py`. tlsx and textroute measure nothing today: their tests read `../../../../migration/fixtures/cases.json`, absent from gremlins' copy of `go/`, so every mutant counts as killed | Hermes's review, then Lee; Engine for the tlsx/textroute fixture path (asked on PRO-176) and the PRO-173 `TOLERANCE` |
+| Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
+| PRO-75 guardrail hooks: branch `claude/platform-PRO-75-hooks`. `.claude/settings.json` + `.claude/hooks/guard.py` (PreToolUse; force-push, main, rebase/reset of shared `claude/*`, merge/approve/close, settings, secrets); tests in `make workflow-policy` and ci `workflow-lint` (SSDLC item 45). A false positive is a `guard.py` change with a test | Hermes's review, then Lee |
 | 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 6 packages test, 2 have no tests, `framed` is excluded; an excluded package that compiles fails the target | Hermes's review, then Lee; Engine to make `framed` (5 constant overflows of `int`) build on 386, then drop it from `GO_386_EXCLUDE` |
 | Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
 | 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 7 packages test, 2 have no tests, `GO_386_EXCLUDE` is empty (PRO-503); an excluded package that compiles fails the target | Done (PR #117); `framed` on 386 is PRO-503 |
@@ -219,6 +225,9 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   re-keyed) and `c5add9e329ce474af9b5eda9109ffea129593616` (apidiff stderr summary).
 - **PRO-270:** `7863692f382c39c5da592493e8047cfb3d68963d` (Dependabot security-only).
 - **PRO-503:** `9b7e79aecdca5a40717bd35d289b42d0503ed0e6` (framed builds and tests on GOARCH=386; `GO_386_EXCLUDE` empty; RESP length wrap on 386). Fix round: `23458ef6fa27d71e6b5d67489b20f299752440f4` (gosec G115: `bits32` int64 widening instead of `uint32`).
+- **PRO-545 (#178):** `81ec7b37071711d59aa1a869dd1dbc1a86a68544` (SR gate: unparsable rows, duplicates, pinned id set; SR-70..SR-75 renumbered).
+  Fix round (SEC-PYRM-10): `b80580f544278e5ffd4b1c2b11c771532ed3fa5d` (rows without a leading pipe, look-alike ids).
+- **PRO-75 (#170):** `e179654a0933a3dbe093eb4ebc62817755f44bc7` (guardrail hooks), `6204d9bf5e4a7a2d5f296db821c2643026049919` (CodeQL empty-except fix).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
@@ -228,6 +237,13 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   `split("\n")`. Rewriting the gosec baseline is a reviewed change and needs `--write-scanner-lock` in the same commit.
 - **apidiff exit codes (PRO-187):** `apidiff` exits 0 after its report, 1 (`die`) or 2 (usage) otherwise, and prints
   nothing when nothing changed; `go_api.judge_report` treats everything else as a failure.
+- **A gate that filters by regex drops what it cannot match (PRO-545):** the requirements gate kept only rows
+  matching ROW, so free text, prose after the backtick or a duplicate id passed silently, and six ids were already
+  duplicated on `main`. Select candidate rows loosely, parse them strictly, and fail on every candidate that does
+  not parse; pin the id set in a lock so a deletion is a reviewed diff. The loose selector must itself be total
+  (SEC-PYRM-10): `^\s*\|\s*sr` still skipped a row without its leading pipe or with a Cyrillic `Ѕ`, so select by
+  structure (every line holding `|`), not by the content you expect, and match ids in ASCII only.
+
 - **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
   `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
   unconditional `check_docs_counts.py --strict` turned every PR's release build red (Dependabot #151, #149).

@@ -120,6 +120,7 @@ pins:
 # The ci gate lists every ci job; the drift workflow triggers on every workflow file;
 # release publishes serialize; a release tag must point at a commit on main.
 workflow-policy:
+	$(PYTHON) -B .claude/hooks/guard.py --self-test
 	$(PYTHON) -B tools/check_release_ref.py --self-test
 	$(PYTHON) -B tools/check_release_exposure.py --self-test
 	$(PYTHON) -B tools/check_release_checks.py --self-test
@@ -153,6 +154,7 @@ workflow-policy:
 	$(PYTHON) -B tools/check_workflow_policy.py
 
 requirements:
+	$(PYTHON) -B tools/check_security_requirements.py --self-test
 	$(PYTHON) -B tools/check_security_requirements.py
 
 fuzz:
