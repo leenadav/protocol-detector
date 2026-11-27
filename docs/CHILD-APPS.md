@@ -35,7 +35,31 @@ key `containers`, which holds for the named application itself and for each of i
   {"name": "watch-dropbox", "action": "alert", "match": {"containers": ["dropbox"]}}]}
 ```
 
-`FromJSON` (the reference's vocabulary, used by every parity path) still refuses `containers` and child names.
+`FromJSON` (the reference's vocabulary, used by every parity path) still refuses `containers`, `child_status` and
+child names.
+
+### Fail closed: `child_status` (SEC-CHILD-1)
+
+Every verdict carries `child_status`:
+
+| Value | Meaning |
+|---|---|
+| `matched` | a child rule decided the function |
+| `none` | every candidate rule was evaluated on the normalized request and none applies (also: no child rule names the host, so no refusal can hide a child) |
+| `undetermined` | a child rule of the host could apply, but the request was refused (`path_not_canonical`), capped (any `limit`) or ambiguous (`request_ambiguous`): the verdict names the host's catalog owner and no child |
+| `not_applicable` | no catalog application, so no child can be named |
+
+A deny entry for a child alone fails open on `undetermined`. Pair it with a `child_status` rule for the owners the
+child's hosts may have, its container and its `depends_on` (Gmail's API hosts belong to `google-base`):
+
+```json
+{"name": "no-gmail-upload", "action": "deny", "match": {"apps": ["gmail-uploading"]}},
+{"name": "no-unknown-gmail-function", "action": "deny", "match": {"apps": ["gmail", "google-base"], "child_status": ["undetermined"]}}
+```
+
+Culvert's `go/detector` facade has `AppClassifier.MayBe(verdict, child)`, which is `Matches` plus exactly that
+undetermined case; use it for deny entries and `Matches` for allow entries. Matching `containers` on the host owner
+is SEC-CHILD-2.
 
 ## The data: `go/internal/childapp/childapps.json`
 
@@ -80,9 +104,18 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
 
 ## Paths are matched only in canonical form
 
-The fragment is ignored and the query is read only by `query` conditions. A path with a dot segment, an empty segment, a backslash, a control byte or an
-encoded `/`, `\`, `.`, `%` or NUL is not matched (reason `path_not_canonical`; the parent is still reported), so a
-filter and a server can never read one path two ways. SNI and Host of different catalog owners give no application
+The fragment is ignored and the query is read only by `query` conditions. Before matching, percent escapes of
+unreserved bytes (`A-Z a-z 0-9 - _ ~`, RFC 3986 section 2.3) are decoded in the path and in query names and values,
+and every other escape is upper-cased (sections 6.2.2.1 and 6.2.2.2), so `/upl%6fad` matches `/upload` and
+`upload%54ype=media` matches `uploadType=media`. A path with a dot segment, an empty segment, a backslash, a
+control byte, a malformed escape or an encoded `/`, `\`, `.`, `%` or control byte is not matched (reason
+`path_not_canonical`, `child_status` `undetermined`; the parent is still reported), so a filter and a server can
+never read one path two ways.
+
+A rule is ambiguous, and never picks a child, when it holds only for one server reading of the request: a query
+parameter it reads is repeated (also through an encoded name), the content type it reads does not parse, or a path
+pattern holds only without a trailing slash. If an ambiguous rule would be the most specific, the verdict is
+`request_ambiguous` and `undetermined`; if a definite rule outranks it, that rule's child stands. SNI and Host of different catalog owners give no application
 (`sni_host_owner_mismatch`, domain fronting); a coalesced HTTP/2 connection of one owner is classified on the Host.
 
 ## Work ceiling (never silent)
@@ -91,7 +124,7 @@ Rules are indexed by host, so a request only meets the rules of its own host and
 `MaxRuleEvaluations` (default 64) rules are evaluated per request, and a path longer than `MaxPathBytes`
 (default 4,096) or a method or content type over 32 or 256 bytes is not matched. Hitting any of these is reported in
 `limit` (`child_rule_evaluations`, `child_path_bytes`, `child_field_bytes`) with reason `work_limit` or
-`field_too_long`, and the verdict then names the parent only, never a child.
+`field_too_long`, and the verdict then names the parent only, never a child, with `child_status` `undetermined`.
 
 ## Where the rules come from
 

@@ -96,6 +96,9 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   stays a sticky exhausted marker with its pre-overflow bytes, so a later contradicting ClientHello conflicts and
   retracts instead of assembling as a first message (Go only, recorded divergence approved by Lee on PRO-124).
   Branch `claude/engine-PRO-122-quic-exhausted-sticky`, PR #145 into `main`; details in `STATUS.md`.
+- **SEC-CHILD-1 (PRO-505, PRO-508):** child apps fail closed. A refused, capped or ambiguous request is
+  `child_status` `undetermined` (policy key `child_status`, `AppClassifier.MayBe`), and escapes of unreserved bytes
+  are decoded before matching. On PR #163's branch; SEC-CHILD-2 (host owner) and SEC-CHILD-3 (wave-0 data) are open.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
@@ -223,6 +226,7 @@ PRO-315 (against `d950eb8`, PR #107's head): `653b1ca` (fix and tests) and the d
 PRO-401 (against `main` `8945986`, PR #127): `466e197` (golden replays, property tests, serve without Python, CI), `f2cb27c` (lint fixes), `a21010a` (scanner lock), `d34aa0f` (two CodeQL errors), `49f8e7d` and `cb1cbad` (the server golden made host-independent: interface list and the synthetic-scope probe) and the documentation commits after them. PRO-431 (main `23bbc0c` merged in as `dc0e42b`): `8541b3a` (the server golden compared without the build identity, Go's held to `SOURCE.json`) and the documentation commit after it.
 SEC-KEY-1 residual (PRO-437, against `main` `23bbc0c`, branch `claude/engine-PRO-51-sec-key-1`): `68202be` (fix and tests) and the documentation commit after it (`migration/notes/PRO-437.md`).
 PRO-492 (child applications, against `main` `5cb35d2`): `e75e4a8474db80a7ad9d4a01534938e0d0531efa` (engine, API, policy, data and tests) and `4e530900bffa7c6e6094ad23eafef1019a58d696` (schema moved beside the facade, lint), with the documentation commit after them.
+SEC-CHILD-1 (PRO-508, against PR #163's head `dadc6bd`, branch `claude/zen-davinci-srvfyo`): `79d8e17e10b88a000dec2f5fe830cdff70ab2773` (fix and tests), `a270178ecf6f699ec189b316655ab15546c004cc` (gosec G115 fix) and the documentation commit after them.
 SEC-QUIC-1 budget (PRO-122, against `main` `23bbc0c`, PR #145): `79cf9dd58e33e36c6c8c04244797781fe87fe5ef` (fix and tests) and the
 documentation commit after it.
 PRO-448 (PR #148, against `main` `23bbc0c`): `81b331d` (fix and tests), `0c51e26` (the pro448 self-test fix), and `b45979c` (PRO-459: main merged in, keeping both the pro448 reference model and the SEC-SESS-1 pins in `analyze_diff.py`), and `dcd932b` (PRO-460: the 9 SEC-SESS-1 analyze pins refreshed for the PRO-448 counters, and limits_test.go set to the half-open budget), and `790b81f` (PRO-460 again: main `6c6d4dd` merged in after #127; `analyze_diff.py` keeps main's golden replay and loads the pro448 model only for a recording run, and `migration/fixtures/golden/analyze.json.gz` is re-recorded with that model: 300 captures, 0 mismatched; then main `359b444`, PR #145, merged in with no code conflict), with the documentation commits after them.
