@@ -490,6 +490,21 @@ func (p *Parser) Feed(data []byte) (int, error) {
 				return pos, parsing.Malformed("Invalid TLS record length")
 			}
 		}
+		if p.hasHelloSize && len(p.handshake) == 4 && p.recordRemaining >= p.helloSize && len(data)-pos >= p.helloSize {
+			// The whole body is in this record and this call (PRO-596): read it where it lies instead of copying it,
+			// a post-quantum key share included. The Credit is charged what the copy would have cost, so every
+			// allowance decision is unchanged; the buffered path below handles a hello split across records or calls.
+			if err := p.credit.Charge(p.handshake, 4+p.helloSize); err != nil {
+				return pos, err
+			}
+			body := data[pos : pos+p.helloSize]
+			pos += p.helloSize
+			p.recordRemaining -= p.helloSize
+			if err := p.finishHello(p.handshake[0], body, pos); err != nil {
+				return pos, err
+			}
+			continue
+		}
 		needed := 4 - len(p.handshake)
 		if p.hasHelloSize {
 			needed = 4 + p.helloSize - len(p.handshake)
@@ -525,53 +540,62 @@ func (p *Parser) Feed(data []byte) (int, error) {
 			}
 		}
 		if p.hasHelloSize && len(p.handshake) == p.helloSize+4 {
-			body := p.handshake[4:]
-			if p.handshake[0] == 1 {
-				fields, err := parseHello(body, p.opts.Fingerprints || p.opts.RetainContexts)
-				if err != nil {
-					return pos, err
-				}
-				extra := []parsing.Row{{Field: "tls_offered_max_version", Value: offeredMaxVersion(fields.legacyVersion, fields.supported), Provenance: "client_hello", Strength: "offered"}}
-				if fields.ech != "" {
-					extra = append(extra, parsing.Row{Field: "tls_ech", Value: fields.ech, Provenance: "client_hello", Strength: "offered"})
-				}
-				for _, label := range offeredWeakClasses(fields.ciphers) {
-					extra = append(extra, parsing.Row{Field: "tls_weak_cipher_offered", Value: label, Provenance: "client_hello", Strength: "offered"})
-				}
-				alpn := fields.alpn
-				if alpn == nil {
-					alpn = []string{}
-				}
-				p.result = &parsing.Result{Host: fields.hostname, HasHost: fields.hasHost, ALPN: alpn, Extra: extra,
-					Reason: "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"}
-				if fields.info != nil && p.opts.RetainContexts {
-					p.result.Contexts = HelloContexts(body, fields.info, fields.hostname, fields.hasHost, fields.alpn)
-				}
-				if fields.info != nil && p.opts.Fingerprints {
-					p.result.Fingerprints = []parsing.Row{{Field: "ja4", Value: fingerprint.JA4(fields.info, "t"), Provenance: "client_hello"},
-						{Field: "ja3", Value: fingerprint.JA3(fields.info), Provenance: "client_hello"}}
-				}
-			} else {
-				rows, scope, reason, err := parseServerHello(body, p.opts, p.recordVersions, p.recordRemaining)
-				if err != nil {
-					return pos, err
-				}
-				p.result = &parsing.Result{ALPN: []string{}, Extra: rows, Scope: scope, Reason: reason}
-			}
-			p.handshake = nil
-			p.done = true
-			if p.opts.Certificates && p.result.Scope == "server_hello" && hasRow(p.result.Extra, "selected_tls_version", "1.2", "server_hello", "asserted") {
-				// TLS 1.3 encrypts its Certificate message; only a 1.2 flight can be read.
-				p.watch = newCertificateWatch(p.recordRemaining, p.opts.MaxBytes-p.consumed-pos)
-				p.result.Continues = true
-			}
-			if p.watch == nil && p.opts.Continuation > 0 {
-				p.startContinuation(p.recordRemaining)
+			if err := p.finishHello(p.handshake[0], p.handshake[4:], pos); err != nil {
+				return pos, err
 			}
 		}
 	}
 	p.consumed += pos
 	return pos, nil
+}
+
+// finishHello parses the complete hello body (kind 1 ClientHello, 2 ServerHello) and publishes the result. body is
+// either the reassembly buffer or, for a hello that arrived whole, the caller's own bytes (PRO-596): nothing the
+// result keeps may point into it, and every value taken from it is a copy.
+func (p *Parser) finishHello(kind byte, body []byte, pos int) error {
+	if kind == 1 {
+		fields, err := parseHello(body, p.opts.Fingerprints || p.opts.RetainContexts)
+		if err != nil {
+			return err
+		}
+		extra := []parsing.Row{{Field: "tls_offered_max_version", Value: offeredMaxVersion(fields.legacyVersion, fields.supported), Provenance: "client_hello", Strength: "offered"}}
+		if fields.ech != "" {
+			extra = append(extra, parsing.Row{Field: "tls_ech", Value: fields.ech, Provenance: "client_hello", Strength: "offered"})
+		}
+		for _, label := range offeredWeakClasses(fields.ciphers) {
+			extra = append(extra, parsing.Row{Field: "tls_weak_cipher_offered", Value: label, Provenance: "client_hello", Strength: "offered"})
+		}
+		alpn := fields.alpn
+		if alpn == nil {
+			alpn = []string{}
+		}
+		p.result = &parsing.Result{Host: fields.hostname, HasHost: fields.hasHost, ALPN: alpn, Extra: extra,
+			Reason: "ClientHello structure validated; SNI/ALPN are client assertions, not decrypted content"}
+		if fields.info != nil && p.opts.RetainContexts {
+			p.result.Contexts = HelloContexts(body, fields.info, fields.hostname, fields.hasHost, fields.alpn)
+		}
+		if fields.info != nil && p.opts.Fingerprints {
+			p.result.Fingerprints = []parsing.Row{{Field: "ja4", Value: fingerprint.JA4(fields.info, "t"), Provenance: "client_hello"},
+				{Field: "ja3", Value: fingerprint.JA3(fields.info), Provenance: "client_hello"}}
+		}
+	} else {
+		rows, scope, reason, err := parseServerHello(body, p.opts, p.recordVersions, p.recordRemaining)
+		if err != nil {
+			return err
+		}
+		p.result = &parsing.Result{ALPN: []string{}, Extra: rows, Scope: scope, Reason: reason}
+	}
+	p.handshake = nil
+	p.done = true
+	if p.opts.Certificates && p.result.Scope == "server_hello" && hasRow(p.result.Extra, "selected_tls_version", "1.2", "server_hello", "asserted") {
+		// TLS 1.3 encrypts its Certificate message; only a 1.2 flight can be read.
+		p.watch = newCertificateWatch(p.recordRemaining, p.opts.MaxBytes-p.consumed-pos)
+		p.result.Continues = true
+	}
+	if p.watch == nil && p.opts.Continuation > 0 {
+		p.startContinuation(p.recordRemaining)
+	}
+	return nil
 }
 
 // startContinuation ports TLSParser._start_continuation: the evidence so far is the base, the identification is not

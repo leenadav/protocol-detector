@@ -1,6 +1,7 @@
 package detector
 
 import (
+	"crypto/tls"
 	"testing"
 )
 
@@ -15,17 +16,24 @@ type flowCase struct {
 	name           string
 	client, server []byte
 	ceiling        float64 // allocations per flow that the gate allows
+	group          string  // TLS only: the selected_group the server direction must report
 }
 
 func flowCases(t testing.TB) []flowCase {
-	hello, reply := tlsFlights(t, "bench.example.test", []string{"h2", "http/1.1"}, nil)
+	// PRO-596: the TLS flow is two explicit cases. Until then it was one "tls" case on Go's default groups, which
+	// negotiate X25519MLKEM768; before PRO-260 the engine refused that ServerHello at once ("Server key share group
+	// outside supported profile"), so the old 67-allocation baseline never parsed the server direction at all, and
+	// the full parse PRO-260 brought read as a regression. Each case now names its group, and the budget test below
+	// checks that the server direction is identified with it, so a benchmark can never again measure a refusal.
+	classicalHello, classicalReply := tlsFlights(t, "bench.example.test", []string{"h2", "http/1.1"}, []tls.CurveID{tls.X25519})
+	hybridHello, hybridReply := tlsFlights(t, "bench.example.test", []string{"h2", "http/1.1"},
+		[]tls.CurveID{tls.X25519MLKEM768, tls.X25519}) // the shares Go's default configuration sends
 	return []flowCase{
-		// PRO-596: 62 measured (68 under -race); 93 before PRO-596, 191 before PRO-148. The flow's ServerHello
-		// selects X25519MLKEM768 (Go's default), identified since PRO-260; the old 110 ceiling let that +26 pass.
-		{"tls", hello, reply, 80},
-		{"http", httpRequest, httpResponse, 80}, // 61 (69); 73 before PRO-596, 128 before PRO-148
-		{"ssh", sshBanner, sshBanner, 60},       // 45 (47); 51 before PRO-596, 89 before PRO-148
-		{"unknown", junk, junk, 15},             // 11 (11), 15 before
+		{"tls-classical", classicalHello, classicalReply, 75, "29"}, // 59 (63 under -race); 92 before PRO-596
+		{"tls-hybrid", hybridHello, hybridReply, 75, "4588"},        // 60 (64); 93 before PRO-596, 191 before PRO-148
+		{"http", httpRequest, httpResponse, 80, ""},                 // 61 (69); 73 before PRO-596, 128 before PRO-148
+		{"ssh", sshBanner, sshBanner, 60, ""},                       // 45 (47); 51 before PRO-596, 89 before PRO-148
+		{"unknown", junk, junk, 15, ""},                             // 11 (11), 15 before
 	}
 }
 
@@ -78,8 +86,21 @@ func BenchmarkFlowBytewise(b *testing.B) {
 func TestFlowAllocationBudget(t *testing.T) {
 	e := mustEngine(t, allFamilies())
 	for _, c := range flowCases(t) {
-		if s := runFlow(e, c); c.name != "unknown" && s.Direction(ClientToServer).Outcome != OutcomeIdentified {
+		s := runFlow(e, c)
+		if c.name != "unknown" && s.Direction(ClientToServer).Outcome != OutcomeIdentified {
 			t.Fatalf("%s: the benchmark flow is not identified: %+v", c.name, s.Direction(ClientToServer))
+		}
+		if c.group != "" {
+			srv, group := s.Direction(ServerToClient), ""
+			for _, ev := range srv.Evidence {
+				if ev.Field == "selected_group" {
+					group = ev.Value
+				}
+			}
+			if srv.Outcome != OutcomeIdentified || group != c.group {
+				t.Fatalf("%s: the server direction must be identified with group %s, got %s with group %q (%s)",
+					c.name, c.group, srv.Outcome, group, srv.Detail)
+			}
 		}
 		got := testing.AllocsPerRun(200, func() { runFlow(e, c) })
 		t.Logf("%s: %.0f allocations per flow (ceiling %.0f)", c.name, got, c.ceiling)

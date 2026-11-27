@@ -145,21 +145,46 @@ func (c *Credit) Append(buf, data []byte) ([]byte, error) {
 	if c == nil || need <= cap(buf) {
 		return append(buf, data...), nil
 	}
-	size := next(cap(buf), need)
-	if !c.reserve(cap(buf), size) {
-		if size == need {
-			return buf, Denied()
-		}
-		c.denied = false
-		if size = need; !c.reserve(cap(buf), size) {
-			return buf, Denied()
-		}
+	size, ok := c.grow(cap(buf), need)
+	if !ok {
+		return buf, Denied()
 	}
 	grown := append([]byte(nil), make([]byte, size)...)[:len(buf)] // one allocation, rounded to its size class
 	copy(grown, buf)
 	grown = append(grown, data...)
 	c.settleAllocation(size, cap(grown))
 	return grown, nil
+}
+
+// grow charges a buffer of capacity old growing to hold need bytes: the usual growth when it fits, else an exact
+// fit. It reports the charged capacity, or false when even the exact fit is refused (nothing is then charged).
+func (c *Credit) grow(old, need int) (int, bool) {
+	size := next(old, need)
+	if !c.reserve(old, size) {
+		if size == need {
+			return 0, false
+		}
+		c.denied = false
+		if size = need; !c.reserve(old, size) {
+			return 0, false
+		}
+	}
+	return size, true
+}
+
+// Charge charges exactly what Append(buf, data) would for len(buf)+len(data) == need, and allocates nothing
+// (PRO-596). A parser that reads a complete message where it lies, instead of copying it into buf, calls it so
+// that every denial and every Used and Peak figure stays what the copy would have produced. Append settles a
+// fresh array's bound to its exact capacity, and the two are equal (TestAllocationBoundCoversTheAllocator), so
+// nothing is left to settle here.
+func (c *Credit) Charge(buf []byte, need int) error {
+	if c == nil || need <= cap(buf) {
+		return nil
+	}
+	if _, ok := c.grow(cap(buf), need); !ok {
+		return Denied()
+	}
+	return nil
 }
 
 // Copy is an owned exact copy of data that the flow retains (nil for empty data, as append([]byte(nil), ...)).
