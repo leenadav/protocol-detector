@@ -32,8 +32,8 @@ consequence and the severity. Identify missing regression tests. A passing suite
   inputs, ambiguity, explicit hints and fragmentation. Hints select candidates; they never establish identity.
 - Reassembly feeds each contiguous byte once. Conflicting retained overlaps invalidate classification before new
   bytes are admitted. Check wraparound, gaps, FIN/timeout/loss ordering, and both traffic directions.
-- The Go engine is judged against the Python reference: a Go change that moves a verdict without a matching
-  parity case or approved reference change is a bug.
+- The Go engine is judged against the frozen answers of the removed Python reference (rule 3 below): a Go
+  change that moves a verdict without a matching parity case or a pinned, approved divergence is a bug.
 
 ### Pass 2: security
 
@@ -48,7 +48,7 @@ consequence and the severity. Identify missing regression tests. A passing suite
 
 - The change does what the task asked, and nothing outside it: one topic, no unrelated files, no placeholder or
   TODO left for this task.
-- It keeps the rules of `AGENTS.md` and `CLAUDE.md`: the Python reference stays frozen (rule 3 below); no test
+- It keeps the rules of `AGENTS.md` and `CLAUDE.md`: the frozen answers stay unedited (rule 3 below); no test
   is skipped, weakened or deleted to get green (the only skip is a dated quarantine, `AGENTS.md`, "Flaky tests and
   verify skills"); no security check is disabled; a lane edits only its own files; no history rewrite.
 - A behaviour change comes with a test that fails without it.
@@ -57,19 +57,18 @@ consequence and the severity. Identify missing regression tests. A passing suite
 
 Each rule names what to flag, why, and the safe path. A finding under these rules is Important.
 
-1. **Parsers of untrusted traffic** (`go/`, `protocol_engine/`, `protocol_adapters/`).
+1. **Parsers of untrusted traffic** (`go/`).
    - Flag: an allocation, slice or read sized by a length or count field before it
      is checked against the bytes present and the configured budget; a panic,
      index error or uncaught exception on malformed or truncated input; a loop or
      recursion with no byte, count, depth or work limit.
    - Why: every byte is attacker-controlled, so these become memory or CPU
      amplification, or a crash of the classifier.
-   - Safe path: bound the read first, then return the existing errors. In Go that
-     is `errs.Exceeded` / `parsing.Budget` and `parsing.Malformed`; in Python,
-     `BudgetError` and `ParseError` (`protocol_engine/parsers.py`). A failure must
+   - Safe path: bound the read first, then return the existing errors:
+     `errs.Exceeded` / `parsing.Budget` and `parsing.Malformed`. A failure must
      never become a positive result.
-2. **Content packs** (`protocol_engine/content.py`, `content_lock.json`,
-   `go/internal/content/`, `migration/fixtures/content.json`).
+2. **Content packs** (`go/internal/content/` (pack.json, history.json, lock.json),
+   `tools/content_pack.py`, `migration/fixtures/content.json`).
    - Flag: anything that weakens digest verification (or any signature check
      added later); a rollback that stops reproducing an earlier release's
      published digest (C11); version ordering that is not numeric per component
@@ -78,14 +77,12 @@ Each rule names what to flag, why, and the safe path. A finding under these rule
      breaks that pin or makes an older pack look newer.
    - Safe path: keep `make content` and `tools/content_gate.py` passing. Change
      a release only by adding a new version.
-3. **The Python reference** (product code outside `go/` and `migration/`).
-   - Flag: any edit not in the Lee-approved list. That list is "Frozen-Python
-     exceptions" in `migration/STATUS.md`: the launchers, the parity case
-     generator, the CoAP profile, and the C11 and numeric version compare in
-     `content.py`, among the others it records.
-   - Why: Go is judged against the Python reference, so an unapproved change
-     moves the parity target.
-   - Safe path: make the change in Go, or get Lee's approval and record it in that list.
+3. **The frozen answers** (`migration/fixtures/cases.json`, `migration/fixtures/golden/`, `migration/parity/deltas.json`).
+   - Flag: an edit that changes a recorded answer to match new Go behaviour, or a new approved divergence,
+     without Lee's decision recorded in `migration/STATUS.md`.
+   - Why: since PRO-403 these files are the only record of the Python reference's behaviour (it can be
+     re-recorded only from the tag `python-final`), so changing an answer moves the parity target silently.
+   - Safe path: a Go behaviour change goes in as a pinned, approved divergence, never as an edited answer.
 4. **CI** (`.github/`, `tools/workflows.lock.json`).
    - Flag: an action not pinned to a full commit SHA; a token permission
      broadened beyond today's set (workflow level `contents: read`; job grants
@@ -99,7 +96,7 @@ Each rule names what to flag, why, and the safe path. A finding under these rule
 ## Severity: Important or Nit
 
 - **Important** (P0/P1): a reproducible bug in pass 1, any pass-2 security problem, a Code Review Rules
-  violation, or a pass-3 breach (scope creep, an unapproved Python edit, a weakened or skipped test, a disabled
+  violation, or a pass-3 breach (scope creep, an edited frozen answer, a weakened or skipped test, a disabled
   check, an expired quarantine). P0 is a crash, a wrong positive classification, a budget bypass, an identity
   leak or a token or secret exposure; P1 is any other Important finding. Each one gives file/line, the
   triggering input or sequence, the consequence, and the missing test.
@@ -115,7 +112,7 @@ Each rule names what to flag, why, and the safe path. A finding under these rule
 
 - **Generated files**: `tools/workflows.lock.json`, `tools/scanner_config.lock.json`,
   `migration/fixtures/**`, `go/internal/content/pack.json` and `history.json`,
-  `protocol_engine/content_lock.json`, `migration/CAPABILITIES.json`, `presentation/SOURCE.json`, `**/testdata/**`,
+  `migration/CAPABILITIES.json`, `presentation/SOURCE.json`, `**/testdata/**`,
   and every section between `BEGIN GENERATED` and `END GENERATED` markers. Review the generator and its gate
   instead (`migration/review-packet/EXCLUDE.md` names the gate for each).
 - **Vendored code**: `go/vendor/**` (`golang.org/x/crypto`, `x/sys`, `pgregory.net/rapid`), vendored unchanged and

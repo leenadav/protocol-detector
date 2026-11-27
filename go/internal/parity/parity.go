@@ -85,6 +85,12 @@ func Load(ctx context.Context, path string) (*Document, error) {
 	if len(data) > MaxDocumentBytes {
 		return nil, errs.Exceeded(errs.ScopeProcess, MaxDocumentBytes, "cases file size")
 	}
+	return Decode(ctx, data, filepath.Dir(path))
+}
+
+// Decode checks and decodes a cases document already read (and bounded) by the caller; dir is where its sibling
+// fixtures are. Load is Decode of a file of at most MaxDocumentBytes.
+func Decode(ctx context.Context, data []byte, dir string) (*Document, error) {
 	var doc Document
 	if err := json.Unmarshal(data, &doc); err != nil {
 		return nil, errs.New(errs.Invalid, errs.ScopeProcess, "cases file is not the expected JSON shape: "+err.Error())
@@ -92,7 +98,7 @@ func Load(ctx context.Context, path string) (*Document, error) {
 	if doc.Schema != 1 {
 		return nil, errs.New(errs.Unsupported, errs.ScopeProcess, fmt.Sprintf("cases schema %d", doc.Schema))
 	}
-	doc.Dir = filepath.Dir(path)
+	doc.Dir = dir
 	seen := make(map[string]bool, len(doc.Cases))
 	for i := range doc.Cases {
 		if err := ctx.Err(); err != nil {

@@ -1,6 +1,6 @@
 # Review scope: protocol detector v0.66
 
-Python3.9-compatible IPv4 passive classification: 88 families, 79 automatic.
+Go engine (`go/`), IPv4 passive classification: 88 families, 79 automatic.
 PROTOCOLS.md defines exact initial-message profiles and exclusions. APPID.md
 defines the verdict vocabulary and the application catalog; RISKS.md the flow
 risks and heuristic thresholds; POLICY.md the policy file and decisions.
@@ -12,7 +12,16 @@ fix diff only (`git diff <reviewed head> <fix head> -- <files of the finding>`),
 never as a re-review of the whole chunk; a chunk is re-read only if the fix
 changes code outside the finding's files.
 
-New focus (v0.66): `protocol_engine/smarthome.py` (LIFX header rules, Tuya CRC32
+New focus (PRO-403): the Python reference engine is removed and Go is the only engine. Review the deletion
+for what must not go with it: every security requirement now names Go tests (SECURITY-REQUIREMENTS.md, each
+proven to fail under a mutation of its guard; `tools/check_security_requirements.py --run` requires each to
+pass), the frozen answers (`migration/fixtures/cases.json`, `migration/fixtures/golden/`) stay untouched and
+every `make go-check-parity` gate still replays them, the CI jobs that ran the reference (behaviour diff,
+mutation smoke, the wheel, the Python fuzz) are gone while every Go job and floor stays, and `tools/*.py`
+remain. The reference's last state, the source of every "Previous focus" below, is the tag `python-final`
+(`5cb35d2`); the review packet (`migration/review-packet/`) is reviewed against Go only.
+
+Previous focus (v0.66, Python reference): `protocol_engine/smarthome.py` (LIFX header rules, Tuya CRC32
 framing, the TP-Link autokey pass with its printable/depth checks before
 `json.loads`), the three probes in `datagram.py`, and the DNS changes in
 `wire.py` (SRV/NSEC RDATA names, mDNS AA, the probe marker). Trace: no decoded

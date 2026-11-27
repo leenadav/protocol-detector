@@ -13,11 +13,15 @@ This lane finishes and maintains the Python → Go migration of the IPv4-only pa
 happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is closed: it merged an early snapshot
 (`7debf09`) into `main` on 2026-11-15 (`c121ada`). The lane has no open pull request now, and opening one waits on Lee.
 
-- **Python** (`protocol_engine/`, `protocol_adapters/`) stays as the reference and the fallback.
-- **Go** (`go/`) is judged against Python by the parity gates.
-- **The lane owns** `go/`, `migration/`, the product code (`protocol_engine/`, `protocol_adapters/`, `presentation/`),
-  the content data and the `Makefile`.
-- **Python detection code is read-only.** The only exceptions are ones Lee approves case by case; they are listed in `migration/STATUS.md` ("Frozen-Python exceptions").
+- **Go** (`go/`) is the only engine (PRO-403, 2026-11-27). The Python reference was removed; its last state is the
+  tag `python-final` (`5cb35d2`). New detection work goes to Go only.
+- **Go is judged against the reference's frozen answers** (`migration/fixtures/cases.json`,
+  `migration/fixtures/golden/`) by the parity gates. Those answers are never edited to match Go; a Go change that
+  moves them is a pinned, Lee-approved divergence, and re-recording needs a checkout of `python-final`.
+- **The lane owns** `go/`, `migration/`, the product code (`go/`, `presentation/`), the content data and the
+  `Makefile`.
+- **Security requirements** (SECURITY-REQUIREMENTS.md) name Go tests; a change that removes or renames one updates
+  the row in the same commit (`make requirements`, `make requirements-run`).
 - **Never touch the CI/CD lane's files:** `.github/**`, `tools/workflows.lock.json` and its CI tools in `tools/`
   (`go_ci.py`, `check_go_drift.py`, `content_gate.py`, `merge_readiness.py`, `go_fuzz_long.py`, `perf_history.py`,
   `build_go_release.py`, `release_provenance.py`, `check_workflow_policy.py`). Changes there go to that lane as a
@@ -139,7 +143,7 @@ its own notes file, and the section is refreshed after merge.
 5. `migration/CONTRACTS.md`: contracts C1 to C17, with the reference behaviour and the cases that check each one.
 6. `PROTOCOLS.md` and `ARCHITECTURE.md`: the profiles, including what each profile deliberately excludes.
 7. `migration/review-packet/INDEX.md` and `REVIEW-SCOPE.md`: what Codex reviews, and how fix rounds are reviewed.
-8. `migration/CONTENT-DIGEST.md` and `protocol_engine/content.py`: the content releases and the C11 rule.
+8. `migration/CONTENT-DIGEST.md`, `go/internal/content/` and `docs/CONTENT-BATCHES.md`: the content releases and the C11 rule.
 9. `migration/adr/`: ownership, toolchain and dependency decisions.
 
 ## 4. How to verify
@@ -149,12 +153,13 @@ Run everything from the repository root. Times are for the cloud container (4 vC
 | Command | What it checks | Runtime |
 |---|---|---|
 | `make go-check` | gofmt, vet, `go test -race`, 28 fuzz targets, parity-go with verify_families, every differential, bench-gate | about 8 min (488 s) |
-| `make check` | the Python suite (866 tests), content, docs counts, manifest, presentation, parity | about 1 min (60 s) |
-| `make parity-random` (in `go-check`) | the randomized differential's frozen seed-1 run (2,000 cases, `migration/fixtures/golden/random.json.gz`): `--self-test --rules-only`, `--plant` on the golden file, then the replay. Every differential of `go-check-parity` replays its golden file since PRO-401 and runs no Python reference; `make golden-record` re-records them while the reference exists. Fresh random inputs: `make property-long` (Go only, nightly) | about 3 s |
+| `make check` | ruff, the tooling and launcher tests, workflow policy, security requirements, docs counts, ledgers, manifest, presentation (Go service in Chromium), content, content pack (PRO-403: no Python engine left) | about 2 min |
+| `make requirements-run` | every Go test SECURITY-REQUIREMENTS.md names, run on the pinned Go; each must PASS | about 2 min |
+| `make parity-random` (in `go-check`) | the randomized differential's frozen seed-1 run (2,000 cases, `migration/fixtures/golden/random.json.gz`): `--self-test --rules-only`, `--plant` on the golden file, then the replay. Every differential of `go-check-parity` replays its golden file since PRO-401; re-recording needs a checkout of the tag `python-final` (PRO-403). Fresh random inputs: `make property-long` (Go only, nightly) | about 3 s |
 | `make pcap-oracle` (nightly, not in `go-check`) | the tshark oracle (`go/oracle`, its own test-only module): real OpenSSL, curl and quic-go traffic on 127.0.0.1, read by gopacket, fed to the engine and compared with tshark 4.2.2 on SNI, ALPN, TLS version, HTTP Host and QUIC version. It needs the pinned tshark, OpenSSL and curl (`go/oracle/README.md`). Allow-list: `go/oracle/allow.json` | about 3 s |
 | `make mutation` (nightly, not in `go-check`) | gremlins v0.6.0 on the nine parser packages against `migration/mutation/baseline.json` (fails on a drop of more than 5 points). `go-check` runs only `boundaries.py --check` and `mutation.py --self-test`. Regenerate the boundary tests with `python3 -B migration/mutation/boundaries.py` | about 20 min |
 | `make go-vendor-check` | re-vendors into `build/go-vendor-check` and diffs it against `go/vendor` | seconds (module cache warm) |
-| `python3 -B -m unittest discover -q` | the Python suite on its own | part of `make check` |
+| `python3 -B -m unittest discover -q` | the remaining Python tests (launchers, Makefile gates, verify_families) | part of `make check` |
 
 Run `make go-check` and `make check` before every push. Also run `make go-vendor-check` after any change to
 `go.mod`, `go.sum` or `go/vendor`. Push fast-forward only.
@@ -186,7 +191,6 @@ Run `make go-check` and `make check` before every push. Also run `make go-vendor
 | PRO-315 (`653b1ca`, on top of PR #107) | Hermes's review, QA Reviewer (Codex), then Lee's merge after PR #107 |
 | Python removal (Lee, 2026-11-25), PR A of 3 (PRO-401, PR #127): Go and CI gates on frozen answers, `serve` without Python | Hermes's review, then Lee's merge. PRO-431: main merged in and the server golden made build-independent (`8541b3a`); the fix then flows into #135 and #138 by merge. PR #125 (PRO-402) ports the same serve answers: whichever lands second reconciles `go/internal/serve`. PR B (the engine and its own jobs) and PR C wait for it. The demo capture, showcase and catalog are Go's own since PRO-401. |
 | SEC-QUIC-1 budget (PRO-122, branch `claude/engine-PRO-122-quic-exhausted-sticky`) | Hermes's review, QA Reviewer (Codex), then Lee's merge |
-| Not yet ported: demo capture, decryption showcase, catalog export | they still run as Python workers (`--python`). Nothing is scheduled. |
 | Release thresholds (plan M9 and M10), production SLOs, capacity | Lee. They are unproven, and docs must never claim production readiness. |
 | SEC-X509-1 (PRO-68): DER length check wrapped on 32-bit `int` (`go/internal/protocols/x509x/x509.go`) | Hermes's review of the fix branch, then Lee's merge. `element` now compares `length > limit-pos` and `count > limit-pos`; `TestHugeDERLengthIsRejectedWithoutWrap` fails on `GOARCH=386` without it. |
 | A2 second run (PRO-119): SEC-QUIC-2, a QUIC conflict marker refreshes its idle time but not its LRU place, so 1024 newer connections evict it; SEC-DEC-1, records after a close_notify or fatal alert are still decrypted | an approved parity delta each (Hermes/Lee, as for PRO-122/PRO-123). The Python reference behaves the same way (`quic.py` `conflicted`, `poc_decryption/engine.py` and `tls12.py`), so a Go-only fix would move parity. `migration/notes/PRO-119.md`. A prepared alert patch, against `c01942f` and not applying here, is `migration/held-patches/PRO-119/` on the dropped PR #147's branch `claude/confident-curie-qpv2sl` |
@@ -238,11 +242,26 @@ documentation commit after it.
 PRO-448 (PR #148, against `main` `23bbc0c`): `81b331d` (fix and tests), `0c51e26` (the pro448 self-test fix), and `b45979c` (PRO-459: main merged in, keeping both the pro448 reference model and the SEC-SESS-1 pins in `analyze_diff.py`), and `dcd932b` (PRO-460: the 9 SEC-SESS-1 analyze pins refreshed for the PRO-448 counters, and limits_test.go set to the half-open budget), and `790b81f` (PRO-460 again: main `6c6d4dd` merged in after #127; `analyze_diff.py` keeps main's golden replay and loads the pro448 model only for a recording run, and `migration/fixtures/golden/analyze.json.gz` is re-recorded with that model: 300 captures, 0 mismatched; then main `359b444`, PR #145, merged in with no code conflict), with the documentation commits after them.
 
 SR-59 key-log tests (PRO-547, SEC-PYRM-3, PR #190, against `main` `cc1566d`): `348a8866ab844e43b8e785974af53f631bd81a14` (FIFO, device and owner tests, the `getuid` seam), `540b016a7bb178418b8545e65843691181fb07c2` (errcheck fix in the test that the Go lint job flagged) and the documentation and merge commits after them.
+PRO-590 (PR #174 with the #166..#169 chain head `97edba3`, merge commits only): `57f68b4410e93b2333f734de446bdf477f6b6f0d` (conflict resolution: ci gate, REVIEW.md rules, Makefile, the SR table and gate) and the documentation commit after it; the #181 merge is recorded in `migration/notes/PRO-590.md`.
+
+PRO-590 on #181 (PRO-546): `81180398ef14c04031639ddf9261e31cbce0c068` merges #174's head `06515ba` (the combined SR gate with the strict Python runner) and the documentation commit after it.
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
 
+- **An SR row's id is not its Go test's name (PRO-590).** `TestSR58RDPSecurityPosture`..`TestSR63ServerNameCatalog`
+  verify SR-70..SR-75 since PRO-545 renumbered the duplicates; the names key `requirements.json.gz`, so renaming a
+  test means re-recording its cases at `python-final`. Change the row id (and the lock), not the test name.
+- **Go `regexp` classes match runes, not bytes (PRO-403).** `[\x80-\xff]` is U+0080..U+00FF, so on wire bytes it
+  refuses a raw obs-text byte and a negated class accepts one. Check byte ranges with a loop (`statusLine`,
+  `isIMAPAtom` in textroute); the recorded requirement cases found two such divergences.
+- **Security requirements replay the reference's recorded inputs (PRO-403).** `go/internal/replay::TestSR*` replay
+  `migration/fixtures/requirements.json.gz` (inputs the removed Python tests made, by test) and the families'
+  parity cases. A Go change that moves one of those answers is a reviewed divergence pinned in
+  `migration/parity/requirement-deltas.json` (deltas.json form), never a re-recording. Re-recording needs a
+  `python-final` extract: `git archive python-final | tar -x -C DIR`, then
+  `python3 -B migration/parity/requirement_cases.py --reference DIR`.
 - **The differential gates replay golden files (PRO-401).** A change that moves Go's answer fails `make go-check`
   until the golden file is re-recorded (`make golden-record`, with the reference) or, after the reference is gone,
   until the new answer is reviewed in. Never re-record to make a red gate green without reading the diff.

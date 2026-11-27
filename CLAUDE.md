@@ -10,8 +10,9 @@ file adds only what a Claude Code session needs to work here.
 
 | Command | What it runs | Healthy output ends with |
 |---|---|---|
-| `make check PYTHON=python3` | The full local gate: ruff, all tests, pins, workflow policy, docs counts, manifest, content, parity, … | `parity: compared 6584, matched 6584, mismatched 0, …` and exit 0 |
-| `python3 -B tools/run_tests_strict.py` | The test suite, where a skip fails the run unless allow-listed | `838 tests discovered, 838 run, 0 skipped` / `strict test run: ok` |
+| `make check PYTHON=python3` | The repository gate: ruff, the tooling and launcher tests, pins, workflow policy, security requirements, docs counts, manifest, presentation, content | `content pack ok: …` and exit 0 |
+| `make requirements-run` | Every security requirement's Go tests, run on the pinned Go; each must PASS | `security requirements: … 0 failures` |
+| `python3 -B tools/run_tests_strict.py` | The Python tooling tests, where a skip fails the run unless allow-listed | `… 0 skipped` / `strict test run: ok` |
 | `make lint` | `ruff check .` | `All checks passed!` |
 | `make workflow-policy PYTHON=python3` | Workflow policy rules, the lock and the self-tests of the CI tools | `workflow policy: ok (8 workflow files)` |
 | `make content` / `make content-pack` | Content lock and release history; the exported pack | `content ok: release … digest …` / `content pack ok: …` |
@@ -19,11 +20,12 @@ file adds only what a Claude Code session needs to work here.
 | `cd go && GOTOOLCHAIN=local GOPROXY=off go test ./...` | Go tests, on the pinned Go of `go/go.mod` | every package `ok` or `[no test files]` |
 | `make go-check` | gofmt, vet, `go test -race`, fuzz smoke, `make parity-go` | exit 0 |
 
-The counts above are those of `main` at the time of writing. A changed count is fine when the change explains it.
+The counts above are those of `main` at the time of writing (after PRO-403). A changed count is fine when the change explains it.
 
 ## Conventions that matter
 
-- Python 3.9 syntax, standard library only in the engine and in `tools/`. Each tool has a `--self-test`.
+- Go is the only engine (`go/`). The Python reference was removed in PRO-403; its last state is the tag
+  `python-final`. Python 3.9 syntax, standard library only, in `tools/` and `migration/`. Each tool has a `--self-test`.
 - Workflows: every action pinned to a full SHA, `contents: read`, and no `if:` or shell conditionals in `ci.yml`
   (the decision goes in a tool). After any workflow edit, run
   `python3 -B tools/check_workflow_policy.py --write-workflow-lock`.
@@ -33,8 +35,9 @@ The counts above are those of `main` at the time of writing. A changed count is 
 
 ## Things Claude gets wrong
 
-- **Editing the Python reference.** Product Python is frozen. The only exceptions are the Lee-approved list in
-  `migration/STATUS.md` ("Frozen-Python exceptions"); otherwise make the change in Go.
+- **Re-adding Python engine code or editing frozen answers.** Detection work goes to Go only. The reference's
+  answers (`migration/fixtures/cases.json`, `migration/fixtures/golden/`) are never edited to match Go; a Go
+  change that moves them is a pinned, Lee-approved divergence. Re-recording needs a checkout of `python-final`.
 - **Skipping or weakening a failing test**, or adding `--allow-skip`, to get green. Find the cause and fix it.
   The only skip allowed is a quarantine of an intermittent test (below). Never disable a security check.
 - **Rewriting history.** No force-push, rebase or amend of a pushed commit, and no tags. Merge the base branch in

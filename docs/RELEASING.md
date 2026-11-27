@@ -8,15 +8,14 @@ There is one release controller, `.github/workflows/publish-release.yml`. Policy
 
 ## What a release contains
 
-The read-only `build` job produces every file below in `dist/`:
+The read-only `build` job produces every file below in `dist/` (PRO-403: the Python sdist, wheel, its decryption
+extra and their product SBOM went with the Python reference engine; the product is the Go binaries):
 
 | File | What it is |
 |---|---|
-| `protocol_stream_engine-<version>.tar.gz` and `...-py3-none-any.whl` | The Python sdist and wheel, after the full gate and a wheel smoke test |
 | `protodetect-<version>-<os>-<arch>[.exe]` | The Go binary for linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64 |
 | `protodetect-<version>-go.cdx.json` | CycloneDX 1.5 SBOM of the Go binaries: every linked module with its go.sum hash, and the Go toolchain |
-| `sbom.cdx.json`, `product-sbom.cdx.json` | CycloneDX SBOMs of the Python build toolchain and of the complete Python product (the wheel and the decryption extra) |
-| `requirements-decryption.lock.txt` | The hash-pinned lock of the decryption extra |
+| `sbom.cdx.json` | CycloneDX SBOM of the Python build toolchain (the repository tooling that runs the gate) |
 | `SHA256SUMS` | SHA-256 of every file above |
 
 The Go binaries are reproducible. `tools/build_go_release.py` builds each target twice and fails if the two builds

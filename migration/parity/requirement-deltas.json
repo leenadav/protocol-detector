@@ -1,0 +1,106 @@
+{
+ "datagram/test_quic::test_frames_allowed_in_initial/3": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": null,
+    "encryption": null,
+    "evidence": [],
+    "hostname": null,
+    "offered_alpn": [],
+    "reason": "QUIC client Initial datagram below the RFC 9000 section 14.1 minimum of 1200 bytes; a server discards it",
+    "scope": "datagram",
+    "status": "malformed",
+    "transport": "udp"
+   },
+   "justification": "SEC-QUIC-3, Go-only by Lee's decision on PRO-124 (commit fe87386): a client Initial in a UDP datagram under 1200 bytes is one a server discards (RFC 9000 section 14.1), so Go reports it malformed and feeds nothing to the assembler; the frozen Python reference identified it. The same divergence is the approved SEC-QUIC-3 class of migration/parity/random_diff.py.",
+   "path": "$.observation"
+  }
+ ],
+ "stream/test_shift::test_all_split_points_and_fragments_agree/90": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": "http/1.1",
+    "encryption": null,
+    "evidence": [
+     [
+      "application_protocol",
+      "http/1.1",
+      "wire",
+      "structural"
+     ],
+     [
+      "hostname",
+      "0xample.com",
+      "wire:http_target",
+      "asserted"
+     ],
+     [
+      "http_host_mismatch",
+      "present",
+      "wire:request_line",
+      "structural"
+     ],
+     [
+      "http_method",
+      "CONNECT",
+      "wire:request_line",
+      "structural"
+     ]
+    ],
+    "hostname": "0xample.com",
+    "offered_alpn": [],
+    "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+    "scope": "tunnel_request",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "SEC-HTTP-1, Go-only by Lee's instruction on PRO-179 (commit 82d50e3): with a CONNECT authority-form target the hostname is the target's authority (RFC 9112 3.2.2), reported from wire:http_target, and a disagreeing Host is flagged with http_host_mismatch=present; the frozen Python reference took the Host header. The same divergence is the approved SEC-HTTP-1 class of migration/parity/random_diff.py.",
+   "path": "$.events[0].observation"
+  }
+ ],
+ "stream/test_shift::test_all_split_points_and_fragments_agree/91": [
+  {
+   "go": {
+    "application": null,
+    "application_protocol": "http/1.1",
+    "encryption": null,
+    "evidence": [
+     [
+      "application_protocol",
+      "http/1.1",
+      "wire",
+      "structural"
+     ],
+     [
+      "hostname",
+      "0xample.com",
+      "wire:http_target",
+      "asserted"
+     ],
+     [
+      "http_host_mismatch",
+      "present",
+      "wire:request_line",
+      "structural"
+     ],
+     [
+      "http_method",
+      "CONNECT",
+      "wire:request_line",
+      "structural"
+     ]
+    ],
+    "hostname": "0xample.com",
+    "offered_alpn": [],
+    "reason": "HTTP start-line and headers validated; body and later requests not inspected",
+    "scope": "tunnel_request",
+    "status": "identified",
+    "transport": "tcp"
+   },
+   "justification": "SEC-HTTP-1, Go-only by Lee's instruction on PRO-179 (commit 82d50e3): with a CONNECT authority-form target the hostname is the target's authority (RFC 9112 3.2.2), reported from wire:http_target, and a disagreeing Host is flagged with http_host_mismatch=present; the frozen Python reference took the Host header. The same divergence is the approved SEC-HTTP-1 class of migration/parity/random_diff.py.",
+   "path": "$.events[0].observation"
+  }
+ ]
+}
