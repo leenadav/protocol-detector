@@ -75,11 +75,12 @@ func TestPolicyContainersMatchHostOwner(t *testing.T) {
 	}
 }
 
-// TestSuffixRuleStaysInsideItsOwner: a host_suffixes rule claimed through google-base never fires on a more
-// specific host the catalog gives another application (maps.googleapis.com is google-maps').
+// TestSuffixRuleStaysInsideItsOwner: a rule claimed through google-base never fires on a more specific host the
+// catalog gives another application (maps.googleapis.com is google-maps'). Since SEC-CHILD-5 a googleapis.com
+// suffix is refused at load (secchild5_test.go), so the rule names its host exactly.
 func TestSuffixRuleStaysInsideItsOwner(t *testing.T) {
 	doc := header + `{"name": "google-drive-x", "container": "google-drive", "description": "d", "depends_on": ["google-base"],
-		"evidence": ["https://example.org/doc"], "rules": [{"host_suffixes": ["googleapis.com"], "methods": ["POST"]}]}]}`
+		"evidence": ["https://example.org/doc"], "rules": [{"hosts": ["www.googleapis.com"], "methods": ["POST"]}]}]}`
 	s, err := Load([]byte(doc), pack(t), Options{})
 	if err != nil {
 		t.Fatal(err)
