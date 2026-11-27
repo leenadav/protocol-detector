@@ -1201,10 +1201,10 @@ SCANNER_JOBS = {
         {"env": dict(GO_BUILD_ENV, GITLEAKS_LOG_OPTS=GITLEAKS_SCOPE),
          "run": SCANNER_BUILD + ['GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8',
                                  'cd "$GITHUB_WORKSPACE"',
-                                 'echo "secret scan scope: event $GITHUB_EVENT_NAME, --log-opts=\'$GITLEAKS_LOG_OPTS\' (empty: '
-                                 'every fetched ref)" | tee -a "$GITHUB_STEP_SUMMARY"',
-                 '"$RUNNER_TEMP/bin/gitleaks" git --log-opts="$GITLEAKS_LOG_OPTS" --ignore-gitleaks-allow --redact --no-banner '
-                 '--exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"']},
+                                 ('echo "secret scan scope: event $GITHUB_EVENT_NAME, --log-opts=\'$GITLEAKS_LOG_OPTS\' (empty: '
+                                  'every fetched ref)" | tee -a "$GITHUB_STEP_SUMMARY"'),
+                                 ('"$RUNNER_TEMP/bin/gitleaks" git --log-opts="$GITLEAKS_LOG_OPTS" --ignore-gitleaks-allow --redact '
+                                  '--no-banner --exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"')]},
     ]),
     "workflow-lint": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
@@ -1337,10 +1337,10 @@ NIGHTLY_SCAN_STEPS = [
     {"env": GO_BUILD_ENV,
      "run": SCANNER_BUILD + ['GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8',
                              'cd "$GITHUB_WORKSPACE"',
-                             'echo "### Nightly secret scan: every branch (gitleaks --log-opts=--all, $(git branch -r | wc -l) '
-                             'remote refs)" | tee -a "$GITHUB_STEP_SUMMARY"',
-                             '"$RUNNER_TEMP/bin/gitleaks" git --log-opts=--all --ignore-gitleaks-allow --redact --no-banner '
-                             '--exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"',
+                             ('echo "### Nightly secret scan: every branch (gitleaks --log-opts=--all, $(git branch -r | wc -l) '
+                              'remote refs)" | tee -a "$GITHUB_STEP_SUMMARY"'),
+                             ('"$RUNNER_TEMP/bin/gitleaks" git --log-opts=--all --ignore-gitleaks-allow --redact --no-banner '
+                              '--exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"'),
                              'echo "secret scan: ok, no leak on any branch" | tee -a "$GITHUB_STEP_SUMMARY"']},
     {"if": "failure()",
      "run": ["{", "echo",
