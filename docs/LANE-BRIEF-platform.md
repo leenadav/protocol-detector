@@ -201,10 +201,18 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
   `claude/determined-mayer-cyjpa0`.
 - **PRO-176 (#155):** `6df38e72bfa96111fd68510bf2e5be782e456ff3` (nightly mutation job, policy `check_mutation_build`) and `6e5292ab4d9499cd5cce43813d43c0eee2ebae34` (notes: tlsx/textroute not measured).
 - **PRO-268 (#157):** `f16f75afe8b8c056e3601a85eec9de0f2c807514` (the `go-bench` job, `tools/go_bench.py`, the benchstat module, SSDLC item 44).
+- **PRO-187 (A12 P3 hardening):** `fcdf0523e6dc56c9c61326149f6070e5bd39c35b` (CLI removal is breaking, apidiff fails
+  closed, gosec keyed by function under `internal/protocols/` and `internal/decrypt/`, baseline and scanner lock
+  re-keyed) and `c5add9e329ce474af9b5eda9109ffea129593616` (apidiff stderr summary).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
 
+- **Line numbers of Go sources (PRO-187):** gosec counts `\n` only; Python's `str.splitlines()` also splits on form
+  feed and U+2028, so a source with one of them shifts every later line. `go_lint.enclosing_function` uses
+  `split("\n")`. Rewriting the gosec baseline is a reviewed change and needs `--write-scanner-lock` in the same commit.
+- **apidiff exit codes (PRO-187):** `apidiff` exits 0 after its report, 1 (`die`) or 2 (usage) otherwise, and prints
+  nothing when nothing changed; `go_api.judge_report` treats everything else as a failure.
 - **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
   `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
   unconditional `check_docs_counts.py --strict` turned every PR's release build red (Dependabot #151, #149).
