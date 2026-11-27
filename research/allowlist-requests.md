@@ -73,6 +73,27 @@ signing in, for dependency mapping (item 2); **FEED** = vendor machine-readable 
   (`UNVERIFIED`). The remaining R1 hosts in the table above can be added by Lee in the environment settings,
   or in a new environment dedicated to dependency mapping. This lane does not work around the limit.
 
+## Batch R2 (2026-11-27, PRO-495): vendor API references for child apps (not yet requested)
+
+Reason code **API** = vendor API reference read for child-app signals (method, path, content type). Read-only; one
+approval for the batch. Unblocks `blocked-urls.md` rows 45 to 53 and 55 to 58.
+
+| Host | Reason | Use | Page |
+|---|---|---|---|
+| `developers.google.com` | API | Gmail, Drive, YouTube | rows 45 to 47 |
+| `www.dropbox.com` | API | Dropbox | row 48 |
+| `developer.box.com` | API | Box | row 49 |
+| `docs.slack.dev` | API | Slack | row 50 |
+| `discord.com` | API | Discord | row 51 |
+| `docs.x.com` | API | X | row 52 |
+| `pastebin.com` | API | Pastebin | row 53 |
+| `www.reddit.com` | API | Reddit | row 53 |
+| `mega.io` | API | Mega | row 53 |
+| `developer.wetransfer.com` | API | WeTransfer | row 55 |
+| `docs.slack.dev` | API | Slack file download | row 56 (also row 50) |
+| `developers.zoom.us` | API | Zoom | row 57 |
+| `support.reddithelp.com` | API | Reddit | row 58 |
+
 ## Decisions needed (not vendor-owned, so not requested): **resolved 2026-11-20**
 
 Hermes's decisions 1, 2 and 6: the live tools and dependency-mapping pass 2 run on the Hermes server (no proxy). No DoH

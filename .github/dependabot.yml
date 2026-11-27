@@ -1,54 +1,79 @@
+# Security updates only (PRO-270, Lee 2026-11-23). Every entry sets open-pull-requests-limit: 0, which per
+# the Dependabot documentation turns its version updates off while keeping its settings (commit-message
+# prefix, groups) for security updates, which have their own fixed limit of 10 open PRs. A security update
+# PR opens only for a dependency with a GitHub advisory, and only once the owner has enabled Dependabot
+# alerts and security updates in the repository settings (SSDLC.md, "Recommended repository settings");
+# this file changes no setting. Review of these PRs: SSDLC.md, "Dependabot security update PRs".
+# Actions stay pinned by full SHA: Dependabot rewrites the SHA and its tag comment together.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0   # no version updates; security updates only
     cooldown:
-      default-days: 7   # a new release waits a week before an update PR proposes it (zizmor dependabot-cooldown)
+      default-days: 7   # version updates only (off above); kept for the zizmor dependabot-cooldown audit
     commit-message:
-      prefix: "ci(deps)"
+      prefix: "deps(security)"
     groups:
-      actions:
+      actions-security:
+        applies-to: security-updates
         patterns: ["*"]
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0   # no version updates; security updates only
     cooldown:
-      default-days: 7   # a new release waits a week before an update PR proposes it (zizmor dependabot-cooldown)
+      default-days: 7   # version updates only (off above); kept for the zizmor dependabot-cooldown audit
     commit-message:
-      prefix: "ci(deps)"
+      prefix: "deps(security)"
     groups:
-      dev-tools:
+      pip-security:
+        applies-to: security-updates
         patterns: ["*"]
     # requirements-dev.txt is the only pip input; the package has no runtime dependencies.
     # presentation/requirements-decryption.lock.txt is deliberately not managed here: it is a uv universal
     # lock with per-interpreter environment markers (Python 3.9 pins included), which Dependabot's pip
     # updater would rewrite as single pins. Regenerate it with the command in its header (engine lane).
   - package-ecosystem: gomod
-    directory: /tools/scanners
+    directories:
+      - /go                          # the engine; vendored, which Dependabot detects and updates for gomod
+      - /go/oracle                   # the parity oracle (gopacket, quic-go)
+      - /tools/scanners              # gitleaks, govulncheck (items 21-22)
+      - /tools/golint/golangci-lint
+      - /tools/golint/staticcheck
+      - /tools/golint/gosec
+      - /tools/golint/go-licenses
+      - /tools/golint/apidiff
+      - /tools/golint/osv-scanner
+      - /migration/mutation/gremlins
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0   # no version updates; security updates only
     cooldown:
-      default-days: 7   # a new release waits a week before an update PR proposes it (zizmor dependabot-cooldown)
+      default-days: 7   # version updates only (off above); kept for the zizmor dependabot-cooldown audit
     commit-message:
-      prefix: "ci(deps)"
+      prefix: "deps(security)"
     groups:
-      scanners:
+      gomod-security:
+        applies-to: security-updates
         patterns: ["*"]
-    # gitleaks, govulncheck and their dependencies (items 21-22). Rule 16 locks go.mod, so each
-    # update PR also advances tools/scanner_config.lock.json (--write-scanner-lock) as its
-    # reviewed baseline step; govulncheck in ci decides whether the result is safe.
+    # /go/consumertest requires only the local engine module, so it has nothing to update.
+    # Rule 16 locks tools/scanners/go.mod and the tools/golint go.mod files, so each update PR there also
+    # advances tools/scanner_config.lock.json (--write-scanner-lock) as its reviewed baseline step.
   - package-ecosystem: npm
     directory: /tools/ui-test-deps
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0   # no version updates; security updates only
     cooldown:
-      default-days: 7   # a new release waits a week before an update PR proposes it (zizmor dependabot-cooldown)
+      default-days: 7   # version updates only (off above); kept for the zizmor dependabot-cooldown audit
     commit-message:
-      prefix: "ci(deps)"
+      prefix: "deps(security)"
     groups:
-      ui-test-tools:
+      npm-security:
+        applies-to: security-updates
         patterns: ["*"]
     # The Playwright the presentation-ui ci job installs with npm ci (item 25); CI-only, never shipped.
