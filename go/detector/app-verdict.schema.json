@@ -5,7 +5,7 @@
   "description": "The enterprise App-ID verdict of go/detector AppClassifier (PRO-492): the catalog application of the server name and, when a child-app rule of the content data matched, the child application per function with its container. A rule only refines the catalog's identity. limit names a work ceiling that was hit (never silent); a verdict with a limit names no child. No path, content type, body or credential is recorded; app, container and rule are content-data names.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "app", "container", "host_owner", "rule", "basis", "reasons", "limit", "rules_evaluated", "child_release", "content_release"],
+  "required": ["schema_version", "app", "container", "host_owner", "rule", "basis", "reasons", "limit", "rules_evaluated", "child_release", "child_digest", "content_release"],
   "properties": {
     "schema_version": {"const": 1},
     "app": {"type": "string", "description": "The child application when a child rule matched, else the catalog application of the server name, else empty"},
@@ -21,7 +21,8 @@
     },
     "limit": {"enum": ["", "child_rule_evaluations", "child_path_bytes", "child_field_bytes"]},
     "rules_evaluated": {"type": "integer", "minimum": 0},
-    "child_release": {"type": "string"},
+    "child_release": {"type": "string", "description": "The release (YYYY.MM.N) of the child-app component the verdict came from"},
+    "child_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of that component file, pinned to child_release by go/internal/childapp/lock.json (SEC-CHILD-6)"},
     "content_release": {"type": "string"}
   }
 }

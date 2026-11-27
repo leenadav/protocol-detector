@@ -100,6 +100,7 @@ type Result struct {
 	Limit       string   // the ceiling hit, "" when none
 	Evaluated   int      // rules evaluated for this request
 	Release     string   // the child-app release
+	Digest      string   // SHA-256 of the child-app component file the verdict came from
 	PackRelease string   // the content release the catalog identity came from
 }
 
@@ -517,7 +518,7 @@ func (s *Set) candidates(host string) [][]int {
 // Classify returns the verdict for one request. It never panics on any input and does at most
 // MaxRuleEvaluations rule evaluations.
 func (s *Set) Classify(req Request) Result {
-	res := Result{Basis: BasisNone, Release: s.Release.Version, PackRelease: s.pack.Release.Version}
+	res := Result{Basis: BasisNone, Release: s.Release.Version, Digest: s.Digest, PackRelease: s.pack.Release.Version}
 	raw := req.Host
 	if raw == "" {
 		raw = req.SNI
