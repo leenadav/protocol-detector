@@ -114,6 +114,34 @@ Reason code **API**, as batch R2. Read-only; one approval for the batch. Unblock
 | `proton.me` | API | Proton Mail | row 70 |
 | `docs.pcloud.com`, `www.pcloud.com` | API | pCloud | row 71 |
 
+## Batch R4 (2026-11-27, PRO-550): vendor API references for child apps wave 2 (not yet requested)
+
+Reason code **API**, as batches R2 and R3. Read-only; one approval for the batch. Unblocks `blocked-urls.md` rows 72 to 92.
+
+| Host | Reason | Use | Page |
+|---|---|---|---|
+| `www.zoho.com`, `www.zoho.eu`, `help.zoho.com` | API | Zoho | row 72 |
+| `www.fastmail.com` | API | Fastmail | row 73 |
+| `developers.docusign.com`, `support.docusign.com`, `www.docusign.com` | API | DocuSign | row 74 |
+| `developers.hellosign.com`, `faq.hellosign.com`, `sign.dropbox.com` | API | Dropbox Sign | row 75 |
+| `www.adobe.com`, `developer.adobe.com` | API | Adobe | row 76 |
+| `dev.evernote.com`, `help.evernote.com` | API | Evernote | row 77 |
+| `docs.replit.com`, `replit.com`, `blog.replit.com` | API | Replit | row 78 |
+| `docs.netlify.com` | API | Netlify | row 79 |
+| `vercel.com` | API | Vercel | row 80 |
+| `developer.zendesk.com` | API | Zendesk | row 81 |
+| `developers.hubspot.com` | API | HubSpot | row 82 |
+| `developers.smartsheet.com` | API | Smartsheet | row 83 |
+| `airtable.com` | API | Airtable | row 84 |
+| `developer.clickup.com`, `help.clickup.com`, `clickup.com` | API | ClickUp | row 85 |
+| `cloud.google.com` | API | Google NotebookLM | row 86 |
+| `developers.egnyte.com`, `www.egnyte.com`, `helpdesk.egnyte.com` | API | Egnyte | row 87 |
+| `www.mediafire.com` | API | MediaFire | row 88 |
+| `www.sync.com` | API | Sync.com | row 89 |
+| `transfer.sh` | API | transfer.sh | row 90 |
+| `developers.facebook.com`, `www.messenger.com`, `www.facebook.com` | API | Facebook Messenger | row 91 |
+| `api.stackexchange.com`, `stackoverflow.com`, `stackapps.com`, `meta.stackexchange.com` | API | Stack Overflow | row 92 |
+
 ## Decisions needed (not vendor-owned, so not requested): **resolved 2026-11-20**
 
 Hermes's decisions 1, 2 and 6: the live tools and dependency-mapping pass 2 run on the Hermes server (no proxy). No DoH
