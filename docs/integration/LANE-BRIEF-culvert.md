@@ -71,6 +71,11 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
     allocations. Cost on: 23 allocations and about 2.7 µs per child-matched request (the library accounts for 20).
     That is outside ADR-0011's 1 per session, and the ADR draft's section 6 needs a per-request row. See
     `docs/integration/CHILDAPP-LAB.md`.
+  - **Child apps under load (PRO-516, 2026-11-27):** vegeta at 200/1,000/3,000 req/s, H1 and H2, off vs on, 3×60 s:
+    +16.2 allocations and +0.8 KB per request on the mix, +8 to +12 µs CPU per request (H1), latency and throughput
+    within noise; every request classified. Within PRO-504's proposed per-request row (≤ 24, ≤ 1.5 KB), outside
+    ADR-0011's 1 per session. Top costs: `strings.Split`/`ToLower` in the library, H2 stack growth from
+    `normalizeHost`, the lab hook's header-name append. Baseline for PRO-514. `docs/integration/CHILDAPP-LOAD.md`.
 - **Load test (PRO-269, 2026-11-24):** `docs/integration/LOAD-TEST.md`. vegeta v12.12.0, a test tool only, against
   A, B and D on `ef94311`, HTTPS (observed) and HTTP (control), at 100/300/600/1,000 req/s, three rounds, one
   connection per request. Observe minus off: p50 +5 to +113 µs, p95 +84 to +424 µs, p99 within noise;
@@ -190,6 +195,10 @@ Culvert's allocation gates need `-tags benchgate`.
   `docs/integration/CHILDAPP-LAB.md` and `lab/culvert/results-childapp/`; lab and docs only, no detector code) and
   the brief commit that records it, on
   `claude/culvert-PRO-504-childapp-lab`, based on `claude/engine-PRO-492-child-apps` `dadc6bd`.
+- **Queued for Codex (PRO-516):** the PRO-516 commit (adds `lab/culvert/tools/childappload/`,
+  `lab/culvert/results-childapp-load/` and `docs/integration/CHILDAPP-LOAD.md`; lab tools, results and docs only, no
+  detector code) and the brief commit that records its SHA, on `claude/culvert-PRO-516-childapp-load`, stacked on
+  `claude/culvert-PRO-504-childapp-lab` `9a4226b`.
 - **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
   The second run, `69434b8` and `1f3e94f` on `claude/vigilant-sagan-i3rlse` (PR leenadav/protocol-detector#120),
