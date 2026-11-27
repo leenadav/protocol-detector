@@ -101,7 +101,7 @@ happens on `claude/go-migration`, and issue #2 is its Codex mailbox. PR #19 is c
   are decoded before matching. On PR #163's branch; SEC-CHILD-2 (host owner) and SEC-CHILD-3 (wave-0 data) are open.
 - **SEC-CHILD-8 (PRO-533):** a plain `deny` naming a child in `apps` or `containers` also denies an `undetermined`
   verdict of its container or `depends_on` (as `MayBe`); allow and alert stay exact. Branch
-  `claude/engine-PRO-533-sec-child-8`, which also ports SEC-CHILD-1 onto PR #163's head; a PR into #163's branch.
+  `claude/engine-PRO-533-sec-child-8`, which also ports SEC-CHILD-1 onto PR #163's head; PR #182, into `main` since #163 merged.
 - **Merged:** PR #40 brought `claude/go-migration` into `main` on 2026-11-22. Engine work now branches from `main`.
 - **PRO-141 (livectl stop flake):** the stand-in worker sets its INT trap first and writes a ready file last; the
   three stop tests wait for it (`aff4d13`, branch `claude/vigilant-meitner-t7kw7h`). 200 of 200 under `-race`, also
