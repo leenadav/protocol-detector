@@ -23,7 +23,9 @@ other than 0 or 1, a staticcheck `compile` diagnostic, and any gosec "Golang err
 silent all-clear of a gosec whose loader cannot read the compiler's export data (it reports 0 issues).
 
 Findings are compared with tools/golint/baseline.json: today's accepted findings, each by tool, rule, file and
-message with a count (line numbers are left out, so an unrelated edit does not move them). A finding beyond the
+message with a count (line numbers are left out, so an unrelated edit does not move them). A gosec finding under
+internal/protocols/ or internal/decrypt/ also names its enclosing function, so fixing one finding and adding
+another with the same message elsewhere in that file is a new finding (SEC-CI-A12-3). A finding beyond the
 baseline fails the job; a baseline entry no longer found is listed as removable. The baseline only shrinks:
 `--write-baseline` rewrites it from the current findings, a reviewed change, and rule 16 locks it with the
 configuration. A commit without go/go.mod has nothing to lint and says so.
@@ -36,6 +38,7 @@ import argparse
 import collections
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -89,16 +92,63 @@ def parse_staticcheck(text, root):
     return findings, problems
 
 
-def parse_gosec(text, root):
-    """(findings, problems) from `gosec -fmt=json`; any "Golang errors" entry means files went unanalysed."""
+# gosec findings in these trees are keyed by their enclosing function as well (SEC-CI-A12-3): they parse attacker
+# bytes, and a file-wide key let a fixed G115 hide a new one with the same message elsewhere in the file.
+SCOPED_GOSEC = ("internal/protocols/", "internal/decrypt/")
+GO_FUNC = re.compile(r"^func\s*(?:\(\s*(?:\w+\s+)?(\*?)\s*([\w.]+)(?:\[[^\]]*\])?\s*\))?\s*(\w+)")
+
+
+def enclosing_function(source, line):
+    """`Name`, `T.Name` or `(*T).Name` of the top-level func declared last at or before `line` (1-based), else None.
+
+    A top-level declaration starts in column 0 under gofmt, so a closure belongs to the func that holds it. A line
+    after the closing `}` of a func at column 0 and before the next func is package scope.
+    """
+    current, closed = None, False
+    for text in (source or "").split("\n")[:max(line, 0)]:   # gosec counts "\n" only, not every splitlines() separator
+        if closed:
+            current, closed = None, False
+        match = GO_FUNC.match(text)
+        if match:
+            star, receiver, name = match.groups()
+            current = name if not receiver else ("(*{}).{}".format(receiver, name) if star else "{}.{}".format(receiver, name))
+            closed = text.rstrip().endswith("}")               # a one-line func ends on its own line
+        elif current and text.startswith("}"):
+            current = None
+    return current
+
+
+def gosec_scope(path, line, read_source):
+    """The " [in F]" suffix for a gosec finding in SCOPED_GOSEC, or "" elsewhere."""
+    if not path.startswith(SCOPED_GOSEC):
+        return ""
+    number = re.match(r"\d+", str(line or ""))
+    function = enclosing_function(read_source(path), int(number.group(0))) if number else None
+    return " [in {}]".format(function or "package scope")
+
+
+def parse_gosec(text, root, read_source=None):
+    """(findings, problems) from `gosec -fmt=json`; any "Golang errors" entry means files went unanalysed.
+
+    A finding under SCOPED_GOSEC carries its enclosing function in the message, " [in (*T).F]".
+    """
+    if read_source is None:
+        def read_source(path):
+            try:
+                return Path(root, path).read_text(encoding="utf-8")
+            except OSError:
+                return ""
     try:
         document = json.loads(text or "{}")
     except ValueError as error:
         return [], ["gosec output is not JSON: {}".format(error)]
     problems = ["gosec could not load {}: {}".format(relative(path, root), (errors or [{}])[0].get("error", ""))
                 for path, errors in sorted((document.get("Golang errors") or {}).items())]
-    findings = [("gosec", issue.get("rule_id", ""), relative(issue.get("file", ""), root), issue.get("details", ""))
-                for issue in document.get("Issues") or []]
+    findings = []
+    for issue in document.get("Issues") or []:
+        path = relative(issue.get("file", ""), root)
+        findings.append(("gosec", issue.get("rule_id", ""), path,
+                         issue.get("details", "") + gosec_scope(path, issue.get("line"), read_source)))
     return findings, problems
 
 
@@ -282,7 +332,31 @@ def self_test():
         assert nested_modules(tree) == ["oracle", "tools/x"], nested_modules(tree)
     assert shadowed_packages("/r/go\n/r/go/internal/engine\n", "/r/go", ["oracle"]) == []
     assert shadowed_packages("/r/go/internal/oracle\n", "/r/go", ["oracle"]) == ["internal/oracle"]
-    print("go_lint self-test: ok (golangci/staticcheck/gosec parsing, load-failure detection, baseline compare and render)")
+    source = ("package p\n\nvar table = uint16(1)\n\nfunc Plain(n int) uint16 {\n\treturn uint16(n)\n}\n\n"
+              "func (p *Parser) Read(n int) byte {\n\tf := func() byte { return byte(n) }\n\treturn f()\n}\n\n"
+              "func (s Set[T]) Len() uint8 { return uint8(len(s)) }\nvar after = byte(2)\n")
+    assert [enclosing_function(source, n) for n in (3, 6, 10, 11, 14)] == [None, "Plain", "(*Parser).Read", "(*Parser).Read",
+                                                                          "Set.Len"]
+    assert enclosing_function("func A() {\n\t// \x0c \u2028\n}\nfunc B() {\n\tx()\n}\n", 5) == "B", "line numbers count newlines only"
+    assert enclosing_function(source, 15) is None, "a line after a one-line func is package scope"
+    assert enclosing_function(source, 8) is None and enclosing_function(source, 0) is None and enclosing_function("", 4) is None
+
+    def scoped(rule_lines, path="internal/protocols/x/x.go"):
+        issues = [{"rule_id": "G115", "file": "/work/go/" + path, "line": line, "details": "integer overflow conversion int -> uint16"}
+                  for line in rule_lines]
+        return counted(parse_gosec(json.dumps({"Issues": issues}), root, lambda _: source)[0])
+    assert list(scoped(["6"])) == [("gosec", "G115", "internal/protocols/x/x.go", "integer overflow conversion int -> uint16 [in Plain]")]
+    assert list(scoped(["3"]))[0][3].endswith("[in package scope]") and list(scoped(["10-11"]))[0][3].endswith("[in (*Parser).Read]")
+    assert list(scoped(["6"], "internal/decrypt/d.go"))[0][3].endswith("[in Plain]")
+    assert list(scoped(["6"], "internal/engine/e.go"))[0][3] == "integer overflow conversion int -> uint16"   # other trees: by file
+    # the A12-3 negative: one finding fixed in Plain, another with the same message added in Read, is new
+    new, removable = compare(scoped(["10"]), scoped(["6"]))
+    assert sum(new.values()) == 1 and sum(removable.values()) == 1, (new, removable)
+    assert any(line.startswith("- FAILED: new gosec G115") and "[in (*Parser).Read]" in line
+               for line in summary_lines(scoped(["10"]), scoped(["6"]), [])), "a moved finding must fail"
+    new, _ = compare(scoped(["6", "6"]), scoped(["6"]))
+    assert sum(new.values()) == 1, "a second finding in the same function is still counted"
+    print("go_lint self-test: ok (gosec keyed by function under internal/protocols/ and internal/decrypt/, golangci/staticcheck/gosec parsing, load-failure detection, baseline compare and render)")
     return 0
 
 
