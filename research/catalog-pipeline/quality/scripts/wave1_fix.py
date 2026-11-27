@@ -1,5 +1,5 @@
 """PRO-491 review fixes: move non-matchable hosts out of `domains`, add priority rank."""
-import json,glob,re,sys
+import json,glob,re
 EXCL={ # domain -> reason
  'software.cisco.com':'download host','ocsp.digicert.com':'CA/OCSP shared','download.pulsesecure.net':'download host',
  'binaries.twingate.com':'download host','storage.googleapis.com':'shared cloud storage','browsec.cx':'download mirror',

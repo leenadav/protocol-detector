@@ -33,6 +33,6 @@ assert len({m['custom_id'] for m in meta})==len(meta)
 if ONLY is None: json.dump(meta,open(f'{out}/entries.json','w'),indent=0)
 body=json.dumps({"requests":reqs}).encode()
 r=urllib.request.Request('https://api.anthropic.com/v1/messages/batches',body,{'x-api-key':key,'anthropic-version':'2023-06-01','content-type':'application/json'})
-resp=json.load(urllib.request.urlopen(r))
+resp=json.load(urllib.request.urlopen(r, timeout=120))  # noqa: S310 -- fixed https:// URL
 open(f'{out}/batch_id'+('_retry' if ONLY else '')+'.txt','w').write(resp['id'])
 print(len(reqs),resp['id'],resp['processing_status'])

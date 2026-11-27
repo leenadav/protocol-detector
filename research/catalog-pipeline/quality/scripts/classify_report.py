@@ -1,5 +1,5 @@
 """Merge batch results -> classification.json + summary.md. Run from quality/."""
-import json,re,collections,random
+import json,collections,random,sys
 meta={m['custom_id']:m for m in json.load(open('out/entries.json'))}
 res={}
 for f in ['out/results.jsonl','out/results_retry.jsonl']:
@@ -8,7 +8,7 @@ for f in ['out/results.jsonl','out/results_retry.jsonl']:
         if r['result']['type']!='succeeded': continue
         t=''.join(b.get('text','') for b in r['result']['message']['content'])
         try: res[r['custom_id']]=json.loads(t[t.index('{'):t.rindex('}')+1])
-        except Exception: pass
+        except ValueError as e: print(f"unparsed {r['custom_id']}: {e}", file=sys.stderr)  # row stays verdict=unparsed
 rows=[{**{('current' if a=='category' else a):b for a,b in meta[k].items()},**res.get(k,{'verdict':'unparsed','reason_code':'','reason':'','confidence':'low'})} for k in meta]
 json.dump(rows,open('classification.json','w'),indent=0,ensure_ascii=False)
 V=collections.Counter(r['verdict'] for r in rows)
