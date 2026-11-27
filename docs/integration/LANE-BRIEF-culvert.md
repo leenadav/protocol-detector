@@ -197,7 +197,8 @@ Culvert's allocation gates need `-tags benchgate`.
   `claude/culvert-PRO-504-childapp-lab`, based on `claude/engine-PRO-492-child-apps` `dadc6bd`.
 - **Queued for Codex (PRO-516):** `5470746` (adds `lab/culvert/tools/childappload/`,
   `lab/culvert/results-childapp-load/` and `docs/integration/CHILDAPP-LOAD.md`; lab tools, results and docs only, no
-  detector code) and the brief commit that records its SHA, on `claude/culvert-PRO-516-childapp-load`, stacked on
+  detector code), `4f0c20f` (the CodeQL fixes: files and responses closed) and the brief commits that record them, on
+  `claude/culvert-PRO-516-childapp-load`, stacked on
   `claude/culvert-PRO-504-childapp-lab` `9a4226b`.
 - **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
