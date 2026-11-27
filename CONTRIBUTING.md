@@ -35,10 +35,9 @@ ARCHITECTURE.md; SSDLC.md describes the gates that enforce them.
    fields change.
 6. A benchmark record (BENCHMARK-Vnnn.md) when a hot path changes, measured
    with `benchmark_ab.py --baseline <previous tree>`.
-7. The behaviour diff against the parent commit (`tools/compare_engine.py`,
-   shown in the CI job summary, run with the run id as seed and again with a
-   fixed second seed by the mutation smoke job) lists only the families you
-   meant to change.
+7. `make go-check` passes: its parity gates replay the removed Python
+   reference's frozen answers (PRO-403, tag `python-final`), so a behaviour
+   change in Go shows up there and is fixed or pinned as an approved divergence.
 
 ## Task notes, not shared ledgers
 
@@ -65,10 +64,9 @@ Shared ledgers made parallel pull requests conflict, so they are generated
 ```bash
 make check          # the full gate, same as CI
 python3 -B tools/build_ledgers.py --diff   # preview the generated ledger sections (a full clone)
-make ci-local       # make check plus extended fuzzing and the offline replay/schema validation
-make fuzz           # extended seeded fuzzing
-make package        # sdist and wheel plus the wheel-content gate (dev tools installed)
-make installed-check   # A01: wheel into a fresh venv, installed server + replay + decryption demo, presentation suite against it
+make go-check       # the Go engine's gate (gofmt, vet, race tests, fuzz smoke, frozen-answer parity)
+make requirements-run   # every security requirement's Go tests, run and required to pass
+make ci-local       # make check, make go-check and the vendor check
 make workflow-lint  # actionlint over the workflows (install shellcheck too, the runner has it) then the zizmor security audit (dev toolchain)
 make pin-drift      # pinned action SHAs still match their tag comments (network)
 pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain advisories
@@ -78,8 +76,7 @@ pip-audit -r requirements-dev.txt --require-hashes --strict   # toolchain adviso
 
 One concern per pull request, with the fixture bytes and the specification
 section the profile follows named in the description. CI runs the same gates
-on pull requests as on pushes, plus a behaviour diff against the pull request
-base. Reviews focus on size arithmetic against containers, dispatch
+on pull requests as on pushes. Reviews focus on size arithmetic against containers, dispatch
 discriminators against existing families, and anything that could leak a
 value from the payload into evidence. Security issues go through SECURITY.md,
 not public issues.

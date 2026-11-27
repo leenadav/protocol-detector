@@ -8,6 +8,18 @@ Lane rule (Hermes, PRO-6, 2026-11-20): a fresh chat reads `migration/LANE-BRIEF.
 (2026-11-24) a task records itself in its own `migration/notes/PRO-<n>.md` instead of adding rows to this file or to
 a lane brief; the hand-written sections below change only for a milestone, a finding or a standing decision.
 
+## Milestone: the Python reference is removed (PRO-403, 2026-11-27)
+
+Lee's decision of 2026-11-25, PR C of the removal plan (PR A: PRO-401 #127, frozen answers; PR B: PRO-402 #125, the
+demo page on Go). `protocol_engine/`, `protocol_adapters/`, the root engine scripts and tests, the Python
+presentation server, jobs, live manager and decryption POC, and the stale benchmark, live-smoke and interop
+artifacts are deleted; the last commit that has them is `5cb35d2`, tagged `python-final` by Hermes. Go is the only
+engine. What stays: `tools/*.py` (repository tooling), `migration/` (the frozen answers `fixtures/cases.json` and
+`fixtures/golden/`, and the replay tools), the root launchers and `presentation/launch.py`. The security
+requirements are verified by Go tests, each proven by a mutation of its guard (SECURITY-REQUIREMENTS.md,
+`make requirements-run`). Re-recording a golden file needs a checkout of `python-final`. The "Frozen-Python
+exceptions" list below is history: there is no Python reference left to except.
+
 ## Recent work, all lanes (generated)
 
 Written by `tools/build_ledgers.py` from `migration/notes/PRO-<n>.md`, newest first. Never edit it: a task adds its
@@ -499,8 +511,8 @@ Bitwarden), `2f6ad4d` (2026.11.9, the vendor-level `goto` id), `50ce5c0` (Hermes
 POST-MERGE-BACKLOG.md, the prepared tests adjusted to them; **the frozen review head of the Codex review packet**), and the
 commit that adds `migration/review-packet/` (documentation only: 42 chunks over `dbe20f3..50ce5c0`, see its INDEX.md); after the packet: `6194fb9` (PRO-31: Go orders content release versions numerically, `CompareVersions`; Python test-only checks, with three expectedFailure tests reproducing the reference's string comparison in `content.py`, which is not changed; outside the packet's range, review as its own diff `git diff e5ae2f6 6194fb9`); `4d8aa29` (PRO-31 numbering rule, Hermes PRO-34: YYYY.MM.N with N 0..9, enforced by `TestEmbeddedReleasesFollowTheNumberingRule`; review as `git diff 4c64c75 4d8aa29`); `376a204` (PRO-31: the Python reference compares versions numerically, Lee's exception of 2026-11-20; review as its own diff `git diff 2393659 376a204` together with `6194fb9`).
 
-Frozen-Python exceptions (Lee-approved edits to the read-only Python reference on this branch; nothing else in it
-changes):
+Frozen-Python exceptions (history since PRO-403, which removed the reference; Lee-approved edits to the read-only
+Python reference while it existed; nothing else in it changed):
 
 | Exception | Approval | Commits |
 |---|---|---|

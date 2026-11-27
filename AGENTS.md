@@ -1,8 +1,12 @@
 # Protocol detector engineering and review guidance
 
-This project is a Python 3.9-compatible, IPv4-only passive protocol classifier.
+This project is an IPv4-only passive protocol classifier. The engine is the Go module in `go/`, the only
+engine: the Python reference engine was removed in PRO-403 (Lee, 2026-11-25), and its last state is the tag
+`python-final` (`5cb35d2`). Its answers live on as frozen fixtures (`migration/fixtures/`) that the Go parity
+gates replay. What Python remains is repository tooling (`tools/`, `migration/`, Python 3.9 syntax, standard
+library only), the root launchers and `presentation/launch.py`.
 Read PROTOCOLS.md and ARCHITECTURE.md before reviewing coverage claims.
-Run `python3 -B -m unittest discover -q` from the repository root.
+Run `make check` and `make go-check` from the repository root.
 Do not capture external or user traffic. Live smoke tests are opt-in and local
 synthetic IPv4 loopback only. Ordinary tests need no capture privileges.
 
@@ -28,19 +32,18 @@ synthetic IPv4 loopback only. Ordinary tests need no capture privileges.
 Automatic pull-request review flags P0/P1 findings only. Lint, formatting and
 style are left to CI. Each rule names what to flag, why, and the safe path.
 
-1. **Parsers of untrusted traffic** (`go/`, `protocol_engine/`, `protocol_adapters/`).
+1. **Parsers of untrusted traffic** (`go/`).
    - Flag: an allocation, slice or read sized by a length or count field before it
      is checked against the bytes present and the configured budget; a panic,
      index error or uncaught exception on malformed or truncated input; a loop or
      recursion with no byte, count, depth or work limit.
    - Why: every byte is attacker-controlled, so these become memory or CPU
      amplification, or a crash of the classifier.
-   - Safe path: bound the read first, then return the existing errors. In Go that
-     is `errs.Exceeded` / `parsing.Budget` and `parsing.Malformed`; in Python,
-     `BudgetError` and `ParseError` (`protocol_engine/parsers.py`). A failure must
+   - Safe path: bound the read first, then return the existing errors:
+     `errs.Exceeded` / `parsing.Budget` and `parsing.Malformed`. A failure must
      never become a positive result.
-2. **Content packs** (`protocol_engine/content.py`, `content_lock.json`,
-   `go/internal/content/`, `migration/fixtures/content.json`).
+2. **Content packs** (`go/internal/content/` (pack.json, history.json, lock.json),
+   `tools/content_pack.py`, `migration/fixtures/content.json`).
    - Flag: anything that weakens digest verification (or any signature check
      added later); a rollback that stops reproducing an earlier release's
      published digest (C11); version ordering that is not numeric per component
@@ -49,14 +52,12 @@ style are left to CI. Each rule names what to flag, why, and the safe path.
      breaks that pin or makes an older pack look newer.
    - Safe path: keep `make content` and `tools/content_gate.py` passing. Change
      a release only by adding a new version.
-3. **The Python reference** (product code outside `go/` and `migration/`).
-   - Flag: any edit not in the Lee-approved list. That list is "Frozen-Python
-     exceptions" in `migration/STATUS.md` on `claude/go-migration`: the
-     launchers, the parity case generator, the CoAP profile, and the C11 and
-     numeric version compare in `content.py`.
-   - Why: Go is judged against the Python reference, so an unapproved change
-     moves the parity target.
-   - Safe path: make the change in Go, or get Lee's approval and record it in that list.
+3. **The frozen answers** (`migration/fixtures/cases.json`, `migration/fixtures/golden/`, `migration/parity/deltas.json`).
+   - Flag: an edit that changes a recorded answer to match new Go behaviour, or a new approved divergence,
+     without Lee's decision recorded in `migration/STATUS.md`.
+   - Why: since PRO-403 these files are the only record of the Python reference's behaviour (it can be
+     re-recorded only from the tag `python-final`), so changing an answer moves the parity target silently.
+   - Safe path: a Go behaviour change goes in as a pinned, approved divergence, never as an edited answer.
 4. **CI** (`.github/`, `tools/workflows.lock.json`).
    - Flag: an action not pinned to a full commit SHA; a token permission
      broadened beyond today's set (workflow level `contents: read`; job grants
@@ -88,11 +89,11 @@ style are left to CI. Each rule names what to flag, why, and the safe path.
 This is initial-message inspection, not a complete TCP stack or full-session
 protocol validator. Profiles intentionally exclude features listed in PROTOCOLS.md.
 Do not report those exclusions alone as bugs. Report contradictions between the
-implementation and its stated contracts. The Python-to-Go migration is in scope
-(explicitly authorized by Lee; issues #2 and #7, 2026-11-14): Python stays the
-reference and its product behaviour is preserved until validated migration gates
-are met, and the Go engine is judged against it (`make go-check`, `make parity-go`,
-the CI `go-engine` job). IPv6 transport remains out of scope. Proxy integration
+implementation and its stated contracts. The Python-to-Go migration is complete:
+Go is the only engine, and it is judged against the Python reference's frozen
+answers (`make go-check`, `make parity-go`, the CI `go-engine` and `go-parity`
+jobs); the reference itself is history under the tag `python-final` (PRO-403).
+IPv6 transport remains out of scope. Proxy integration
 (Culvert) is in scope only as the Culvert Integration lane's assigned work. A
 default-backend switch, a merge or a deployment stays out of scope without Lee's
 decision. Benchmarks report local CPU work, not production SWG end-to-end latency.
@@ -147,8 +148,8 @@ authorization for anything else.
   restrictions and authorizes no merge, deployment or permission change.
   Independent work continues while the request is open.
 - Evaluate each finding against the documented profile, fix justified ones
-  with regression tests, run the full gate (`make check`, the second Python
-  interpreter, fuzz, security requirements, behaviour diff), push, and request
+  with regression tests, run the full gate (`make check`, `make go-check`, the
+  Go fuzz smoke, `make requirements-run`), push, and request
   the next round with the new exact SHAs. At most three rounds per task; a
   result with no actionable findings closes the task's loop.
 - Lanes receive work as Paperclip tasks and work through their queue with no
