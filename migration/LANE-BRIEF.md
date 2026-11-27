@@ -226,6 +226,7 @@ PRO-492 (child applications, against `main` `5cb35d2`): `e75e4a8474db80a7ad9d4a0
 SEC-QUIC-1 budget (PRO-122, against `main` `23bbc0c`, PR #145): `79cf9dd58e33e36c6c8c04244797781fe87fe5ef` (fix and tests) and the
 documentation commit after it.
 PRO-448 (PR #148, against `main` `23bbc0c`): `81b331d` (fix and tests), `0c51e26` (the pro448 self-test fix), and `b45979c` (PRO-459: main merged in, keeping both the pro448 reference model and the SEC-SESS-1 pins in `analyze_diff.py`), and `dcd932b` (PRO-460: the 9 SEC-SESS-1 analyze pins refreshed for the PRO-448 counters, and limits_test.go set to the half-open budget), and `790b81f` (PRO-460 again: main `6c6d4dd` merged in after #127; `analyze_diff.py` keeps main's golden replay and loads the pro448 model only for a recording run, and `migration/fixtures/golden/analyze.json.gz` is re-recorded with that model: 300 captures, 0 mismatched; then main `359b444`, PR #145, merged in with no code conflict), with the documentation commits after them.
+PRO-596 (TLS perf-history regression, against `main` `bb8dc28`, branch `claude/engine-PRO-596-tls-perf`): `cac696d36d7c2b22c1af6aa67b6fe8a887e6b47a` (identified-path allocations), `9beae0922b3478e1275c03886cd8dbaf4684cfef` (whole hello read in place, `Credit.Charge`, explicit tls-classical and tls-hybrid bench cases), with the documentation commit after them (`migration/notes/PRO-596.md`).
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
@@ -257,6 +258,10 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 - **A new Go-only divergence that random inputs reach needs a `random_diff.py` approved class**, as narrow as
   SEC-HTTP-1's and SEC-QUIC-3's (the case's shape, Go's exact verdict, the paths allowed to differ), with self-test
   rejections; check that the earlier classes' counts are unchanged.
+- **A benchmark must assert what it measures (PRO-596).** The old `BenchmarkFlow/tls` used Go's default groups, so
+  its "baseline" was a refused ServerHello and PRO-260's real parse read as a +46 % regression. Bench cases now
+  name their inputs and `TestFlowAllocationBudget` checks each one's outcome. When a perf metric jumps, bisect
+  first-parent merges with `-benchtime=2000x` (allocations are deterministic), then check the flow's outcome.
 - **Don't run govulncheck locally.** CI runs it over the vendored tree.
 - **The safety checker refuses `rm -rf` and heavy heredoc quoting.** Use `mv`, the Edit tool or plain `sed`.
 - **Commits:** author `Lee Nadav`, and keep the email private. End every message with the Co-Authored-By and
