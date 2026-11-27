@@ -143,7 +143,7 @@ def python_worker(root, module, output, names):
     folders = [folder] + [parent for parent in folder.parents if parent == root or root in parent.parents]
     for entry in reversed(folders):
         sys.path.insert(0, str(entry))
-    outcomes = {}
+    outcomes, cases, detail = {}, None, None
     try:
         spec = importlib.util.spec_from_file_location(path.stem, str(path))
         loaded = importlib.util.module_from_spec(spec)
@@ -157,9 +157,9 @@ def python_worker(root, module, output, names):
                 pending.extend(item)
             elif isinstance(item, unittest.TestCase):
                 cases.append(item)
-    except BaseException as error:  # noqa: BLE001 - any import failure means no referenced test ran
-        cases = None
-        detail = "import error: {}".format(type(error).__name__)
+    except Exception as error:  # noqa: BLE001 - any import failure means no referenced test ran
+        # A SystemExit or KeyboardInterrupt ends this worker without writing outcomes: "did not run", also a failure.
+        cases, detail = None, "import error: {}".format(type(error).__name__)
     for name in names:
         if cases is None:
             outcomes[name] = detail
@@ -197,18 +197,19 @@ def run_python(root, python_tests):
             output = Path(directory) / "outcomes.json"
             command = [sys.executable, "-B", str(Path(__file__).resolve()), "--python-worker", str(root), module,
                        str(output)] + names
+            fallback = "did not run"
             try:
                 subprocess.run(command, cwd=str(root), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,  # noqa: S603
                                timeout=PY_TIMEOUT, check=False)
             except subprocess.TimeoutExpired:
-                pass
+                fallback = "timed out after {} s".format(PY_TIMEOUT)
             try:
                 outcome = json.loads(output.read_text(encoding="utf-8"))
             except (OSError, ValueError):
-                outcome = {}
+                outcome = {}  # the worker wrote no outcomes: every name fails with the fallback below
         for name in names:
             if outcome.get(name) != "pass":
-                failures.append("{}::{}: {}".format(module, name, outcome.get(name) or "did not run"))
+                failures.append("{}::{}: {}".format(module, name, outcome.get(name) or fallback))
         print("python {}: {} referenced, {} passed".format(module, len(names), sum(1 for name in names if outcome.get(name) == "pass")))
     return failures
 
