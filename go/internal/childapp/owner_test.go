@@ -133,3 +133,57 @@ func TestChildRiskNeverBelowOwner(t *testing.T) {
 		}
 	}
 }
+
+// TestPolicyOwnerFloor is the SEC-CHILD-7 reproduction: a deny keyed on the host owner's or the container's
+// catalog record (apps, subcategories, characteristics, risk) still denies a child matched under it. Allow and
+// alert rules keep naming the child exactly, so an earlier allow of the owner never lifts a deny of the child.
+func TestPolicyOwnerFloor(t *testing.T) {
+	s := embeddedSet(t)
+	sendMail := Request{Host: "graph.microsoft.com", Method: "POST", Path: "/v1.0/me/sendMail"}
+	gmailSend := Request{Host: "gmail.googleapis.com", Method: "POST", Path: "/gmail/v1/users/me/messages/send"}
+	driveUpload := Request{Host: "www.googleapis.com", Method: "POST", Path: "/upload/drive/v3/files?uploadType=media",
+		ContentType: "application/octet-stream", RequestBodyBytes: 4096, ResponseBodyBytes: 10}
+	dropboxUpload := Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload",
+		ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}}
+	for _, c := range []struct {
+		name, rules string
+		req         Request
+		want, rule  string
+	}{
+		{"owner app", `{"name": "r", "action": "deny", "match": {"apps": ["ms-base"]}}`, sendMail, "deny", "r"},
+		{"owner app google", `{"name": "r", "action": "deny", "match": {"apps": ["google-base"]}}`, gmailSend, "deny", "r"},
+		{"owner subcategory", `{"name": "r", "action": "deny", "match": {"subcategories": ["internet-utility"]}}`, sendMail, "deny", "r"},
+		{"owner subcategory drive", `{"name": "r", "action": "deny", "match": {"subcategories": ["internet-utility"]}}`, driveUpload, "deny", "r"},
+		{"owner characteristic", `{"name": "r", "action": "deny", "match": {"characteristics": ["pervasive"]}}`, gmailSend, "deny", "r"},
+		{"owner category and technology", `{"name": "r", "action": "deny", "match": {"categories": ["general-internet"], "technologies": ["client-server"]}}`, sendMail, "deny", "r"},
+		{"container app", `{"name": "r", "action": "deny", "match": {"apps": ["gmail"]}}`, gmailSend, "deny", "r"},
+		{"container app outlook", `{"name": "r", "action": "deny", "match": {"apps": ["outlook-web"]}}`, sendMail, "deny", "r"},
+		{"child still denied after owner allow",
+			`{"name": "a", "action": "allow", "match": {"apps": ["ms-base"]}}, {"name": "d", "action": "deny", "match": {"apps": ["outlook-sending"]}}`,
+			sendMail, "deny", "d"},
+		{"explicit child exception first",
+			`{"name": "a", "action": "allow", "match": {"apps": ["outlook-sending"]}}, {"name": "d", "action": "deny", "match": {"apps": ["ms-base"]}}`,
+			sendMail, "allow", "a"},
+		{"alert names the child exactly", `{"name": "r", "action": "alert", "match": {"apps": ["ms-base"]}}`, sendMail, "allow", ""},
+		{"another owner untouched", `{"name": "r", "action": "deny", "match": {"apps": ["ms-base"]}}`, dropboxUpload, "allow", ""},
+		{"owner attributes do not leak across owners", `{"name": "r", "action": "deny", "match": {"subcategories": ["internet-utility"]}}`, dropboxUpload, "allow", ""},
+	} {
+		pol, err := policy.FromJSONWithChildren([]byte(`{"version": 1, "default": "allow", "rules": [`+c.rules+`]}`), pack(t), s)
+		if err != nil {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		res := s.Classify(c.req)
+		if res.Container == "" {
+			t.Fatalf("%s: fixture is not a child match: %+v", c.name, res)
+		}
+		got := pol.Evaluate(s.Verdict(res), "tcp", 443, true, nil, "")
+		rule := ""
+		if got.Rule != nil {
+			rule = *got.Rule
+		}
+		if got.Action != c.want || rule != c.rule {
+			t.Errorf("%s: %s (app %s, container %s, owner %s): %s by %q, want %s by %q %v", c.name, c.req.Host, res.App,
+				res.Container, res.HostOwner, got.Action, rule, c.want, c.rule, got.Reasons)
+		}
+	}
+}

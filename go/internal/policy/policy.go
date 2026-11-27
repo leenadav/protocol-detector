@@ -104,6 +104,9 @@ type Policy struct {
 	Rules       []*Rule
 	Default     string
 	Description string
+	// floors is the pack whose catalog records give a child verdict its owner floors (SEC-CHILD-7); set only by
+	// FromJSONWithChildren with children, nil on every reference path.
+	floors *content.Pack
 }
 
 // Decision is the outcome of one evaluation.
@@ -551,6 +554,9 @@ func FromJSONWithChildren(text []byte, pack *content.Pack, children Children) (*
 	if duplicate {
 		return nil, fail("Rule names must be unique")
 	}
+	if children != nil {
+		p.floors = pack
+	}
 	return p, nil
 }
 
@@ -662,13 +668,59 @@ func sortedPredicates(r *Rule) []string {
 	return keys
 }
 
+// ownerFloors is SEC-CHILD-7: a child verdict (Go only; HostOwner set by internal/childapp) seen as each catalog
+// application it refines, its container and its host owner, with that application's own name, category,
+// subcategory, technology, risk and characteristics and the session's other fields. A deny rule that holds for a
+// floor holds for the child, so a child is never allowed where its owner is denied; allow and alert rules keep
+// naming the child exactly, so an earlier allow of an owner never lifts a later deny of one of its children. nil
+// on every reference path (no HostOwner, or a policy parsed without children), which keeps parity unchanged.
+func (p *Policy) ownerFloors(v *appid.Verdict) []*appid.Verdict {
+	if p.floors == nil || v.HostOwner == nil {
+		return nil
+	}
+	var names []string
+	if v.BaseApp != nil {
+		names = append(names, *v.BaseApp)
+	}
+	names = append(names, *v.HostOwner)
+	var out []*appid.Verdict
+	seen := map[string]bool{v.App: true}
+	for _, name := range names {
+		app := p.floors.Applications[name]
+		if seen[name] || app == nil {
+			continue
+		}
+		seen[name] = true
+		f := *v
+		f.App, f.Category, f.Subcategory, f.Technology, f.Risk = app.Name, app.Category, app.Subcategory, app.Technology, app.Risk
+		f.Characteristics = append([]string{}, app.Characteristics...)
+		f.BaseApp, f.HostOwner = app.Container, nil
+		out = append(out, &f)
+	}
+	return out
+}
+
 // Evaluate ports Policy.evaluate: the first matching rule decides, otherwise the default. hasPort false is the
 // reference's server_port None; transport "" its transport None.
 func (p *Policy) Evaluate(v *appid.Verdict, transport string, serverPort int, hasPort bool, layers map[string]interface{}, observation string) Decision {
 	context := Context(v, layers, "", observation)
+	floors := p.ownerFloors(v)
 	for _, rule := range p.Rules {
-		if rule.matches(v, v.PortUsage, transport, serverPort, hasPort, context, false) {
+		matched := rule.matches(v, v.PortUsage, transport, serverPort, hasPort, context, false)
+		var floor *appid.Verdict
+		if !matched && rule.Action == "deny" {
+			for _, f := range floors {
+				if rule.matches(f, v.PortUsage, transport, serverPort, hasPort, context, false) {
+					matched, floor = true, f
+					break
+				}
+			}
+		}
+		if matched {
 			reasons := []string{fmt.Sprintf("rule '%s' matched %s", rule.Name, v.App)}
+			if floor != nil {
+				reasons = []string{fmt.Sprintf("rule '%s' matched %s, the owner of %s", rule.Name, floor.App, v.App)}
+			}
 			if rule.ApplicationDefault {
 				reasons = append(reasons, "application-default: port usage "+v.PortUsage)
 			}

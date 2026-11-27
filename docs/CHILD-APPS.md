@@ -39,7 +39,16 @@ outlook-web, host owner ms-base), and `containers:[google-base]` Gmail send and 
   {"name": "watch-dropbox", "action": "alert", "match": {"containers": ["dropbox"]}}]}
 ```
 
-`FromJSON` (the reference's vocabulary, used by every parity path) still refuses `containers` and child names.
+A **deny** rule also holds for a child when it holds for the catalog record of the child's container or host owner
+(SEC-CHILD-7): its name, category, subcategory, technology, risk and characteristics. So `deny apps:[ms-base]`,
+`deny subcategories:[internet-utility]` or `deny characteristics:[pervasive]` still denies Graph `sendMail`, and
+`deny apps:[gmail]` Gmail send on `gmail.googleapis.com`: a child is never allowed where its owner is denied. Allow and
+alert rules name the child exactly, so in `allow apps:[ms-base]` then `deny apps:[outlook-sending]` the deny still wins,
+while `allow apps:[outlook-sending]` placed before `deny apps:[ms-base]` is an explicit exception. Use `containers` for
+an allow or alert that should cover a parent and its children.
+
+`FromJSON` (the reference's vocabulary, used by every parity path) still refuses `containers` and child names, and
+never applies an owner floor.
 
 ## The data: `go/internal/childapp/childapps.json`
 
