@@ -1,0 +1,11 @@
+10:01:15 proc_start {"proc": "p1", "binary": "culvert-lab-v8", "setup": {"setup": 200, "login": 200, "auth_rule": 200, "lab-inspect-googleapis": 200, "lab-bypass-rest": 200}}
+10:01:15 warmup_start {"load_s": 60}
+10:02:35 warmup_stop {"driver_rc": 0, "t_after_ready_s": 80.7}
+10:03:30 baseline {"goroutines": [25, 25, 25], "heap_live": [10261584, 11017728, 11028160], "t_after_ready_s": [120.0, 125.0, 130.1]}
+10:03:30 load_start {}
+10:13:46 proc_stop {"proc": "p1", "rc": 0, "action": "restart"}
+10:13:46 proc_start {"proc": "p2", "binary": "culvert-lab-v8", "setup": {"setup": 200, "login": 200, "auth_rule": 200, "lab-inspect-googleapis": 200, "lab-bypass-rest": 200}, "downtime_s": 1.37}
+10:23:46 proc_stop {"proc": "p2", "rc": 0, "action": "content_change"}
+10:23:46 proc_start {"proc": "p3", "binary": "culvert-lab-v9", "setup": {"setup": 200, "login": 200, "auth_rule": 200, "lab-inspect-googleapis": 200, "lab-bypass-rest": 200}, "downtime_s": 1.27}
+10:33:50 load_stop {"driver_rc": 0, "load_s": 1820.6}
+exit 0

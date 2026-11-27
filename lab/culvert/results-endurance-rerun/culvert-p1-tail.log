@@ -1,0 +1,200 @@
+[Culvert] 2026/11/27 10:13:29 SSLInspect: tunnel "www.googleapis.com:443"
+[Culvert] 2026/11/27 10:13:29 SSL_INNER 127.0.0.1 GET www.googleapis.com/drive/v3/files/1AbCdEf/export (profile="" filter=off)
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=66ff5d64c461240c}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=66ff5d64c461240c identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=1624d46e2ea0ee4c}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=1624d46e2ea0ee4c identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=db80dc7c4c0b90a5}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=db80dc7c4c0b90a5 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=7867faa5f0ade1b9}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=7867faa5f0ade1b9 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=ee44d1f6c5e26054}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=ee44d1f6c5e26054 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=f1eb83a4ecfb044a}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=f1eb83a4ecfb044a identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=dad0e51666fe7f06}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=dad0e51666fe7f06 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=f22daa1e52361075}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=f22daa1e52361075 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "www.googleapis.com:443" {req_id=f3eaae1ecddcffdd}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-inspect-googleapis" pri=2 127.0.0.1 CONNECT "www.googleapis.com:443" [destFQDN=*.googleapis.com] {req_id=f3eaae1ecddcffdd identity= rule=lab-inspect-googleapis action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=059eaee38bf64e84}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=059eaee38bf64e84 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=133bc3806fde4c2f}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=133bc3806fde4c2f identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9003" {req_id=163f93ad06392ad8}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9003" [any] {req_id=163f93ad06392ad8 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=c2f8460a3c68bd5c}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=c2f8460a3c68bd5c identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 SSLInspect: tunnel "www.googleapis.com:443"
+[Culvert] 2026/11/27 10:13:29 SSL_INNER 127.0.0.1 GET www.googleapis.com/drive/v3/files/1AbCdEf/export (profile="" filter=off)
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=16a8c99d9c55e928}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=16a8c99d9c55e928 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=f4c86bfd6a0087bb}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=f4c86bfd6a0087bb identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=16857883d8a35ae0}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=16857883d8a35ae0 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=4f6d4c61c21a04a8}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=4f6d4c61c21a04a8 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=b0150c219be918f2}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=b0150c219be918f2 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=b11fc1511b33fbc1}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=b11fc1511b33fbc1 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=f638895ce7ccc53d}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=f638895ce7ccc53d identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=8b8908e5604488f4}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=8b8908e5604488f4 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "www.googleapis.com:443" {req_id=c2e40c51d040f2c5}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-inspect-googleapis" pri=2 127.0.0.1 CONNECT "www.googleapis.com:443" [destFQDN=*.googleapis.com] {req_id=c2e40c51d040f2c5 identity= rule=lab-inspect-googleapis action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9003" {req_id=7ed51267512064f4}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9003" [any] {req_id=7ed51267512064f4 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=e423f3c2e495ea2e}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=e423f3c2e495ea2e identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=89647a34c9c4367c}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=89647a34c9c4367c identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 SSLInspect: tunnel "www.googleapis.com:443"
+[Culvert] 2026/11/27 10:13:29 SSL_INNER 127.0.0.1 GET www.googleapis.com/drive/v3/files/1AbCdEf/export (profile="" filter=off)
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=9bb620e374d69f4b}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=9bb620e374d69f4b identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=d5e4e185fdf5e753}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=d5e4e185fdf5e753 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=260027060aaa0f10}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=260027060aaa0f10 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=b4c55dbf0502375f}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=b4c55dbf0502375f identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=6825a26760278163}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=6825a26760278163 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=53c31ee21a3b49cf}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=53c31ee21a3b49cf identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=3de80013d94eecf3}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=3de80013d94eecf3 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=e2ef2514bcfc86b5}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=e2ef2514bcfc86b5 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "www.googleapis.com:443" {req_id=76e5a99b7e3df6be}
+[Culvert] 2026/11/27 10:13:29 POLICY_ALLOW rule="lab-inspect-googleapis" pri=2 127.0.0.1 CONNECT "www.googleapis.com:443" [destFQDN=*.googleapis.com] {req_id=76e5a99b7e3df6be identity= rule=lab-inspect-googleapis action=allow}
+[Culvert] 2026/11/27 10:13:29 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9003" {req_id=ca47f734ccf8ac20}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9003" [any] {req_id=ca47f734ccf8ac20 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=3cc842ebe1bceb6f}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=3cc842ebe1bceb6f identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=26559f8ab0d54eb4}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=26559f8ab0d54eb4 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=4f3e39555b805175}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=4f3e39555b805175 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 SSLInspect: tunnel "www.googleapis.com:443"
+[Culvert] 2026/11/27 10:13:30 SSL_INNER 127.0.0.1 GET www.googleapis.com/drive/v3/files/1AbCdEf/export (profile="" filter=off)
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=9cc6b4eae47c2a7b}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=9cc6b4eae47c2a7b identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=ca02b9075c351240}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=ca02b9075c351240 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=81a10f086a45621b}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=81a10f086a45621b identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=49c023139cb2abec}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=49c023139cb2abec identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=e5b4db20c679a4f8}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=e5b4db20c679a4f8 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=a9df414f37ea1a87}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=a9df414f37ea1a87 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=f7ad87b80e858573}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=f7ad87b80e858573 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=2f248bdeeeaf2d31}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=2f248bdeeeaf2d31 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=f33ee49f13addeec}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "www.googleapis.com:443" {req_id=b33cc4ab7427c2cd}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=f33ee49f13addeec identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-inspect-googleapis" pri=2 127.0.0.1 CONNECT "www.googleapis.com:443" [destFQDN=*.googleapis.com] {req_id=b33cc4ab7427c2cd identity= rule=lab-inspect-googleapis action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9003" {req_id=bb43f0cc877c9fef}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9003" [any] {req_id=bb43f0cc877c9fef identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=0a389651ee1d61b9}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=0a389651ee1d61b9 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 SSLInspect: tunnel "www.googleapis.com:443"
+[Culvert] 2026/11/27 10:13:30 SSL_INNER 127.0.0.1 GET www.googleapis.com/drive/v3/files/1AbCdEf/export (profile="" filter=off)
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=44f0c16419f9c50e}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=44f0c16419f9c50e identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=2870b2331e7a75ef}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=2870b2331e7a75ef identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=8ac63ecde1431a07}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=8ac63ecde1431a07 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=ac30e95afc1fbdfe}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=4178e227abbbf08e}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=ac30e95afc1fbdfe identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=4178e227abbbf08e identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=5854d4984dbdbc28}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=5854d4984dbdbc28 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=29b092f92ee6c676}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=29b092f92ee6c676 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=f1bd8cf59f1655f0}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=f1bd8cf59f1655f0 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9003" {req_id=8da5b482ab49a35a}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "www.googleapis.com:443" {req_id=37638882aaffa401}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9003" [any] {req_id=8da5b482ab49a35a identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-inspect-googleapis" pri=2 127.0.0.1 CONNECT "www.googleapis.com:443" [destFQDN=*.googleapis.com] {req_id=37638882aaffa401 identity= rule=lab-inspect-googleapis action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9002" {req_id=dd68beddc81c9308}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9002" [any] {req_id=dd68beddc81c9308 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=277aee9ac0f24a64}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=277aee9ac0f24a64 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9001" {req_id=50990f761e834557}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9001" [any] {req_id=50990f761e834557 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=890ad1db8d8c1205}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=890ad1db8d8c1205 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=62ad4f9e6ac5a7d1}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=62ad4f9e6ac5a7d1 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 SSLInspect: tunnel "www.googleapis.com:443"
+[Culvert] 2026/11/27 10:13:30 SSL_INNER 127.0.0.1 GET www.googleapis.com/drive/v3/files/1AbCdEf/export (profile="" filter=off)
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=bd4b3f8b279d712e}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=bd4b3f8b279d712e identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=1a73d5663fa32552}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=1a73d5663fa32552 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=e7ca5fe3187a5d95}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=e7ca5fe3187a5d95 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=f013dd658c790797}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=f013dd658c790797 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=86f528dcd3161b3e}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=86f528dcd3161b3e identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=152de26e19f2b19d}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=152de26e19f2b19d identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=3023787738206da7}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=3023787738206da7 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=60c5f74ba26c263b}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=60c5f74ba26c263b identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "www.googleapis.com:443" {req_id=e55f18e0043ac326}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-inspect-googleapis" pri=2 127.0.0.1 CONNECT "www.googleapis.com:443" [destFQDN=*.googleapis.com] {req_id=e55f18e0043ac326 identity= rule=lab-inspect-googleapis action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=d59b7dc36996730b}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=d59b7dc36996730b identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9003" {req_id=3545f8e361e970d4}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9003" [any] {req_id=3545f8e361e970d4 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=44b40e0c0c2d688f}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=44b40e0c0c2d688f identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 SSLInspect: tunnel "www.googleapis.com:443"
+[Culvert] 2026/11/27 10:13:30 SSL_INNER 127.0.0.1 GET www.googleapis.com/drive/v3/files/1AbCdEf/export (profile="" filter=off)
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=f76682b4ba8c0ac1}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=f76682b4ba8c0ac1 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=696cd8c13cb8705e}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=696cd8c13cb8705e identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=67212dd8970a5389}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=67212dd8970a5389 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=1e00bec8196f5f54}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=1e00bec8196f5f54 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=da8a9d07fc7c2a96}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=da8a9d07fc7c2a96 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=3661a527aa899fe0}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=3661a527aa899fe0 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=a13f697bc628b57f}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=a13f697bc628b57f identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=5fd032f3bb040077}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=5fd032f3bb040077 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "www.googleapis.com:443" {req_id=4992d181cb6a3623}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-inspect-googleapis" pri=2 127.0.0.1 CONNECT "www.googleapis.com:443" [destFQDN=*.googleapis.com] {req_id=4992d181cb6a3623 identity= rule=lab-inspect-googleapis action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:9003" {req_id=bc99ea7d0310a7b9}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:9003" [any] {req_id=bc99ea7d0310a7b9 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:443" {req_id=113ebbe7b0675b10}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:443" [any] {req_id=113ebbe7b0675b10 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:80" {req_id=3e000322ec119260}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:80" [any] {req_id=3e000322ec119260 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 AUTH_EXEMPT rule="lab-exempt-loopback" id="01M8E77DJWFQ0X7JBDYTT7X71R" 127.0.0.1 -> "origin.lab.test:2222" {req_id=dd3ba8d061728669}
+[Culvert] 2026/11/27 10:13:30 POLICY_ALLOW rule="lab-bypass-rest" pri=3 127.0.0.1 CONNECT "origin.lab.test:2222" [any] {req_id=dd3ba8d061728669 identity= rule=lab-bypass-rest action=allow}
+[Culvert] 2026/11/27 10:13:30 Shutting down gracefully…
+[Culvert] 2026/11/27 10:13:30 Draining 44 active tunnel(s) (0 inspected H2)…
+[Culvert] 2026/11/27 10:13:30 SSLInspect: tunnel "www.googleapis.com:443"
+[Culvert] 2026/11/27 10:13:30 SSL_INNER 127.0.0.1 GET www.googleapis.com/drive/v3/files/1AbCdEf/export (profile="" filter=off)
+[Culvert] 2026/11/27 10:13:45 Drain timeout: 0 tunnel(s) still active (force-closed 0 inspected H2, 5 hijacked [connect_bypass=5])
+[Culvert] 2026/11/27 10:13:45 Shutdown: drained; flushing durable state…

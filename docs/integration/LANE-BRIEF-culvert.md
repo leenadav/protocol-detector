@@ -66,6 +66,15 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
       attributed. It is the same after 2 and after 30 minutes.
     - goroutines −14%: two keep-alive connections close about 85 s after start, with or without load.
   - Thresholds unchanged. A re-run needs the documented revision in the report first.
+- **Endurance re-run (PRO-564, 2026-11-27):** `lab/culvert/ENDURANCE-RERUN.md`. Revision 1, written into the
+  manifest before the run (Hermes, candidate 1): 60 s of warm-up with the same mix, then the baseline at least
+  120 s after start. Thresholds, mix and rates are unchanged, and traffic logging stays on. **P1 to P5 all pass.**
+  - P1: 25 vs 25 goroutines; live heap 10.30 vs 11.02 MB (−6.5%), within from 5 s on.
+  - P2: largest slope 0.51%/min.
+  - P3 to P5: 0 panics; 0 active, reserved or retained bytes after load; the intended content release in every
+    pd block.
+  - The median baseline holds about 0.75 MB caused by the orchestrator's own feed query. P1 also passes against
+    the first baseline sample (+0.4%).
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
 - **Lab:**
@@ -220,6 +229,9 @@ Culvert's allocation gates need `-tags benchgate`.
   and the merge of `main` that moves its tools to `lab/culvert/tools/loadsplit/` (lab tooling and docs only).
 - **Queued for Codex (PRO-540):** `fd0c122` on `claude/culvert-PRO-540-endurance`, the endurance run, and the commit
   that records it (lab tools, results and docs only; no detector code).
+- **Queued for Codex (PRO-564):** `4fe99b7` (revision 1 in the manifest and `run.py`, pushed before the run) and
+  the results commit on `claude/culvert-PRO-564-endurance-rerun` (stacked on PRO-540; lab tools, results and docs
+  only; no detector code).
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
