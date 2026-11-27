@@ -36,12 +36,6 @@
     "quote": "ftp-hipaa.sharefileftp.com is the dedicated FTP endpoint for HIPAA customer traffic."
    },
    {
-    "domain": "sf-cdn.net",
-    "role": "cdn",
-    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
-    "quote": "*.sf-cdn.net"
-   },
-   {
     "domain": "securevdr.com",
     "role": "web",
     "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
@@ -81,7 +75,17 @@
   ],
   "notes": "Vendor firewall page lists wildcard domains; tenant subdomains vary. Wildcards give clean SNI-level blocking of the whole service.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "sf-cdn.net",
+    "role": "cdn",
+    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "quote": "*.sf-cdn.net",
+    "excluded_reason": "CDN"
+   }
+  ],
+  "priority_rank": 21
  },
  {
   "id": "tresorit",
@@ -114,7 +118,9 @@
   ],
   "notes": "Official guide fetch returned 403; hostname list unverified. Search summary: Azure-hosted, 443 plus port 80 for CRLs, no TLS interception support.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 22
  },
  {
   "id": "smash",
@@ -173,7 +179,9 @@
   ],
   "notes": "Official API reference is incomplete ('docs will be available soon'). Upload/storage hosts not confirmed from official sources.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 26
  },
  {
   "id": "filemail",
@@ -192,12 +200,6 @@
     "role": "web",
     "source_url": "https://docs.filemail.com/api/sending-files/upload-files",
     "quote": "https://8888.filemail.com/savefile.ashx"
-   },
-   {
-    "domain": "docs.filemail.com",
-    "role": "other",
-    "source_url": "https://docs.filemail.com/api/sending-files/initialize",
-    "quote": "Filemail API Docs"
    }
   ],
   "domains_unsourced": [],
@@ -226,7 +228,17 @@
   ],
   "notes": "API host and numbered upload server subdomains documented. Download hosts not covered.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "docs.filemail.com",
+    "role": "other",
+    "source_url": "https://docs.filemail.com/api/sending-files/initialize",
+    "quote": "Filemail API Docs",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 28
  },
  {
   "id": "swisstransfer",
@@ -239,12 +251,6 @@
     "role": "web",
     "source_url": "https://www.infomaniak.com/en/support/faq/1751/discover-the-official-domains-used-by-infomaniak",
     "quote": "Large file transfer service (SwissTransfer)"
-   },
-   {
-    "domain": "infomaniakusercontent.com",
-    "role": "download",
-    "source_url": "https://www.infomaniak.com/en/support/faq/1751/discover-the-official-domains-used-by-infomaniak",
-    "quote": "Primarily used for file storage and downloading."
    },
    {
     "domain": "ksharelink.com",
@@ -285,7 +291,17 @@
   ],
   "notes": "Infomaniak domain FAQ names swisstransfer.com; no official SwissTransfer API/upload host list found. Storage domain shared with kDrive.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "infomaniakusercontent.com",
+    "role": "download",
+    "source_url": "https://www.infomaniak.com/en/support/faq/1751/discover-the-official-domains-used-by-infomaniak",
+    "quote": "Primarily used for file storage and downloading.",
+    "excluded_reason": "shared user-content host"
+   }
+  ],
+  "priority_rank": 27
  },
  {
   "id": "terabox",
@@ -353,7 +369,9 @@
   ],
   "notes": "No official vendor domain/network doc found; all domains from third-party sources. Multiple mirror domains complicate matching.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 23
  },
  {
   "id": "baidu-netdisk",
@@ -391,7 +409,9 @@
   ],
   "notes": "Official doc page lists upload steps but no hosts. baidu.com subdomains already in pack, so overlap likely covers it.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 24
  },
  {
   "id": "yandex-disk",
@@ -404,12 +424,6 @@
     "role": "api",
     "source_url": "https://yandex.ru/dev/yandex-360/disk/rest/en/reference/upload",
     "quote": "https://cloud-api.yandex.net/v1/disk/resources/upload"
-   },
-   {
-    "domain": "dst.yandex.net",
-    "role": "download",
-    "source_url": "https://yandex.ru/dev/yandex-360/disk/rest/en/reference/upload",
-    "quote": "https://uploader1d.dst.yandex.net:443/upload-target/"
    }
   ],
   "domains_unsourced": [
@@ -444,7 +458,17 @@
   ],
   "notes": "API and upload hosts documented; parent domains already in pack under other Yandex apps, so product-level separation needs hostname rules.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "dst.yandex.net",
+    "role": "download",
+    "source_url": "https://yandex.ru/dev/yandex-360/disk/rest/en/reference/upload",
+    "quote": "https://uploader1d.dst.yandex.net:443/upload-target/",
+    "excluded_reason": "download host"
+   }
+  ],
+  "priority_rank": 25
  },
  {
   "id": "pixeldrain",
@@ -457,12 +481,6 @@
     "role": "api",
     "source_url": "https://pixeldrain.com/api",
     "quote": "https://pixeldrain.com/api/file/"
-   },
-   {
-    "domain": "docs.pixeldrain.com",
-    "role": "other",
-    "source_url": "https://pixeldrain.com/api",
-    "quote": "https://docs.pixeldrain.com/filesystem/"
    }
   ],
   "domains_unsourced": [],
@@ -498,6 +516,16 @@
   ],
   "notes": "Single hostname serves web and API; subfunctions separable only via HTTP inspection.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "docs.pixeldrain.com",
+    "role": "other",
+    "source_url": "https://pixeldrain.com/api",
+    "quote": "https://docs.pixeldrain.com/filesystem/",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 29
  }
 ]

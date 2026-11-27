@@ -4,20 +4,7 @@
   "name": "Cisco Secure Client (AnyConnect)",
   "class": "vpn",
   "pack_overlap": "none",
-  "domains": [
-   {
-    "domain": "software.cisco.com",
-    "role": "download",
-    "source_url": "https://www.cisco.com/c/en/us/support/docs/security/umbrella/224780-download-cisco-secure-client.pdf",
-    "quote": "download Cisco Secure Client"
-   },
-   {
-    "domain": "ocsp.digicert.com",
-    "role": "other",
-    "source_url": "https://docs.umbrella.com/umbrella-user-guide/docs/prerequisites-5",
-    "quote": "crl3.digicert.com crl4.digicert.com ocsp.digicert.com"
-   }
-  ],
+  "domains": [],
   "domains_unsourced": [
    {
     "domain": "headend gateway (customer-hosted ASA/FTD hostname)",
@@ -42,7 +29,24 @@
   ],
   "notes": "Enterprise headend is customer-hosted; only download and CRL/OCSP hosts sourced. Prerequisites page fetch via securitydocs failed; relied on search snippets.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "software.cisco.com",
+    "role": "download",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/security/umbrella/224780-download-cisco-secure-client.pdf",
+    "quote": "download Cisco Secure Client",
+    "excluded_reason": "download host"
+   },
+   {
+    "domain": "ocsp.digicert.com",
+    "role": "other",
+    "source_url": "https://docs.umbrella.com/umbrella-user-guide/docs/prerequisites-5",
+    "quote": "crl3.digicert.com crl4.digicert.com ocsp.digicert.com",
+    "excluded_reason": "CA/OCSP shared"
+   }
+  ],
+  "priority_rank": 5
  },
  {
   "id": "paloalto-globalprotect",
@@ -63,22 +67,10 @@
     "quote": "*.apps.paloaltonetworks.com"
    },
    {
-    "domain": "storage.googleapis.com",
-    "role": "download",
-    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
-    "quote": "download Prisma Agent software images and OPSWAT binary updates"
-   },
-   {
     "domain": "filter.paloaltonetworks.com",
     "role": "other",
     "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
     "quote": "Network extension server address"
-   },
-   {
-    "domain": "docs.paloaltonetworks.com",
-    "role": "web",
-    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
-    "quote": "Support documentation"
    }
   ],
   "domains_unsourced": [],
@@ -107,7 +99,24 @@
   ],
   "notes": "Sourced page is Prisma Agent, not classic GlobalProtect app; portal/gateway are customer or Prisma Access hosted.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "storage.googleapis.com",
+    "role": "download",
+    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "quote": "download Prisma Agent software images and OPSWAT binary updates",
+    "excluded_reason": "shared cloud storage"
+   },
+   {
+    "domain": "docs.paloaltonetworks.com",
+    "role": "web",
+    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "quote": "Support documentation",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 6
  },
  {
   "id": "fortinet-forticlient-vpn",
@@ -126,12 +135,6 @@
     "role": "api",
     "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
     "quote": "Web Filter URL ratings (Anycast, global)"
-   },
-   {
-    "domain": "fctupdate.fortinet.net",
-    "role": "update",
-    "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
-    "quote": "AV and vulnerability signature updates (Anycast, global)"
    },
    {
     "domain": "forticlient.fortinet.net",
@@ -178,7 +181,17 @@
   ],
   "notes": "VPN endpoint is customer-hosted FortiGate; vendor domains are for management, updates, web filter.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "fctupdate.fortinet.net",
+    "role": "update",
+    "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "quote": "AV and vulnerability signature updates (Anycast, global)",
+    "excluded_reason": "update host"
+   }
+  ],
+  "priority_rank": 7
  },
  {
   "id": "ivanti-connect-secure",
@@ -186,12 +199,6 @@
   "class": "vpn",
   "pack_overlap": "none",
   "domains": [
-   {
-    "domain": "download.pulsesecure.net",
-    "role": "download",
-    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
-    "quote": "Host Checker signatures"
-   },
    {
     "domain": "pcls.pulseone.net",
     "role": "other",
@@ -203,12 +210,6 @@
     "role": "api",
     "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
     "quote": "Telemetry"
-   },
-   {
-    "domain": "help.ivanti.com",
-    "role": "web",
-    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
-    "quote": "Online Help Pages"
    },
    {
     "domain": "forums.ivanti.com",
@@ -236,7 +237,24 @@
   ],
   "notes": "Allow-list page is Ivanti Policy Secure docs (same client family); applicability to Connect Secure inferred.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "download.pulsesecure.net",
+    "role": "download",
+    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
+    "quote": "Host Checker signatures",
+    "excluded_reason": "download host"
+   },
+   {
+    "domain": "help.ivanti.com",
+    "role": "web",
+    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
+    "quote": "Online Help Pages",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 8
  },
  {
   "id": "twingate",
@@ -267,18 +285,6 @@
     "role": "auth",
     "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
     "quote": "saml.twingate.com"
-   },
-   {
-    "domain": "binaries.twingate.com",
-    "role": "download",
-    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
-    "quote": "binaries.twingate.com"
-   },
-   {
-    "domain": "pubnub.com",
-    "role": "other",
-    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
-    "quote": "pubsub.pubnub.com"
    }
   ],
   "domains_unsourced": [],
@@ -314,7 +320,24 @@
   ],
   "notes": "Official allowlist article lists FQDNs, relay and STUN hosts; tenant subdomain identifies customer.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "binaries.twingate.com",
+    "role": "download",
+    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "quote": "binaries.twingate.com",
+    "excluded_reason": "download host"
+   },
+   {
+    "domain": "pubnub.com",
+    "role": "other",
+    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "quote": "pubsub.pubnub.com",
+    "excluded_reason": "shared third-party service"
+   }
+  ],
+  "priority_rank": 9
  },
  {
   "id": "astrill-vpn",
@@ -339,7 +362,9 @@
   ],
   "notes": "No official network-requirements page found. Consumer VPN with obfuscation (StealthVPN); likely traffic-pattern detection only.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 14
  },
  {
   "id": "purevpn",
@@ -364,7 +389,9 @@
   ],
   "notes": "Official support lists protocol ports; no official domain list found.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 15
  },
  {
   "id": "vyprvpn",
@@ -389,6 +416,8 @@
   ],
   "notes": "Support pages cover NAT firewall and port selection only; no official domain allowlist found.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 18
  }
 ]

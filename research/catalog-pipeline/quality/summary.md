@@ -172,3 +172,7 @@ high: 813, medium: 845, low: 38
 
 ## Open decision for Lee
 `news_content_site` (240 drops, 14% of all entries) follows the PRO-498 calibration "rule gap": news and content-only sites are dropped as non-applications (a match would only be a website visit). If Lee keeps them as services, those 240 move to keep. Gaming publisher pages (614) are dropped by the same rule as calibration rows 18-34.
+
+## Raw artifacts
+
+`quality/out/` (entries.json, batch ids, retry ids, batch results) is not committed. It holds the Message Batch inputs and ids used for the classification; `classification.json` is the committed result. `scripts/classify_report.py` reads `out/` if you regenerate.

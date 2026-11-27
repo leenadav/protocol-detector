@@ -2,7 +2,7 @@
 
 Research only; nothing changes in the pack (release 2026.11.9, 544 apps). Wave 1 = 65 services **not in the pack** (PRO-495 covers the 30 already in it). Waves 2+ (to ~300) follow; the other classes (SaaS collaboration, social media at scale) are not in wave 1.
 
-Method: 7 research passes over public vendor pages only (WebSearch/WebFetch, no sign-in, no traffic). A domain is listed under `domains` only if an official vendor page names it (URL + short quote in `enterprise-300/wave1/*.json`); everything else is `unsourced`. Pack overlap = the domain already appears in the pack host catalog (805 domains), checked by grep. Order: class by enterprise block priority (remote access, VPN, anonymizers, file sharing, GenAI, webmail, messaging, social, code/paste, crypto, P2P), then name; a numeric rank comes with wave 2.
+Method: 7 research passes over public vendor pages only (WebSearch/WebFetch, no sign-in, no traffic). A domain is listed under `domains` only if an official vendor page names it (URL + short quote in `enterprise-300/wave1/*.json`); everything else is `unsourced`. Pack overlap = the domain already appears in the pack host catalog (805 domains), checked by grep. Order: class by enterprise block priority (remote access, VPN, anonymizers, file sharing, GenAI, webmail, messaging, social, code/paste, crypto, P2P), then name; `#` is the numeric enterprise-priority rank (1 = block/monitor first). Download hosts, OCSP/CA, docs/help pages, CDNs and shared hosts are excluded from `domains` and listed under `domains_not_a_match` in the JSON.
 
 Separability legend (Culvert = proxy seeing SNI and, with TLS inspection, HTTP): **sni** distinct hostname in the handshake; **http** needs host/path/method after inspection; **pattern** only traffic-pattern detection; **no** not separable.
 
@@ -20,71 +20,71 @@ Many low-confidence rows come from vendors that publish no network-requirements 
 
 | # | service | class | status | pack overlap | sourced domains | conf |
 |---|---|---|---|---|---|---|
-| 1 | Amazon WorkSpaces (`amazon-workspaces`) | remote-access | active | none (amazonaws.com S3 entries in pack are specific unrelated buckets; no amazonworkspaces.com or awsapps.com) | *.<region>.rdn.amazonaws.com, <dirid>.awsapps.com, clients.amazonworkspaces.com, connectivity.amazonworkspaces.com, drp-<airport>.amazonworkspaces.com, skylight-cm.<region>.amazonaws.com | high |
-| 2 | Citrix Workspace / Virtual Apps and Desktops (Citrix DaaS) (`citrix-workspace-daas`) | remote-access | active | partial: windows.net/servicebus-type Azure hosts and digicert.com are generic; no Citrix domain (citrix.com, cloud.com, citrixworkspacesapi.net, nssvc.net) in pack | *.citrixworkspacesapi.net, *.cloud.com, *.netscalergateway.net, *.nssvc.net, *.wsp.cloud.com, [customerid].xendesktop.net | high |
-| 3 | HopToDesk (`hoptodesk`) | remote-access | active | none (no hoptodesk domains in pack) | api.hoptodesk.com, dashboard.hoptodesk.com, dl.hoptodesk.com, signal.hoptodesk.com, turn-eu.hoptodesk.com, turn.hoptodesk.com | high |
+| 1 | Citrix Workspace / Virtual Apps and Desktops (Citrix DaaS) (`citrix-workspace-daas`) | remote-access | active | partial: windows.net/servicebus-type Azure hosts and digicert.com are generic; no Citrix domain (citrix.com, cloud.com, citrixworkspacesapi.net, nssvc.net) in pack | *.cloud.com, *.citrixworkspacesapi.net, *.nssvc.net, *.netscalergateway.net, [customerid].xendesktop.net, *.wsp.cloud.com, trust.citrixnetworkapi.net | high |
+| 2 | Windows 365 / Azure Virtual Desktop (`windows-365-avd`) | remote-access | active | partial: microsoft.com, microsoftonline.com, office.com, office.net, events.data.microsoft.com, digicert.com, windowsupdate.com already in pack (app unknown); AVD-specific hosts not present | *.wvd.microsoft.com, *.service.windows.cloud.microsoft, *.windows.cloud.microsoft, windows.cloud.microsoft, windows365.microsoft.com, login.microsoftonline.com | high |
+| 3 | Amazon WorkSpaces (`amazon-workspaces`) | remote-access | active | none (amazonaws.com S3 entries in pack are specific unrelated buckets; no amazonworkspaces.com or awsapps.com) | clients.amazonworkspaces.com, connectivity.amazonworkspaces.com, ws-broker-service.<region>.amazonaws.com, skylight-cm.<region>.amazonaws.com, <dirid>.awsapps.com, *.<region>.rdn.amazonaws.com | high |
 | 4 | Omnissa Horizon (ex VMware Horizon) (`omnissa-horizon`) | remote-access | rebranded:Omnissa Horizon (from VMware Horizon, 2024) | none (no omnissa.com, vmware.com or horizon domains found in pack) | (none sourced) | low |
-| 5 | Radmin (`radmin`) | remote-access | active | none (no radmin or famatech domains in pack) | helpdesk.radmin.com | medium |
-| 6 | Sunlogin (Oray AweSun) (`sunlogin-awesun`) | remote-access | active | none (no oray domains in pack) | *.oray.com, client.oray.net | low |
-| 7 | ToDesk (`todesk`) | remote-access | active | none (no todesk domains in pack) | (none sourced) | low |
-| 8 | Twingate (`twingate`) | remote-access | active | none | api.twingate.com, binaries.twingate.com, pubnub.com, relays.twingate.com, saml.twingate.com, twingate.com | high |
-| 9 | Windows 365 / Azure Virtual Desktop (`windows-365-avd`) | remote-access | active | partial: microsoft.com, microsoftonline.com, office.com, office.net, events.data.microsoft.com, digicert.com, windowsupdate.com already in pack (app unknown); AVD-specific hosts not present | *.cdn.office.net, *.service.windows.cloud.microsoft, *.windows.cloud.microsoft, *.windows.static.microsoft, *.wvd.microsoft.com, login.microsoftonline.com | high |
-| 10 | Astrill VPN (`astrill-vpn`) | vpn | active | none | (none sourced) | low |
-| 11 | Browsec (`browsec`) | vpn | active | none | browsec.com, browsec.cx, browsec.zendesk.com, bs-dl.s3.eu-central-1.amazonaws.com | low |
-| 12 | Cisco Secure Client (AnyConnect) (`cisco-secure-client`) | vpn | active | none | ocsp.digicert.com, software.cisco.com | low |
-| 13 | Fortinet FortiClient VPN (`fortinet-forticlient-vpn`) | vpn | active | none | aptctrl1.fortinet.com, fctguard.fortinet.net, fctupdate.fortinet.net, forticlient.forticloud.com, forticlient.fortinet.net, myforticlient.fortinet.net | medium |
-| 14 | Hola VPN (`hola-vpn`) | vpn | active | none | cdn4.hola.org, hola.org, support.hola.org | low |
-| 15 | Ivanti Connect Secure (`ivanti-connect-secure`) | vpn | active | none | download.pulsesecure.net, forums.ivanti.com, help.ivanti.com, pcls.pulseone.net, service.pulsesecure.net | low |
-| 16 | Opera VPN (`opera-vpn`) | vpn | active | none | (none sourced) | low |
-| 17 | Palo Alto GlobalProtect (`paloalto-globalprotect`) | vpn | active | partial: googleapis.com already under (unknown app) - storage.googleapis.com is a shared bypass host | apps.paloaltonetworks.com, docs.paloaltonetworks.com, epm.gpcloudservice.com, filter.paloaltonetworks.com, storage.googleapis.com | low |
-| 18 | PureVPN (`purevpn`) | vpn | active | none | (none sourced) | low |
-| 19 | TorGuard (`torguard`) | vpn | active | none | torguard.net, www.torguard.net | low |
-| 20 | Urban VPN (`urban-vpn`) | vpn | active | none | premium.urban-vpn.com, www.urban-vpn.com | low |
-| 21 | VyprVPN (`vyprvpn`) | vpn | active | none | (none sourced) | low |
-| 22 | X-VPN (`x-vpn`) | vpn | active | none | xvpn.io | low |
-| 23 | Bright Data (`bright-data`) | proxy-anonymizer | active | none | api.brightdata.com, brd.superproxy.io, brdtest.com, brightdata.com, docs.brightdata.com, geo.brdtest.com | high |
-| 24 | CroxyProxy (`croxyproxy`) | proxy-anonymizer | active | none | (none sourced) | low |
-| 25 | Baidu Netdisk (`baidu-netdisk`) | file-sharing | active | partial: baidu.com already under an app (domain only) | (none sourced) | low |
-| 26 | Citrix ShareFile (`citrix-sharefile`) | file-sharing | active | none | securevdr.com, sf-api.com, sf-api.eu, sf-cdn.net, sharefile.com, sharefile.eu | high |
-| 27 | Filemail (`filemail`) | file-sharing | active | none | api-public.filemail.com, docs.filemail.com, filemail.com | medium |
-| 28 | Pixeldrain (`pixeldrain`) | file-sharing | active | none | docs.pixeldrain.com, pixeldrain.com | high |
-| 29 | Smash (fromsmash.com) (`smash`) | file-sharing | active | none | api.fromsmash.com, developer.fromsmash.com, fromsmash.com | low |
-| 30 | SwissTransfer (Infomaniak) (`swisstransfer`) | file-sharing | active | none | infomaniakusercontent.com, ksharelink.com, swisstransfer.com | low |
-| 31 | Terabox (`terabox`) | file-sharing | active | none | (none sourced) | low |
-| 32 | Tresorit (`tresorit`) | file-sharing | active | none | (none sourced) | low |
-| 33 | Yandex Disk (`yandex-disk`) | file-sharing | active | partial: yandex.net, yandex.ru, yandex.com already under an app (domain only) | cloud-api.yandex.net, dst.yandex.net | medium |
-| 34 | Bolt.new (`bolt-new`) | genai | active | none | bolt.new, support.bolt.new | low |
-| 35 | DeepL (`deepl`) | genai | active | none | api-free.deepl.com, api.deepl.com, developers.deepl.com | medium |
-| 36 | Gamma (`gamma`) | genai | active | none | mcp.gamma.app, public-api.gamma.app | medium |
-| 37 | Kimi (Moonshot AI) (`kimi-moonshot`) | genai | active | none | api.moonshot.ai, platform.kimi.ai | medium |
-| 38 | Lovable (`lovable`) | genai | active | none | docs.lovable.dev, lovable.app, lovable.dev | medium |
-| 39 | Manus (`manus`) | genai | active | none | api.manus.ai, open.manus.ai | low |
-| 40 | Otter.ai (`otter-ai`) | genai | active | none | (none sourced) | low |
-| 41 | Hey.com (`hey-com`) | webmail | active | none | app.hey.com, help.hey.com, hey.com | medium |
-| 42 | Mail.ru webmail (`mail-ru`) | webmail | active | none | imap.mail.ru, pop.mail.ru, smtp.mail.ru | medium |
-| 43 | Temp-Mail (temp-mail.io disposable email) (`temp-mail`) | webmail | active | none | api.temp-mail.io, docs.temp-mail.io | medium |
-| 44 | DingTalk (`dingtalk`) | messaging | active | none | oapi.dingtalk.io | low |
-| 45 | Feishu/Lark (`feishu-lark`) | messaging | active | none | open.feishu.cn, open.larksuite.com | medium |
-| 46 | Mattermost (`mattermost`) | messaging | active | none | (none sourced) | low |
-| 47 | WeCom (WeChat Work) (`wecom`) | messaging | active | partial: weixin.qq.com already under unknown app (WeCom hosts qyapi/work/developer.work.weixin.qq.com are subdomains) | qyapi.weixin.qq.com, work.weixin.qq.com, wwcdn.weixin.qq.com | medium |
-| 48 | Wire (`wire`) | messaging | active | none | prod-nginz-ssl.wire.com, sft.calling-prod-v01.wire.com, turn.calling-prod-v01.wire.com | medium |
-| 49 | Mastodon (mastodon.social) (`mastodon`) | social | active | none | (none sourced) | low |
-| 50 | Truth Social (`truth-social`) | social | active | none | help.truthsocial.com | low |
-| 51 | Azure DevOps (`azure-devops`) | code-paste | active | partial: visualstudio.com and vsassets.io already in pack (app unknown); dev.azure.com not present | dev.azure.com, download.agent.dev.azure.com, login.microsoftonline.com, ssh.dev.azure.com, vsassets.io, vsrm.dev.azure.com | high |
-| 52 | Bitbucket Cloud (`bitbucket`) | code-paste | active | partial: bitbucket.org and atlassian.com already in pack (app unknown) | altssh.bitbucket.org, api.bitbucket.org, bitbucket.org, ssh.bitbucket.org | medium |
-| 53 | Codeberg (`codeberg`) | code-paste | active | none | codeberg.org, codeberg.page, design.codeberg.org, docs.codeberg.org | medium |
-| 54 | Rentry (`rentry`) | code-paste | active | none | rentry.co | medium |
-| 55 | Bitget (`bitget`) | crypto | active | none | api.bitget.com, capi.bitget.com | low |
-| 56 | Bybit (`bybit`) | crypto | active | none | api-testnet.bybit.com, api.bybit.com, api.bybit.eu, api.bytick.com, stream-testnet.bybit.com, stream.bybit.com | medium |
-| 57 | KuCoin (`kucoin`) | crypto | active | none | api-broker.kucoin.com, api-futures.kucoin.com, api.kucoin.com, ws-api-futures.kucoin.com, ws-api-spot.kucoin.com, wsapi-push.kucoin.com | medium |
-| 58 | Ledger Live (`ledger-live`) | crypto | active | none | (none sourced) | low |
-| 59 | OKX (`okx`) | crypto | active | none | eea.okx.com, openapi.okx.com, us.okx.com, ws.okx.com, wspap.okx.com, www.okx.com | medium |
-| 60 | Trust Wallet (`trust-wallet`) | crypto | active | none | mcp.trustwallet.com, portal.trustwallet.com, tws.trustwallet.com | low |
-| 61 | Uniswap (`uniswap`) | crypto | active | none | developers.uniswap.org, gateway.thegraph.com | low |
-| 62 | Resilio Sync (`resilio-sync`) | p2p | active | none | config.resilio.com, connect-license.resilio.com, feedback.resilio.com, upload.resilio.com | low |
-| 63 | Soulseek (`soulseek`) | p2p | active | none | (none sourced) | low |
-| 64 | qBittorrent (`qbittorrent`) | p2p | active | none | (none sourced) | medium |
-| 65 | uTorrent (`utorrent`) | p2p | active | none | (none sourced) | low |
+| 5 | Cisco Secure Client (AnyConnect) (`cisco-secure-client`) | vpn | active | none | (none sourced) | low |
+| 6 | Palo Alto GlobalProtect (`paloalto-globalprotect`) | vpn | active | partial: googleapis.com already under (unknown app) - storage.googleapis.com is a shared bypass host | epm.gpcloudservice.com, apps.paloaltonetworks.com, filter.paloaltonetworks.com | low |
+| 7 | Fortinet FortiClient VPN (`fortinet-forticlient-vpn`) | vpn | active | none | forticlient.forticloud.com, fctguard.fortinet.net, forticlient.fortinet.net, myforticlient.fortinet.net, aptctrl1.fortinet.com | medium |
+| 8 | Ivanti Connect Secure (`ivanti-connect-secure`) | vpn | active | none | pcls.pulseone.net, service.pulsesecure.net, forums.ivanti.com | low |
+| 9 | Twingate (`twingate`) | remote-access | active | none | twingate.com, api.twingate.com, relays.twingate.com, saml.twingate.com | high |
+| 10 | Bright Data (`bright-data`) | proxy-anonymizer | active | none | brd.superproxy.io, api.brightdata.com, brightdata.com | high |
+| 11 | Urban VPN (`urban-vpn`) | vpn | active | none | www.urban-vpn.com, premium.urban-vpn.com | low |
+| 12 | Hola VPN (`hola-vpn`) | vpn | active | none | hola.org | low |
+| 13 | Browsec (`browsec`) | vpn | active | none | browsec.com, browsec.zendesk.com | low |
+| 14 | Astrill VPN (`astrill-vpn`) | vpn | active | none | (none sourced) | low |
+| 15 | PureVPN (`purevpn`) | vpn | active | none | (none sourced) | low |
+| 16 | X-VPN (`x-vpn`) | vpn | active | none | xvpn.io | low |
+| 17 | TorGuard (`torguard`) | vpn | active | none | torguard.net, www.torguard.net | low |
+| 18 | VyprVPN (`vyprvpn`) | vpn | active | none | (none sourced) | low |
+| 19 | Opera VPN (`opera-vpn`) | vpn | active | none | (none sourced) | low |
+| 20 | CroxyProxy (`croxyproxy`) | proxy-anonymizer | active | none | (none sourced) | low |
+| 21 | Citrix ShareFile (`citrix-sharefile`) | file-sharing | active | none | sharefile.com, sf-api.com, sharefile.eu, sf-api.eu, sharefileftp.com, securevdr.com | high |
+| 22 | Tresorit (`tresorit`) | file-sharing | active | none | (none sourced) | low |
+| 23 | Terabox (`terabox`) | file-sharing | active | none | (none sourced) | low |
+| 24 | Baidu Netdisk (`baidu-netdisk`) | file-sharing | active | partial: baidu.com already under an app (domain only) | (none sourced) | low |
+| 25 | Yandex Disk (`yandex-disk`) | file-sharing | active | partial: yandex.net, yandex.ru, yandex.com already under an app (domain only) | cloud-api.yandex.net | medium |
+| 26 | Smash (fromsmash.com) (`smash`) | file-sharing | active | none | api.fromsmash.com, developer.fromsmash.com, fromsmash.com | low |
+| 27 | SwissTransfer (Infomaniak) (`swisstransfer`) | file-sharing | active | none | swisstransfer.com, ksharelink.com | low |
+| 28 | Filemail (`filemail`) | file-sharing | active | none | api-public.filemail.com, filemail.com | medium |
+| 29 | Pixeldrain (`pixeldrain`) | file-sharing | active | none | pixeldrain.com | high |
+| 30 | Kimi (Moonshot AI) (`kimi-moonshot`) | genai | active | none | api.moonshot.ai, platform.kimi.ai | medium |
+| 31 | Manus (`manus`) | genai | active | none | api.manus.ai, open.manus.ai | low |
+| 32 | Lovable (`lovable`) | genai | active | none | lovable.dev | medium |
+| 33 | Bolt.new (`bolt-new`) | genai | active | none | bolt.new | low |
+| 34 | Gamma (`gamma`) | genai | active | none | public-api.gamma.app, mcp.gamma.app | medium |
+| 35 | Otter.ai (`otter-ai`) | genai | active | none | (none sourced) | low |
+| 36 | DeepL (`deepl`) | genai | active | none | api.deepl.com, api-free.deepl.com, developers.deepl.com | medium |
+| 37 | Mail.ru webmail (`mail-ru`) | webmail | active | none | imap.mail.ru, smtp.mail.ru, pop.mail.ru | medium |
+| 38 | Hey.com (`hey-com`) | webmail | active | none | app.hey.com, hey.com | medium |
+| 39 | Temp-Mail (temp-mail.io disposable email) (`temp-mail`) | webmail | active | none | api.temp-mail.io | medium |
+| 40 | WeCom (WeChat Work) (`wecom`) | messaging | active | partial: weixin.qq.com already under unknown app (WeCom hosts qyapi/work/developer.work.weixin.qq.com are subdomains) | qyapi.weixin.qq.com, work.weixin.qq.com | medium |
+| 41 | DingTalk (`dingtalk`) | messaging | active | none | oapi.dingtalk.io | low |
+| 42 | Feishu/Lark (`feishu-lark`) | messaging | active | none | open.feishu.cn, open.larksuite.com | medium |
+| 43 | Mattermost (`mattermost`) | messaging | active | none | (none sourced) | low |
+| 44 | Wire (`wire`) | messaging | active | none | prod-nginz-ssl.wire.com, turn.calling-prod-v01.wire.com, sft.calling-prod-v01.wire.com | medium |
+| 45 | Mastodon (mastodon.social) (`mastodon`) | social | active | none | (none sourced) | low |
+| 46 | Truth Social (`truth-social`) | social | active | none | (none sourced) | low |
+| 47 | Bitbucket Cloud (`bitbucket`) | code-paste | active | partial: bitbucket.org and atlassian.com already in pack (app unknown) | bitbucket.org, api.bitbucket.org, altssh.bitbucket.org, ssh.bitbucket.org | medium |
+| 48 | Azure DevOps (`azure-devops`) | code-paste | active | partial: visualstudio.com and vsassets.io already in pack (app unknown); dev.azure.com not present | dev.azure.com, vssps.visualstudio.com, ssh.dev.azure.com, vsrm.dev.azure.com, login.microsoftonline.com | high |
+| 49 | Codeberg (`codeberg`) | code-paste | active | none | codeberg.org | medium |
+| 50 | Rentry (`rentry`) | code-paste | active | none | rentry.co | medium |
+| 51 | HopToDesk (`hoptodesk`) | remote-access | active | none (no hoptodesk domains in pack) | api.hoptodesk.com, signal.hoptodesk.com, turn.hoptodesk.com, turn-eu.hoptodesk.com, dashboard.hoptodesk.com | high |
+| 52 | ToDesk (`todesk`) | remote-access | active | none (no todesk domains in pack) | (none sourced) | low |
+| 53 | Sunlogin (Oray AweSun) (`sunlogin-awesun`) | remote-access | active | none (no oray domains in pack) | client.oray.net, *.oray.com | low |
+| 54 | Radmin (`radmin`) | remote-access | active | none (no radmin or famatech domains in pack) | helpdesk.radmin.com | medium |
+| 55 | OKX (`okx`) | crypto | active | none | openapi.okx.com, ws.okx.com, wspap.okx.com, us.okx.com, eea.okx.com, www.okx.com | medium |
+| 56 | Bybit (`bybit`) | crypto | active | none | api.bybit.com, api.bytick.com, stream.bybit.com, api-testnet.bybit.com, stream-testnet.bybit.com, api.bybit.eu | medium |
+| 57 | KuCoin (`kucoin`) | crypto | active | none | api.kucoin.com, api-futures.kucoin.com, api-broker.kucoin.com, ws-api-spot.kucoin.com, ws-api-futures.kucoin.com, wsapi.kucoin.com, x-push-spot.kucoin.com, wsapi-push.kucoin.com | medium |
+| 58 | Bitget (`bitget`) | crypto | active | none | api.bitget.com, capi.bitget.com | low |
+| 59 | Uniswap (`uniswap`) | crypto | active | none | gateway.thegraph.com, developers.uniswap.org | low |
+| 60 | Trust Wallet (`trust-wallet`) | crypto | active | none | mcp.trustwallet.com, tws.trustwallet.com, portal.trustwallet.com | low |
+| 61 | Ledger Live (`ledger-live`) | crypto | active | none | (none sourced) | low |
+| 62 | qBittorrent (`qbittorrent`) | p2p | active | none | (none sourced) | medium |
+| 63 | uTorrent (`utorrent`) | p2p | active | none | (none sourced) | low |
+| 64 | Resilio Sync (`resilio-sync`) | p2p | active | none | config.resilio.com, connect-license.resilio.com, upload.resilio.com | low |
+| 65 | Soulseek (`soulseek`) | p2p | active | none | (none sourced) | low |
 
 ## Sub-functions and separability
 

@@ -88,7 +88,9 @@
   ],
   "notes": "Cloud-side domains well documented; on-prem Virtual Apps and Desktops uses customer-owned hostnames, not catalog-matchable. Allowlist API provides per-customer FQDNs.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 1
  },
  {
   "id": "omnissa-horizon",
@@ -114,7 +116,9 @@
   ],
   "notes": "Horizon is mostly customer-hosted (UAG, Connection Server); only the cloud control plane has vendor domains, which I could not verify from official docs.",
   "confidence": "low",
-  "status": "rebranded:Omnissa Horizon (from VMware Horizon, 2024)"
+  "status": "rebranded:Omnissa Horizon (from VMware Horizon, 2024)",
+  "domains_not_a_match": [],
+  "priority_rank": 4
  },
  {
   "id": "amazon-workspaces",
@@ -145,12 +149,6 @@
     "role": "api",
     "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
     "quote": "Session Broker (PCM) https://skylight-cm.us-east-1.amazonaws.com"
-   },
-   {
-    "domain": "drp-<airport>.amazonworkspaces.com",
-    "role": "other",
-    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
-    "quote": "drp-iad.amazonworkspaces.com"
    },
    {
     "domain": "<dirid>.awsapps.com",
@@ -205,7 +203,17 @@
   ],
   "notes": "Client-facing hostnames are clear; streaming runs on ports to AWS IP ranges. DCV proxy not recommended, TLS inspection unsupported.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "drp-<airport>.amazonworkspaces.com",
+    "role": "other",
+    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "quote": "drp-iad.amazonworkspaces.com",
+    "excluded_reason": "placeholder / per-airport shared host"
+   }
+  ],
+  "priority_rank": 3
  },
  {
   "id": "windows-365-avd",
@@ -238,12 +246,6 @@
     "quote": "Connection center"
    },
    {
-    "domain": "*.windows.static.microsoft",
-    "role": "cdn",
-    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
-    "quote": "Service Traffic"
-   },
-   {
     "domain": "windows365.microsoft.com",
     "role": "web",
     "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
@@ -254,12 +256,6 @@
     "role": "auth",
     "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
     "quote": "Authentication to Microsoft Online Services"
-   },
-   {
-    "domain": "*.cdn.office.net",
-    "role": "update",
-    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
-    "quote": "Automatic updates"
    }
   ],
   "domains_unsourced": [],
@@ -302,7 +298,24 @@
   ],
   "notes": "AVD and Windows 365 share endpoints, so they can't be split. Microsoft says blocking these is unsupported. Overlaps with shipped Microsoft domains.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "*.windows.static.microsoft",
+    "role": "cdn",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Service Traffic",
+    "excluded_reason": "shared CDN"
+   },
+   {
+    "domain": "*.cdn.office.net",
+    "role": "update",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Automatic updates",
+    "excluded_reason": "shared CDN"
+   }
+  ],
+  "priority_rank": 2
  },
  {
   "id": "todesk",
@@ -328,7 +341,9 @@
   ],
   "notes": "Searches in English and Chinese returned no official ToDesk network-requirements page. Chinese vendor; service domains unverified.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 52
  },
  {
   "id": "sunlogin-awesun",
@@ -381,7 +396,9 @@
   ],
   "notes": "Official Oray FAQ is dated Dec 2021; ports/domains came via search summary, and a direct fetch did not confirm them. The ports article is a separate page.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 53
  },
  {
   "id": "hoptodesk",
@@ -418,12 +435,6 @@
     "role": "web",
     "source_url": "https://help.hoptodesk.com/",
     "quote": "dashboard.hoptodesk.com for dashboard-linked devices"
-   },
-   {
-    "domain": "dl.hoptodesk.com",
-    "role": "update",
-    "source_url": "https://help.hoptodesk.com/",
-    "quote": "App updates: dl.hoptodesk.com"
    }
   ],
   "domains_unsourced": [],
@@ -466,7 +477,17 @@
   ],
   "notes": "Help center lists allowlist domains and ports explicitly. Direct connections use IP only. Relay is also sourced from the page, other turn-* regions omitted.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "dl.hoptodesk.com",
+    "role": "update",
+    "source_url": "https://help.hoptodesk.com/",
+    "quote": "App updates: dl.hoptodesk.com",
+    "excluded_reason": "download/update host"
+   }
+  ],
+  "priority_rank": 51
  },
  {
   "id": "radmin",
@@ -506,6 +527,8 @@
   ],
   "notes": "Radmin is mainly direct viewer to server on TCP 4899 with no vendor-hosted relay, so there is little domain-level signal. Detect by port or protocol only.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 54
  }
 ]

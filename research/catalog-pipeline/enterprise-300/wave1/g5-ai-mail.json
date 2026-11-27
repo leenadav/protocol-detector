@@ -48,7 +48,9 @@
   ],
   "notes": "Platform moved moonshot.ai to kimi.ai; consumer web chat host not confirmed from official docs.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 30
  },
  {
   "id": "manus",
@@ -94,7 +96,9 @@
   ],
   "notes": "Docs list API host only; no network-requirements page found. Consumer app domains unverified.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 31
  },
  {
   "id": "lovable",
@@ -107,18 +111,6 @@
     "role": "web",
     "source_url": "https://docs.lovable.dev/features/custom-domain",
     "quote": "https://lovable.dev/settings/workspace-domains"
-   },
-   {
-    "domain": "lovable.app",
-    "role": "other",
-    "source_url": "https://docs.lovable.dev/features/custom-domain",
-    "quote": "instead of the default your-app.lovable.app address"
-   },
-   {
-    "domain": "docs.lovable.dev",
-    "role": "web",
-    "source_url": "https://docs.lovable.dev/features/custom-domain",
-    "quote": "Fetch the complete documentation index at: https://docs.lovable.dev/llms.txt"
    }
   ],
   "domains_unsourced": [
@@ -146,7 +138,24 @@
   ],
   "notes": "Builder app plus user-hosted sites on lovable.app. No official network requirements page found.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "lovable.app",
+    "role": "other",
+    "source_url": "https://docs.lovable.dev/features/custom-domain",
+    "quote": "instead of the default your-app.lovable.app address",
+    "excluded_reason": "shared user-content host"
+   },
+   {
+    "domain": "docs.lovable.dev",
+    "role": "web",
+    "source_url": "https://docs.lovable.dev/features/custom-domain",
+    "quote": "Fetch the complete documentation index at: https://docs.lovable.dev/llms.txt",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 32
  },
  {
   "id": "bolt-new",
@@ -159,12 +168,6 @@
     "role": "web",
     "source_url": "https://support.bolt.new/",
     "quote": "Templates marketplace (bolt.new/resources/templates)"
-   },
-   {
-    "domain": "support.bolt.new",
-    "role": "web",
-    "source_url": "https://support.bolt.new/",
-    "quote": "help center, including the QuickStart guide"
    }
   ],
   "domains_unsourced": [
@@ -192,7 +195,17 @@
   ],
   "notes": "Support page has no allowlist guidance; WebContainer troubleshooting page returned 404. Runtime domains unverified.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "support.bolt.new",
+    "role": "web",
+    "source_url": "https://support.bolt.new/",
+    "quote": "help center, including the QuickStart guide",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 33
  },
  {
   "id": "gamma",
@@ -252,7 +265,9 @@
   ],
   "notes": "API and MCP hosts documented; web app host gamma.app unsourced by network doc.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 34
  },
  {
   "id": "otter-ai",
@@ -285,7 +300,9 @@
   ],
   "notes": "help.otter.ai blocked fetch (403); no official domain list located. All domains unsourced.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 35
  },
  {
   "id": "deepl",
@@ -344,7 +361,9 @@
   ],
   "notes": "API hosts well documented; consumer web translator host not sourced.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 36
  },
  {
   "id": "mail-ru",
@@ -403,7 +422,9 @@
   ],
   "notes": "Mail protocol hosts sourced from official help; webmail UI and CDN hosts not sourced.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 37
  },
  {
   "id": "temp-mail",
@@ -416,12 +437,6 @@
     "role": "api",
     "source_url": "https://docs.temp-mail.io/docs/getting-started",
     "quote": "Base URL: https://api.temp-mail.io"
-   },
-   {
-    "domain": "docs.temp-mail.io",
-    "role": "web",
-    "source_url": "https://docs.temp-mail.io/docs/getting-started",
-    "quote": "official API documentation site"
    }
   ],
   "domains_unsourced": [
@@ -461,7 +476,17 @@
   ],
   "notes": "Disposable-email category has many unrelated look-alike domains; only temp-mail.io API sourced. Disposable inbox domains are not enumerable.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "docs.temp-mail.io",
+    "role": "web",
+    "source_url": "https://docs.temp-mail.io/docs/getting-started",
+    "quote": "official API documentation site",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 39
  },
  {
   "id": "hey-com",
@@ -474,12 +499,6 @@
     "role": "web",
     "source_url": "https://www.hey.com/faqs/",
     "quote": "sign-in and sign-up site, password reset page"
-   },
-   {
-    "domain": "help.hey.com",
-    "role": "other",
-    "source_url": "https://www.hey.com/faqs/",
-    "quote": "help center"
    },
    {
     "domain": "hey.com",
@@ -507,6 +526,16 @@
   ],
   "notes": "No IMAP/POP/SMTP; hosts derived from FAQ page, not a network-requirements page. Firewall guidance absent.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "help.hey.com",
+    "role": "other",
+    "source_url": "https://www.hey.com/faqs/",
+    "quote": "help center",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 38
  }
 ]

@@ -10,18 +10,6 @@
     "role": "web",
     "source_url": "https://hola.org/faq",
     "quote": "Hola for iOS; My Account; support team"
-   },
-   {
-    "domain": "support.hola.org",
-    "role": "web",
-    "source_url": "https://hola.org/faq",
-    "quote": "Help center (https://support.hola.org)"
-   },
-   {
-    "domain": "cdn4.hola.org",
-    "role": "cdn",
-    "source_url": "https://hola.org/faq",
-    "quote": "//cdn4.hola.org/www/hola/pub/img/hola_logo_letters.svg"
    }
   ],
   "domains_unsourced": [
@@ -55,7 +43,24 @@
   ],
   "notes": "Official docs publish no network-requirements list; proxy agent hostnames not officially documented. Hola FAQ also references Bright Data as commercial arm.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "support.hola.org",
+    "role": "web",
+    "source_url": "https://hola.org/faq",
+    "quote": "Help center (https://support.hola.org)",
+    "excluded_reason": "documentation/support page"
+   },
+   {
+    "domain": "cdn4.hola.org",
+    "role": "cdn",
+    "source_url": "https://hola.org/faq",
+    "quote": "//cdn4.hola.org/www/hola/pub/img/hola_logo_letters.svg",
+    "excluded_reason": "CDN"
+   }
+  ],
+  "priority_rank": 12
  },
  {
   "id": "urban-vpn",
@@ -102,7 +107,9 @@
   ],
   "notes": "No official allowlist or network doc found; tunnel endpoints undocumented. Distributed via browser extensions and apps.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 11
  },
  {
   "id": "torguard",
@@ -142,7 +149,9 @@
   ],
   "notes": "Official fetch blocked (403) for some pages; no network-requirements doc found. Server hostnames not verified.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 17
  },
  {
   "id": "browsec",
@@ -161,18 +170,6 @@
     "role": "web",
     "source_url": "https://browsec.com/en/faq",
     "quote": "Help Center"
-   },
-   {
-    "domain": "browsec.cx",
-    "role": "download",
-    "source_url": "https://browsec.com/en/faq",
-    "quote": "our download page"
-   },
-   {
-    "domain": "bs-dl.s3.eu-central-1.amazonaws.com",
-    "role": "download",
-    "source_url": "https://browsec.com/en/faq",
-    "quote": "download the APK from a direct link"
    }
   ],
   "domains_unsourced": [],
@@ -201,7 +198,24 @@
   ],
   "notes": "FAQ says extension uses HTTP proxy over TLS but names no proxy/API host. Download mirrors are s3/browsec.cx; mirror domains may rotate.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "browsec.cx",
+    "role": "download",
+    "source_url": "https://browsec.com/en/faq",
+    "quote": "our download page",
+    "excluded_reason": "download mirror"
+   },
+   {
+    "domain": "bs-dl.s3.eu-central-1.amazonaws.com",
+    "role": "download",
+    "source_url": "https://browsec.com/en/faq",
+    "quote": "download the APK from a direct link",
+    "excluded_reason": "shared cloud storage"
+   }
+  ],
+  "priority_rank": 13
  },
  {
   "id": "croxyproxy",
@@ -230,7 +244,9 @@
   ],
   "notes": "No official vendor docs fetched; only third-party descriptions. Lookalike phishing domains reported. Rotating hostnames possible but unverified.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 20
  },
  {
   "id": "bright-data",
@@ -255,24 +271,6 @@
     "role": "web",
     "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
     "quote": "https://brightdata.com/cp/zones"
-   },
-   {
-    "domain": "docs.brightdata.com",
-    "role": "web",
-    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
-    "quote": "docs.brightdata.com/proxy-networks/errorCatalog.md"
-   },
-   {
-    "domain": "geo.brdtest.com",
-    "role": "other",
-    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
-    "quote": "https://geo.brdtest.com/mygeo.json"
-   },
-   {
-    "domain": "brdtest.com",
-    "role": "other",
-    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
-    "quote": "https://brdtest.com/myip.json"
    }
   ],
   "domains_unsourced": [],
@@ -301,7 +299,31 @@
   ],
   "notes": "Well documented. Gateway ports 33335 per search summary and 44445 per FAQ. Proxy exit IPs are residential and not enumerable.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "docs.brightdata.com",
+    "role": "web",
+    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "quote": "docs.brightdata.com/proxy-networks/errorCatalog.md",
+    "excluded_reason": "documentation/support page"
+   },
+   {
+    "domain": "geo.brdtest.com",
+    "role": "other",
+    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "quote": "https://geo.brdtest.com/mygeo.json",
+    "excluded_reason": "test host"
+   },
+   {
+    "domain": "brdtest.com",
+    "role": "other",
+    "source_url": "https://docs.brightdata.com/proxy-networks/faqs",
+    "quote": "https://brdtest.com/myip.json",
+    "excluded_reason": "test host"
+   }
+  ],
+  "priority_rank": 10
  },
  {
   "id": "x-vpn",
@@ -335,7 +357,9 @@
   ],
   "notes": "Help center has no network-requirements or allowlist; tunnel endpoints undocumented.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 16
  },
  {
   "id": "opera-vpn",
@@ -383,6 +407,8 @@
   ],
   "notes": "No official Opera network doc; domains only from third-party/community. Built-in browser VPN (SurfEasy backend); operacdn pattern unconfirmed.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 19
  }
 ]

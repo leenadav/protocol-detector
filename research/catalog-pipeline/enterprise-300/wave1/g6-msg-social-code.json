@@ -40,7 +40,9 @@
   ],
   "notes": "Official domain evidence limited to international docs mirror dingtalk.io; open.dingtalk.com pages did not render. China domains dingtalk.com unsourced.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 41
  },
  {
   "id": "feishu-lark",
@@ -87,7 +89,9 @@
   ],
   "notes": "Client/web hosts (feishu.cn, larksuite.com, larkoffice.com) not confirmed from official network docs; only API hosts sourced.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 42
  },
  {
   "id": "wecom",
@@ -106,12 +110,6 @@
     "role": "web",
     "source_url": "https://developer.work.weixin.qq.com/document/path/90664",
     "quote": "site link seen on official page (navigation)"
-   },
-   {
-    "domain": "wwcdn.weixin.qq.com",
-    "role": "cdn",
-    "source_url": "https://developer.work.weixin.qq.com/document/path/90664",
-    "quote": "static assets host seen on official page"
    }
   ],
   "domains_unsourced": [],
@@ -140,7 +138,17 @@
   ],
   "notes": "Domains are subdomains of weixin.qq.com which is already in pack; SNI-level separation is possible on subdomain only if pack does not wildcard it.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "wwcdn.weixin.qq.com",
+    "role": "cdn",
+    "source_url": "https://developer.work.weixin.qq.com/document/path/90664",
+    "quote": "static assets host seen on official page",
+    "excluded_reason": "shared CDN"
+   }
+  ],
+  "priority_rank": 40
  },
  {
   "id": "wire",
@@ -193,7 +201,9 @@
   ],
   "notes": "Support page returned 403 to fetch; details taken from search-result summary of the official page. Other hosts (assets, web app) not verified.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 44
  },
  {
   "id": "mattermost",
@@ -237,7 +247,9 @@
   ],
   "notes": "Self-hosted product; official docs name no real hostnames. Cloud tenants use *.cloud.mattermost.com (not verified from docs).",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 43
  },
  {
   "id": "mastodon",
@@ -287,21 +299,16 @@
   ],
   "notes": "Federated: thousands of independent instance domains; only mastodon.social is one host. Domain-level blocking cannot cover the fediverse. Official docs give placeholders only.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 45
  },
  {
   "id": "truth-social",
   "name": "Truth Social",
   "class": "social",
   "pack_overlap": "none",
-  "domains": [
-   {
-    "domain": "help.truthsocial.com",
-    "role": "web",
-    "source_url": "https://help.truthsocial.com/faq",
-    "quote": "official help center site"
-   }
-  ],
+  "domains": [],
   "domains_unsourced": [
    {
     "domain": "truthsocial.com",
@@ -330,7 +337,17 @@
   ],
   "notes": "No official developer API or allowlist documentation found; third-party scrapers only. Software is Mastodon-derived (unconfirmed officially).",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "help.truthsocial.com",
+    "role": "web",
+    "source_url": "https://help.truthsocial.com/faq",
+    "quote": "official help center site",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 46
  },
  {
   "id": "bitbucket",
@@ -401,7 +418,9 @@
   ],
   "notes": "Core domain already shipped in pack; incremental value is sub-function split (api, ssh).",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 47
  },
  {
   "id": "azure-devops",
@@ -432,18 +451,6 @@
     "role": "api",
     "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
     "quote": "https://vsrm.dev.azure.com Hosts releases"
-   },
-   {
-    "domain": "download.agent.dev.azure.com",
-    "role": "download",
-    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
-    "quote": "Required to set up self-hosted agent"
-   },
-   {
-    "domain": "vsassets.io",
-    "role": "cdn",
-    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
-    "quote": "https://cdn.vsassets.io Hosts Azure DevOps CDN content"
    },
    {
     "domain": "login.microsoftonline.com",
@@ -485,7 +492,24 @@
   ],
   "notes": "login.microsoftonline.com is shared Microsoft auth, do not block per-service. Legacy {org}.visualstudio.com already in pack.",
   "confidence": "high",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "download.agent.dev.azure.com",
+    "role": "download",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "Required to set up self-hosted agent",
+    "excluded_reason": "download host"
+   },
+   {
+    "domain": "vsassets.io",
+    "role": "cdn",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "https://cdn.vsassets.io Hosts Azure DevOps CDN content",
+    "excluded_reason": "shared CDN"
+   }
+  ],
+  "priority_rank": 48
  },
  {
   "id": "codeberg",
@@ -498,24 +522,6 @@
     "role": "web",
     "source_url": "https://docs.codeberg.org/",
     "quote": "links to https://codeberg.org/Codeberg/Community/issues"
-   },
-   {
-    "domain": "docs.codeberg.org",
-    "role": "web",
-    "source_url": "https://docs.codeberg.org/",
-    "quote": "contributor FAQ link uses this host"
-   },
-   {
-    "domain": "codeberg.page",
-    "role": "other",
-    "source_url": "https://docs.codeberg.org/codeberg-pages/",
-    "quote": "a human-friendly address ({username}.codeberg.page)"
-   },
-   {
-    "domain": "design.codeberg.org",
-    "role": "cdn",
-    "source_url": "https://docs.codeberg.org/",
-    "quote": "logo images are served from this host"
    }
   ],
   "domains_unsourced": [],
@@ -544,7 +550,31 @@
   ],
   "notes": "Forgejo-based; API path not verified on fetched pages. Pages uses git-pages with custom domains (not enumerable).",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "docs.codeberg.org",
+    "role": "web",
+    "source_url": "https://docs.codeberg.org/",
+    "quote": "contributor FAQ link uses this host",
+    "excluded_reason": "documentation/support page"
+   },
+   {
+    "domain": "codeberg.page",
+    "role": "other",
+    "source_url": "https://docs.codeberg.org/codeberg-pages/",
+    "quote": "a human-friendly address ({username}.codeberg.page)",
+    "excluded_reason": "shared user-content host"
+   },
+   {
+    "domain": "design.codeberg.org",
+    "role": "cdn",
+    "source_url": "https://docs.codeberg.org/",
+    "quote": "logo images are served from this host",
+    "excluded_reason": "design/docs host"
+   }
+  ],
+  "priority_rank": 49
  },
  {
   "id": "rentry",
@@ -597,6 +627,8 @@
   ],
   "notes": "Only unofficial-adjacent author CLI repo documents API; rentry.co/api page returned empty. Read vs write separable only via HTTP inspection.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 50
  }
 ]

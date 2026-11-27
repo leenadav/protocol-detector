@@ -81,7 +81,9 @@
   ],
   "notes": "API hosts well documented; consumer web/app hosts and wallet/DEX hosts not listed in official docs fetched.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 55
  },
  {
   "id": "bybit",
@@ -165,7 +167,9 @@
   ],
   "notes": "Official docs list many regional API/stream hosts; consumer web domains not verified from official docs.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 56
  },
  {
   "id": "kucoin",
@@ -261,7 +265,9 @@
   ],
   "notes": "API hosts clearly sourced; web UI and CDN hosts not verified. Classic vs unified account use different WS hosts.",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 57
  },
  {
   "id": "bitget",
@@ -319,7 +325,9 @@
   ],
   "notes": "New UTA docs list no hostnames; legacy docs give api.bitget.com. WS and web hosts unconfirmed.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 58
  },
  {
   "id": "uniswap",
@@ -377,7 +385,9 @@
   ],
   "notes": "Decentralized protocol; official docs name only The Graph gateway. Web app hosts not confirmed on docs pages.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 59
  },
  {
   "id": "trust-wallet",
@@ -441,7 +451,9 @@
   ],
   "notes": "Only developer-platform hosts documented; mobile wallet app/extension backend hosts not found in official docs.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 60
  },
  {
   "id": "ledger-live",
@@ -467,7 +479,9 @@
   ],
   "notes": "No official allowlist located; searches returned only third-party pages. Needs dedicated follow-up.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 61
  },
  {
   "id": "qbittorrent",
@@ -507,7 +521,9 @@
   ],
   "notes": "Protocol-level detection; no vendor-fixed domains. Embedded tracker default port 9000 (disabled by default).",
   "confidence": "medium",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 62
  },
  {
   "id": "utorrent",
@@ -540,7 +556,9 @@
   ],
   "notes": "No official domain list found; detection via BitTorrent protocol. Ad/update hosts unverified.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 63
  },
  {
   "id": "soulseek",
@@ -578,7 +596,9 @@
   ],
   "notes": "Proprietary, undocumented by vendor; only community reverse-engineered docs. Not TLS, so SNI inapplicable.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 65
  },
  {
   "id": "resilio-sync",
@@ -603,12 +623,6 @@
     "role": "other",
     "source_url": "https://docs.resilio.com/content/getting-started/ports-protocols-port-forwarding/",
     "quote": "support case creation with automated log upload"
-   },
-   {
-    "domain": "feedback.resilio.com",
-    "role": "other",
-    "source_url": "https://docs.resilio.com/content/getting-started/ports-protocols-port-forwarding/",
-    "quote": "manual log uploads; leads to upload.resilio.com"
    }
   ],
   "domains_unsourced": [
@@ -650,6 +664,16 @@
   ],
   "notes": "Docs fetched were for Connect/Agent; Sync consumer hosts (tracker/relay) dynamic. help.resilio.com 403'd on direct fetch.",
   "confidence": "low",
-  "status": "active"
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "feedback.resilio.com",
+    "role": "other",
+    "source_url": "https://docs.resilio.com/content/getting-started/ports-protocols-port-forwarding/",
+    "quote": "manual log uploads; leads to upload.resilio.com",
+    "excluded_reason": "feedback endpoint"
+   }
+  ],
+  "priority_rank": 64
  }
 ]
