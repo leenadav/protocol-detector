@@ -228,17 +228,17 @@ func normalizeHost(h string) (string, bool) {
 	return h, true
 }
 
-// unhex is the value of a hex digit, or -1.
-func unhex(c byte) int {
+// unhex is the value of a hex digit; ok is false for any other byte.
+func unhex(c byte) (byte, bool) {
 	switch {
 	case c >= '0' && c <= '9':
-		return int(c - '0')
+		return c - '0', true
 	case c >= 'a' && c <= 'f':
-		return int(c-'a') + 10
+		return c - 'a' + 10, true
 	case c >= 'A' && c <= 'F':
-		return int(c-'A') + 10
+		return c - 'A' + 10, true
 	}
-	return -1
+	return 0, false
 }
 
 // unreserved reports an RFC 3986 unreserved byte other than '.': decoding it never changes how a server splits
@@ -265,11 +265,12 @@ func normalizePercent(in string, path bool) (string, bool) {
 		if i+2 >= len(in) {
 			return "", false
 		}
-		hi, lo := unhex(in[i+1]), unhex(in[i+2])
-		if hi < 0 || lo < 0 {
+		hi, okHi := unhex(in[i+1])
+		lo, okLo := unhex(in[i+2])
+		if !okHi || !okLo {
 			return "", false
 		}
-		d := byte(hi<<4 | lo)
+		d := hi<<4 | lo
 		if path && (d == '/' || d == '\\' || d == '.' || d == '%' || d < 0x20 || d == 0x7f) {
 			return "", false
 		}
