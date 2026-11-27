@@ -64,6 +64,13 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
     tests and the lab tests pass, 198 under `-race`.
   - **First lab:** on `52eb9d1`, branch `lab/protocol-detector`, with the restriction demonstration. Kept
     unchanged: 84 of 84 checks on 2026-11-17.
+  - **Child applications (PRO-504, 2026-11-27):** `culvert-lab-ef94311-childapp.patch` on top of the 4-commit
+    patch (local branch `lab/childapp-ef94311`, `88d2c0a4`). `CULVERT_LAB_CHILDAPP=real` classifies each decrypted
+    request of an inspected tunnel (H1 and H2) with `go/detector` `AppClassifier` (engine PR #163). The verdicts
+    ride a log-only `TUNNEL_CLOSED` entry as `pd.apps` (`internal/pdobs` vocabularies, no host or path). Off adds 0
+    allocations. Cost on: 23 allocations and about 2.7 µs per child-matched request (the library accounts for 20).
+    That is outside ADR-0011's 1 per session, and the ADR draft's section 6 needs a per-request row. See
+    `docs/integration/CHILDAPP-LAB.md`.
 - **Load test (PRO-269, 2026-11-24):** `docs/integration/LOAD-TEST.md`. vegeta v12.12.0, a test tool only, against
   A, B and D on `ef94311`, HTTPS (observed) and HTTP (control), at 100/300/600/1,000 req/s, three rounds, one
   connection per request. Observe minus off: p50 +5 to +113 µs, p95 +84 to +424 µs, p99 within noise;
@@ -183,6 +190,10 @@ Culvert's allocation gates need `-tags benchgate`.
   `claude/culvert-land-main`; PR leenadav/protocol-detector#97. Then `60b2305` (merge of main `e5ac90f`) and the
   brief commit that records the PRO-235 decision, then the commit that fixes the 12 CodeQL alerts in
   `lab/culvert/tools/` (TLS 1.2 minimum on the lab clients, files closed, one unused assignment).
+- **Queued for Codex (PRO-504):** `35f1e25` (adds `lab/culvert/culvert-lab-ef94311-childapp.patch`,
+  `docs/integration/CHILDAPP-LAB.md` and `lab/culvert/results-childapp/`; lab and docs only, no detector code) and
+  the brief commit that records it, on
+  `claude/culvert-PRO-504-childapp-lab`, based on `claude/engine-PRO-492-child-apps` `dadc6bd`.
 - **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
   The second run, `69434b8` and `1f3e94f` on `claude/vigilant-sagan-i3rlse` (PR leenadav/protocol-detector#120),
