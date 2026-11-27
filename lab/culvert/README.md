@@ -60,6 +60,34 @@ Results, in `results-ef94311/`:
   different. No scenario asserts a host that differs from the CONNECT destination, so no record carries the new
   signal; the unit tests cover it.
 
+## Child applications on the decrypted path (PRO-504, 2026-11-27)
+
+`culvert-lab-ef94311-childapp.patch` (1 commit) applies after `culvert-lab-ef94311.patch`. The local branch is
+`lab/childapp-ef94311`, head `88d2c0a4`. With `CULVERT_LAB_CHILDAPP=real`, every decrypted request of an
+inspected tunnel (HTTP/1.1 and HTTP/2) is classified by the detector's `AppClassifier`. The tunnel's distinct
+verdicts (app, container, basis, limit, reasons, count) ride a log-only `TUNNEL_CLOSED` entry as the nested
+`pd` block, using the `internal/pdobs` closed vocabularies. The block carries no host, path or header value.
+Visibility only. Off is the default and adds 0 allocations and no entry. It needs the detector from engine PR
+#163 (`claude/engine-PRO-492-child-apps`) in `go.work`. Design, tests and cost per request are in
+`docs/integration/CHILDAPP-LAB.md`; raw benchmark output is in `results-childapp/bench.txt`.
+
+```sh
+git -C culvert checkout -b lab/childapp-ef94311 ef9431189490f7f85bb32d6fe7e7b6b8be5b0844
+git -C culvert am lab/culvert/culvert-lab-ef94311.patch lab/culvert/culvert-lab-ef94311-childapp.patch
+cd culvert && GOWORK=/path/to/go.work go test -race -run 'TestLab' . ./internal/pdobs ./internal/protodetect
+```
+
+## Child applications under load (PRO-516, 2026-11-27)
+
+`tools/childappload/` drives the PRO-504 lab build with vegeta v12.12.0 at 200, 1,000 and 3,000 req/s over a
+five-request decrypted mix (gmail upload, a Drive child, a parent-only request, an unowned host, a `..` path), on
+HTTP/1.1 and HTTP/2, child-app lab off against on, 3 repetitions of 60 s. Result: +16.2 heap allocations and about
++0.8 KB per request on both protocols at every rate (the PRO-504 benchmark, averaged over the mix), about +8 to
++12 µs proxy CPU per request on HTTP/1.1, latency and throughput unchanged within noise. Results, profiles and the
+comparison with the ADR-0011 budget: `docs/integration/CHILDAPP-LOAD.md`; data in `results-childapp-load/`.
+The lab-only `tools/childappload/zz_labmetrics_lab.go` (loopback `runtime/metrics` and pprof) is copied into the
+clone before the build and is not part of the lab patch.
+
 ## Load test with vegeta (PRO-269, 2026-11-24)
 
 `tools/loadtest.py` sends sustained HTTPS (CONNECT, observed) and HTTP (forward proxy, the control) load with
@@ -80,6 +108,21 @@ and D, with C for the CPU split, and a hold test of 1,000 open tunnels. The tool
 
 Headline: no measurable added latency at 200 and 500/s. The cost is +105 to +277 ms of proxy CPU per 1,000
 HTTPS flows, and +3.9 KiB per tunnel retained after the window. vegeta (MIT) is a test tool and is never shipped.
+
+## Endurance run (PRO-540, 2026-11-27)
+
+`ENDURANCE.md` reports working plan phase L6. The setup:
+- one 30-minute run of the `ef94311` lab with both lab patches, CONNECT bypass observed by the real detector
+  and child apps on;
+- 127.5 new tunnels/s of TLS, HTTP/1, SSH, inspected requests, adverse inputs, quiet peers and a blocked direction;
+- a restart, and a restart onto content pack 2026.11.9.
+
+The tools are in `tools/endurance/`: the Go origin and driver `load/`, the lab-only counter hook `culverthook/`
+and the orchestrator `run.py`. The data is in `results-endurance/`.
+
+Verdict: no growth slope, no panic, no leaked reservation, and the new version is used after each switch.
+Recovery to within 10% of the baseline fails: Culvert's bounded request-log ring, the lazily built child-app
+classifier, and a baseline taken before two idle keep-alive connections closed.
 
 ## What was built on the Culvert lab branch
 

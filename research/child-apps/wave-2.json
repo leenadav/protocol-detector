@@ -1,0 +1,3548 @@
+{
+ "schema": "child-apps/v1",
+ "task": "PRO-550",
+ "feeds": "PRO-492 (Engine, enterprise App-ID child apps); continues PRO-495 (wave 0, PR #161) and PRO-524 (wave 1, PR #176)",
+ "wave": 2,
+ "pack": {
+  "commit": "5cb35d29e6392b1d96d75c3f569baa378a0efe68",
+  "version": "2026.11.9",
+  "path": "go/internal/content/pack.json"
+ },
+ "accessed": "2026-11-27",
+ "pro491_overlap": "PR #166 (PRO-491 wave 1, research/catalog-pipeline/enterprise-300.md at 4cf00fe) lists 65 services; none of them is in pack 2026.11.9 under its proposed id, so none can be a parent here. Azure DevOps (row 48, 'azure-devops', not in the pack) and Bitbucket (row 47) are linked there and not repeated. None of the 30 services below is in that list (checked by name, 2026-11-27).",
+ "not_in_pack": "Azure DevOps has no app id in pack 2026.11.9 (PR #166 row 48). OpenAI API (openai-platform) is left out because wave 0 already holds openai-platform-* children under ChatGPT.",
+ "rules": [
+  "verified=false means every signals field is null: such a child is a proposal only and must not become a rule.",
+  "surface=api: documented vendor API endpoint (scripts, integrations). The first-party web UI's own request paths are not documented and must not be assumed equal; web_ui_evidence says per service whether an official source links the web app to the API hosts.",
+  "web_ui_evidence (new in wave 2): 'none', or an object whose uses_documented_api is 'same' (official source says the web client calls the documented API), 'partial' (official source puts the web client on the API host, paths not stated) or 'different' (official source shows the web client uses other hosts or paths), with the citation and a verbatim quote. A host overlap that needs two pages to see is not counted; it goes in web_ui_note.",
+  "host_sni lists names as the source spells them; a '*.' or '{...}' form is a pattern, not a literal.",
+  "path_pattern alternatives are separated by ' | '.",
+  "transport is set for non-HTTP signals; those are invisible to an HTTP rule.",
+  "Hosts and paths are client assertions seen by a decrypting proxy, not authenticated identity.",
+  "Rows citing raw.githubusercontent.com, registry.npmjs.org or pypi.org cite the vendor's own published spec, SDK or sample repository (DocuSign, Dropbox Sign, Fastmail, Evernote, Adobe, npm, Netlify, Vercel, Zendesk, HubSpot, Smartsheet, Airtable, Egnyte, transfer.sh, Facebook), used where the vendor's documentation site was not reachable; each note names the file and quotes the line. Third-party SDKs were rejected."
+ ],
+ "services": [
+  {
+   "service": "Zoho Mail",
+   "parent_app_id": "zoho",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": "Every Zoho page tried (zoho.com, zoho.eu, help.zoho.com) is blocked by the network policy, and no Zoho-owned Mail SDK or spec was found on raw.githubusercontent.com, npm or PyPI (the npm/PyPI 'zoho mail' packages found are third-party, e.g. PyPI 'zohomail' by alphaolomi, so not used).",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "zoho-mail-base",
+     "function": "Zoho Mail web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official Zoho Mail page or Zoho-owned SDK; www.zoho.com, www.zoho.eu and help.zoho.com refused by the network policy (curl 000)."
+    },
+    {
+     "child_id": "zoho-mail-sending",
+     "function": "Mail API: send an email",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Zoho Mail API documentation (www.zoho.com/mail/help/api/) blocked; no official spec reachable."
+    },
+    {
+     "child_id": "zoho-mail-attachment-uploading",
+     "function": "Mail API: upload an attachment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Zoho Mail API documentation blocked; no official spec reachable."
+    },
+    {
+     "child_id": "zoho-mail-attachment-downloading",
+     "function": "Mail API: download an attachment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Zoho Mail API documentation blocked; no official spec reachable."
+    }
+   ],
+   "sources_blocked": [
+    "https://www.zoho.com/mail/help/api/",
+    "https://www.zoho.eu/mail/help/api/",
+    "https://help.zoho.com/portal/en/kb/mail"
+   ]
+  },
+  {
+   "service": "Fastmail",
+   "parent_app_id": "fastmail",
+   "separability": "host-only",
+   "not_separable": "Fastmail's API is JMAP: every mail operation (query, read, create a draft, send via EmailSubmission/set) is a method name inside one JSON body POSTed to the session's apiUrl (RFC 8620 section 3.1), so send vs read is split only by inspecting the JSON body, not by path or method. Blob upload and download have their own session URLs (RFC 8620 sections 6.1 and 6.2), but Fastmail's concrete uploadUrl/downloadUrl paths come from the session object at runtime and were not on any reachable Fastmail page.",
+   "web_ui_note": "Whether the Fastmail web app itself talks JMAP to api.fastmail.com is not stated on any reachable page (www.fastmail.com/dev/ is blocked). RFC 8620 and 8621 are authored by N. Jenkins (Fastmail) but are standards, not a statement about Fastmail's web client.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "fastmail-base",
+     "function": "JMAP API: session discovery",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.fastmail.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/.well-known/jmap",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/fastmail/JMAP-Samples/main/javascript/hello-world.js",
+     "citation_page_date": "main branch, read 2026-11-27",
+     "notes": "Fastmail's official sample (fastmail/JMAP-Samples javascript/hello-world.js): 'const hostname = process.env.JMAP_HOSTNAME || \"api.fastmail.com\";', 'const authUrl = `https://${hostname}/.well-known/jmap`;', '\"Content-Type\": \"application/json\"', 'method: \"GET\"'. python3/hello-world.py: 'hostname=os.environ.get(\"JMAP_HOSTNAME\", \"api.fastmail.com\")'. RFC 8620 2.2: '\"https://${hostname}[:${port}]/.well-known/jmap\"'. api.fastmail.com is under fastmail.com in the pack.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/fastmail/JMAP-Samples/main/python3/hello-world.py",
+      "https://www.rfc-editor.org/rfc/rfc8620.txt"
+     ]
+    },
+    {
+     "child_id": "fastmail-jmap-calling",
+     "function": "JMAP API: method calls (read, query, draft, send)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": null,
+      "http_method": "POST",
+      "path_pattern": null,
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/fastmail/JMAP-Samples/main/javascript/hello-world.js",
+     "citation_page_date": "main branch, read 2026-11-27",
+     "notes": "hello-world.js: 'const response = await fetch(apiUrl, { method: \"POST\", ...' with 'methodCalls: [[\"Identity/get\", ...]]' and, to send, '\"EmailSubmission/set\"' in the same POST; 'const apiUrl = session.apiUrl;' (the path comes from the session, so path_pattern is null). RFC 8620 3.1: 'the client makes an authenticated POST request to the API resource, which is defined by the \"apiUrl\" property in the Session object' and 'The request MUST be of type \"application/json\"'. Host is null: the samples take apiUrl from the session fetched from api.fastmail.com, and the apiUrl host itself is not printed in the sample.",
+     "citation_also": [
+      "https://www.rfc-editor.org/rfc/rfc8620.txt"
+     ]
+    },
+    {
+     "child_id": "fastmail-sending",
+     "function": "JMAP: send an email (EmailSubmission/set)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": null,
+      "http_method": "POST",
+      "path_pattern": null,
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://www.rfc-editor.org/rfc/rfc8621.txt",
+     "citation_page_date": "RFC 8621, August 2019",
+     "notes": "RFC 8621 (author N. Jenkins, Fastmail) 7.5 'EmailSubmission/set ... This is a standard \"/set\" method'; carried in the JSON POST of RFC 8620 3.1 ('authenticated POST request to the API resource ... MUST be of type \"application/json\"'). Fastmail's sample python3/hello-world.py: '# EmailSubmission/set, to actually send the mail to ourselves.' A proxy separates sending only by finding \"EmailSubmission/set\" in the request body; path and method equal fastmail-jmap-calling.",
+     "citation_also": [
+      "https://www.rfc-editor.org/rfc/rfc8620.txt",
+      "https://raw.githubusercontent.com/fastmail/JMAP-Samples/main/python3/hello-world.py"
+     ]
+    },
+    {
+     "child_id": "fastmail-uploading",
+     "function": "JMAP: upload a blob (attachment)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": null,
+      "http_method": "POST",
+      "path_pattern": null,
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://www.rfc-editor.org/rfc/rfc8620.txt",
+     "citation_page_date": "RFC 8620, July 2019",
+     "notes": "RFC 8620 6.1: 'There is a single endpoint that handles all file uploads for an account ... The Session object (see Section 2) has an \"uploadUrl\" property in URI Template (level 1) format' and 'To upload a file, the client submits an authenticated POST request to the file upload resource.' Fastmail's concrete uploadUrl host and path were not on a reachable Fastmail page, so host and path are null."
+    },
+    {
+     "child_id": "fastmail-downloading",
+     "function": "JMAP: download a blob (attachment)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": null,
+      "http_method": "GET",
+      "path_pattern": null,
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://www.rfc-editor.org/rfc/rfc8620.txt",
+     "citation_page_date": "RFC 8620, July 2019",
+     "notes": "RFC 8620 6.2: 'The Session object (see Section 2) has a \"downloadUrl\" property ... The URL MUST contain variables called \"accountId\", \"blobId\", \"type\", and \"name\".' and 'To download a file, the client makes an authenticated GET request to the download URL'. Fastmail's concrete downloadUrl was not on a reachable Fastmail page."
+    }
+   ],
+   "sources_blocked": [
+    "https://www.fastmail.com/dev/"
+   ]
+  },
+  {
+   "service": "DocuSign",
+   "parent_app_id": "docusign",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "Production accounts are served from account-specific base URIs (the spec's x-ds examples cite 'https://www.docusign.net/restapi/service_information' and the demo host 'https://demo.docusign.net/restapi/...'); the spec's host field is www.docusign.net. Signing and sending in the browser happen in views whose URLs the API returns; the only such URL in the spec is a demo-environment example. Not counted as web-UI evidence (PRO-550 review): the cited quote does not itself name the production web-client host.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "docusign-esign-base",
+     "function": "eSignature REST API",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "www.docusign.net",
+       "demo.docusign.net"
+      ],
+      "http_method": null,
+      "path_pattern": "/restapi/v2.1/accounts/{accountId}/*",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/HEAD/esignature.rest.swagger-v2.1.json",
+     "citation_page_date": "Swagger info.version v2.1, read 2026-11-27",
+     "notes": "Docusign's official spec: '\"host\": \"www.docusign.net\"', '\"basePath\": \"/restapi\"', '\"schemes\": [\"https\"]'; paths are '/v2.1/accounts/{accountId}/...'. Examples use 'https://demo.docusign.net/restapi/v2.1/accounts/...' (developer sandbox). Both hosts are under docusign.net in the pack."
+    },
+    {
+     "child_id": "docusign-envelope-sending",
+     "function": "Create and send an envelope (with documents)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "www.docusign.net"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/restapi/v2.1/accounts/{accountId}/envelopes",
+      "content_type": "application/json | application/xml",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/HEAD/esignature.rest.swagger-v2.1.json",
+     "citation_page_date": "Swagger info.version v2.1, read 2026-11-27",
+     "notes": "POST /v2.1/accounts/{accountId}/envelopes, operationId Envelopes_PostEnvelopes: 'Creates and sends an envelope or creates a draft envelope.' ... '`status` | Set to `sent` to send'. Body parameter 'envelopeDefinition' (carries the documents); spec-level '\"consumes\": [\"application/json\", \"application/xml\"]'. Draft vs send differs only by the body's status field."
+    },
+    {
+     "child_id": "docusign-draft-sending",
+     "function": "Send, void or modify a draft envelope",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "www.docusign.net"
+      ],
+      "http_method": "PUT",
+      "path_pattern": "/restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/HEAD/esignature.rest.swagger-v2.1.json",
+     "citation_page_date": "Swagger info.version v2.1, read 2026-11-27",
+     "notes": "PUT /v2.1/accounts/{accountId}/envelopes/{envelopeId}, Envelopes_PutEnvelope: 'Send, void, or modify a draft envelope. Purge documents from a completed envelope.'"
+    },
+    {
+     "child_id": "docusign-document-uploading",
+     "function": "Add or replace a document in an envelope",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "www.docusign.net"
+      ],
+      "http_method": "PUT",
+      "path_pattern": "/restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}/documents/{documentId} | /restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}/documents",
+      "content_type": "application/pdf",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/HEAD/esignature.rest.swagger-v2.1.json",
+     "citation_page_date": "Swagger info.version v2.1, read 2026-11-27",
+     "notes": "Documents_PutDocument: 'Adds or replaces a document in an existing envelope.' with '\"consumes\": [\"application/pdf\"]'; Documents_PutDocuments (PUT .../documents): 'Adds one or more documents to an existing envelope.' (content type application/pdf applies to the single-document path)."
+    },
+    {
+     "child_id": "docusign-document-downloading",
+     "function": "Download an envelope document",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "www.docusign.net"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}/documents/{documentId}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/HEAD/esignature.rest.swagger-v2.1.json",
+     "citation_page_date": "Swagger info.version v2.1, read 2026-11-27",
+     "notes": "Documents_GetDocument: 'Retrieves a single document or all documents from an envelope.' with '\"produces\": [\"application/pdf\"]' (response type, so content_type is left null)."
+    },
+    {
+     "child_id": "docusign-signing-view",
+     "function": "Embedded signing: get the recipient view URL",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "www.docusign.net"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/restapi/v2.1/accounts/{accountId}/envelopes/{envelopeId}/views/recipient",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/docusign/OpenAPI-Specifications/HEAD/esignature.rest.swagger-v2.1.json",
+     "citation_page_date": "Swagger info.version v2.1, read 2026-11-27",
+     "notes": "Views_PostEnvelopeRecipientView: 'Returns a URL to the recipient view UI. For signer recipients, returns the embedded signing...'. The signing UI itself loads from the returned URL; the console view example (POST /v2.1/accounts/{accountId}/views/console) returns 'https://demo.docusign.net/Member/StartInSession.aspx?StartConsole=1&...'."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.docusign.com/docs/esign-rest-api/",
+    "https://support.docusign.com/",
+    "https://www.docusign.com/trust/security/esignature"
+   ]
+  },
+  {
+   "service": "Dropbox Sign",
+   "parent_app_id": "dropbox-sign",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The spec links web-app pages on app.hellosign.com (e.g. 'your [API settings](https://app.hellosign.com/home/myAccount#api)'), a host other than the API's api.hellosign.com, but it does not say which hosts the web app calls; so no web_ui_evidence. Note sign.dropbox.com also appears in the spec ('https://sign.dropbox.com/form/contact-sales') and is not in the pack's dropbox-sign app_domains.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "dropbox-sign-api-base",
+     "function": "Dropbox Sign API v3",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hellosign.com"
+      ],
+      "http_method": null,
+      "path_pattern": "/v3/*",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/hellosign/hellosign-openapi/HEAD/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 3.0.0, read 2026-11-27",
+     "notes": "Dropbox Sign's official spec (hellosign/hellosign-openapi): 'title: 'Dropbox Sign API'', servers 'url: 'https://api.hellosign.com/v3''. Host is under hellosign.com in the pack."
+    },
+    {
+     "child_id": "dropbox-sign-request-sending",
+     "function": "Send a signature request (with files)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hellosign.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v3/signature_request/send | /v3/signature_request/send_with_template",
+      "content_type": "multipart/form-data | application/json",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/hellosign/hellosign-openapi/HEAD/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 3.0.0, read 2026-11-27",
+     "notes": "/signature_request/send post, operationId signatureRequestSend: 'Creates and sends a new SignatureRequest with the submitted documents.' requestBody content 'application/json' and 'multipart/form-data'; SignatureRequestSendRequest.files: 'Use `files[]` to indicate the uploaded file(s) to send for signature.' (send_with_template is the template variant)."
+    },
+    {
+     "child_id": "dropbox-sign-file-downloading",
+     "function": "Download signed files",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hellosign.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v3/signature_request/files/{signature_request_id} | /v3/signature_request/files_as_data_uri/{signature_request_id} | /v3/signature_request/files_as_file_url/{signature_request_id}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/hellosign/hellosign-openapi/HEAD/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 3.0.0, read 2026-11-27",
+     "notes": "'/signature_request/files/{signature_request_id}' get, summary 'Download Files', operationId signatureRequestFiles: 'Obtain a copy of the current documents ... Returns a PDF or ZIP file.' (response 'application/pdf' / 'application/zip')."
+    },
+    {
+     "child_id": "dropbox-sign-template-uploading",
+     "function": "Create a template (upload files)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hellosign.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v3/template/create | /v3/template/create_embedded_draft",
+      "content_type": "multipart/form-data | application/json",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/hellosign/hellosign-openapi/HEAD/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 3.0.0, read 2026-11-27",
+     "notes": "/template/create post, summary 'Create Template', requestBody content 'application/json' and 'multipart/form-data'."
+    },
+    {
+     "child_id": "dropbox-sign-fax-sending",
+     "function": "Send a fax",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hellosign.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v3/fax/send",
+      "content_type": "multipart/form-data | application/json",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/hellosign/hellosign-openapi/HEAD/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 3.0.0, read 2026-11-27",
+     "notes": "/fax/send post, operationId faxSend: 'Creates and sends a new Fax with the submitted file(s)', requestBody 'application/json' and 'multipart/form-data'."
+    },
+    {
+     "child_id": "dropbox-sign-embedded-signing",
+     "function": "Embedded signing: get a sign URL",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hellosign.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v3/embedded/sign_url/{signature_id}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/hellosign/hellosign-openapi/HEAD/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 3.0.0, read 2026-11-27",
+     "notes": "'/embedded/sign_url/{signature_id}' get, summary 'Get Embedded Sign URL', operationId embeddedSignUrl: 'Retrieves an embedded object containing a signature url that can be opened in an iFrame.' The signing page itself loads from the returned URL, whose host the spec does not fix."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.hellosign.com/api/reference/",
+    "https://faq.hellosign.com/hc/en-us",
+    "https://sign.dropbox.com/"
+   ]
+  },
+  {
+   "service": "Adobe Acrobat online / Document Cloud",
+   "parent_app_id": "adobe-cloud",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The API rows are Adobe PDF Services (Acrobat Services API), not the Acrobat web app. helpx's endpoint list names dc-api.adobe.io and dc-api-v2.adobe.io (the latter under 'Creative Cloud services accessed from browsers ... Applies to : All') but not pdf-services*.adobe.io, and it points Acrobat to a separate page ('For a list of domains that you must allow for Acrobat, see here', www.adobe.com/devnet-docs/acrobatetk/tools/AdminGuide/endpoints.html) that is blocked. So no statement links the Acrobat web app to the PDF Services hosts.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "adobe-cloud-pdfservices-base",
+     "function": "PDF Services API",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "pdf-services.adobe.io",
+       "pdf-services-ue1.adobe.io",
+       "pdf-services-ew1.adobe.io"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://registry.npmjs.org/@adobe/pdfservices-node-sdk/-/pdfservices-node-sdk-4.1.0.tgz",
+     "citation_page_date": "@adobe/pdfservices-node-sdk 4.1.0 (npm, author Adobe), read 2026-11-27",
+     "notes": "Official SDK lib/internal/constants/PDFServicesUri.js: 'PDFServicesUri.URI = \"https://pdf-services.adobe.io\";', 'PDFServicesUri.US_URI = \"https://pdf-services-ue1.adobe.io\";', 'PDFServicesUri.EU_URI = \"https://pdf-services-ew1.adobe.io\";'. Hosts are under adobe.io in the pack."
+    },
+    {
+     "child_id": "adobe-cloud-pdfservices-uploading",
+     "function": "PDF Services: upload an asset",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "pdf-services.adobe.io",
+       "pdf-services-ue1.adobe.io",
+       "pdf-services-ew1.adobe.io"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/assets",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://registry.npmjs.org/@adobe/pdfservices-node-sdk/-/pdfservices-node-sdk-4.1.0.tgz",
+     "citation_page_date": "@adobe/pdfservices-node-sdk 4.1.0 (npm, author Adobe), read 2026-11-27",
+     "notes": "lib/internal/PDFServiceRequestContext.js: RequestKey.CREATE_PRE_SIGNED_URI 'uriTemplate: pdfServicesUri + \"/assets\", httpMethod: HttpMethod_1.HttpMethod.POST'; HttpClient.js reads 'axiosResponse.data.uploadUri'; PDFServicesHelper.upload then 'await this.uploadAsset(context, getUploadURIResponse.baseResponseDto.uploadURI, buffer, mediaType)' with Content-Type = mediaType. The file bytes go to the returned pre-signed uploadUri (a PUT, HttpMethod.PUT in the same request map), whose host the SDK does not name; the POST /assets on the API host only obtains it."
+    },
+    {
+     "child_id": "adobe-cloud-pdfservices-converting",
+     "function": "PDF Services: run an operation (create, export, OCR, compress ...)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "pdf-services.adobe.io",
+       "pdf-services-ue1.adobe.io",
+       "pdf-services-ew1.adobe.io"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/operation/{createpdf|exportpdf|ocr|compresspdf|...}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://registry.npmjs.org/@adobe/pdfservices-node-sdk/-/pdfservices-node-sdk-4.1.0.tgz",
+     "citation_page_date": "@adobe/pdfservices-node-sdk 4.1.0 (npm, author Adobe), read 2026-11-27",
+     "notes": "PDFServiceRequestContext.js: RequestKey.CREATE_JOB 'uriTemplate: pdfServicesUri + \"/operation/\", httpMethod: HttpMethod_1.HttpMethod.POST'; OperationHeaderInfoEndpointMap.js: 'CREATE_PDF = new OperationHeaderInfoEndpointMap(\"Create PDF Operation\", \"createpdf\")', 'EXPORT_PDF ... \"exportpdf\"', 'OCR ... \"ocr\"', 'COMPRESS_PDF ... \"compresspdf\"'."
+    },
+    {
+     "child_id": "adobe-cloud-pdfservices-downloading",
+     "function": "PDF Services: get a result asset",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "pdf-services.adobe.io",
+       "pdf-services-ue1.adobe.io",
+       "pdf-services-ew1.adobe.io"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/assets/{assetID}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://registry.npmjs.org/@adobe/pdfservices-node-sdk/-/pdfservices-node-sdk-4.1.0.tgz",
+     "citation_page_date": "@adobe/pdfservices-node-sdk 4.1.0 (npm, author Adobe), read 2026-11-27",
+     "notes": "PDFServiceRequestContext.js: RequestKey.GET_ASSET 'uriTemplate: pdfServicesUri + \"/assets/\", httpMethod: HttpMethod_1.HttpMethod.GET'; HttpClient.js: 'new AssetDownloadUriResponse_1.AssetDownloadUriResponse(axiosResponse.data.downloadUri, ...)'. The bytes come from the returned downloadUri, whose host the SDK does not name."
+    },
+    {
+     "child_id": "adobe-cloud-dc-api",
+     "function": "Document Cloud API hosts on Adobe's allowlist",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "dc-api.adobe.io",
+       "dc-api-v2.adobe.io"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://helpx.adobe.com/enterprise/kb/network-endpoints.html",
+     "citation_page_date": "Last updated on Nov 5, 2026",
+     "notes": "helpx 'Allow required domains for Adobe apps and services' lists 'dc-api.adobe.io' and, under 'Creative Cloud services accessed from browsers ... Applies to : All', 'dc-api-v2.adobe.io'. The page does not say which function these hosts serve; under adobe.io in the pack."
+    },
+    {
+     "child_id": "adobe-cloud-acrobat-web",
+     "function": "Acrobat web app (upload, edit, share a PDF)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. The Acrobat endpoint page linked from helpx (www.adobe.com/devnet-docs/acrobatetk/tools/AdminGuide/endpoints.html) and developer.adobe.com are blocked by the network policy."
+    }
+   ],
+   "sources_blocked": [
+    "https://www.adobe.com/devnet-docs/acrobatetk/tools/AdminGuide/endpoints.html",
+    "https://developer.adobe.com/document-services/docs/apis/"
+   ]
+  },
+  {
+   "service": "Evernote",
+   "parent_app_id": "evernote",
+   "separability": "host-only",
+   "not_separable": "The Evernote Cloud API is Thrift over HTTP: every NoteStore call (createNote, updateNote, getNote, getResourceData) is a binary Thrift message POSTed with Content-Type application/x-thrift to the one noteStoreUrl of the user's shard, so upload vs read is in the binary body, not the path or method. Only UserStore (/edam/user) and NoteStore (/shard/{shardId}/edam/note) differ by path.",
+   "web_ui_note": "No reachable official page says whether the Evernote web client uses the Thrift NoteStore (dev.evernote.com and help.evernote.com are blocked). UserStore.thrift also names a separate 'thin client \"web API\"' under webApiUrlPrefix whose servlet paths are 'documented on our developer web site' (blocked).",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "evernote-userstore",
+     "function": "Cloud API: UserStore (auth, user URLs)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "www.evernote.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/edam/user",
+      "content_type": "application/x-thrift",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/Evernote/evernote-sdk-js/master/src/client.js",
+     "citation_page_date": "master branch, read 2026-11-27",
+     "notes": "Official SDK (Evernote/evernote-sdk-js) src/client.js: 'defaultServiceHost = 'www.evernote.com';', getEndpoint 'let url = 'https://' + this.serviceHost;', getUserStore 'url: this.getEndpoint('edam/user')'; src/thrift/transport/binaryHttpTransport.js: 'method: 'POST'', ''Content-Type': 'application/x-thrift''. Host under evernote.com in the pack.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/Evernote/evernote-sdk-js/master/src/thrift/transport/binaryHttpTransport.js"
+     ]
+    },
+    {
+     "child_id": "evernote-notestore",
+     "function": "Cloud API: NoteStore (create, update, read notes and resources)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": null,
+      "http_method": "POST",
+      "path_pattern": "/shard/{shardId}/edam/note",
+      "content_type": "application/x-thrift",
+      "direction": "both",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/Evernote/evernote-thrift/master/src/NoteStore.thrift",
+     "citation_page_date": "evernote-thrift master (IDL version 1.29), read 2026-11-27",
+     "notes": "NoteStore.thrift: '(I.e. the shardId in /shard/shardId/edam/note must be the same as LinkedNotebook.shardId.)'; 'Types.Note createNote(1: string authenticationToken,', 'Types.Note updateNote(...', 'binary getResourceData(...' all on this one service. UserStore.thrift noteStoreUrl: 'the full URL that clients should use to make NoteStore requests to the server shard'. Method and content type from binaryHttpTransport.js ('method: 'POST'', 'application/x-thrift'); host is null: client.js takes the NoteStore URL from 'this.getUserStore().getUserUrls()' ('userUrls.noteStoreUrl') at runtime, so the host is not fixed by the source.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/Evernote/evernote-thrift/master/src/UserStore.thrift",
+      "https://raw.githubusercontent.com/Evernote/evernote-sdk-js/master/src/thrift/transport/binaryHttpTransport.js",
+      "https://raw.githubusercontent.com/Evernote/evernote-sdk-js/master/src/client.js"
+     ]
+    },
+    {
+     "child_id": "evernote-oauth",
+     "function": "OAuth sign-in for third-party apps",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "www.evernote.com"
+      ],
+      "http_method": null,
+      "path_pattern": "/oauth | /OAuth.action",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/Evernote/evernote-sdk-js/master/src/client.js",
+     "citation_page_date": "master branch, read 2026-11-27",
+     "notes": "client.js: 'getAuthorizeUrl(oauthToken) { return `${this.getEndpoint('OAuth.action')}?oauth_token=${oauthToken}`;', 'new OAuth.OAuth(this.getEndpoint('oauth'), this.getEndpoint('oauth'), ...'."
+    },
+    {
+     "child_id": "evernote-base",
+     "function": "Evernote web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official Evernote network or web-client page; dev.evernote.com and help.evernote.com refused by the network policy."
+    }
+   ],
+   "sources_blocked": [
+    "https://dev.evernote.com/doc/",
+    "https://help.evernote.com/"
+   ]
+  },
+  {
+   "service": "Replit",
+   "parent_app_id": "replit",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "replit-base",
+     "function": "Replit web IDE and hosting",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. docs.replit.com and replit.com return curl 000 (agent proxy: no rule) from this session; no vendor host or firewall list could be read."
+    },
+    {
+     "child_id": "replit-uploading",
+     "function": "Upload files into a Repl",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official page describes the upload request; docs.replit.com blocked."
+    },
+    {
+     "child_id": "replit-prompting",
+     "function": "Replit Agent / AI prompt",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official page describes the Agent request host or path; docs.replit.com blocked."
+    },
+    {
+     "child_id": "replit-deploying",
+     "function": "Publish a deployment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official page describes the deployment request; docs.replit.com blocked. The official replit/replit-py README (raw.githubusercontent.com) covers only the in-Repl Replit DB client and Flask helpers, with no network endpoint for these functions."
+    }
+   ],
+   "sources_blocked": [
+    "https://docs.replit.com/",
+    "https://replit.com/",
+    "https://docs.replit.com/teams/networking",
+    "https://blog.replit.com/"
+   ]
+  },
+  {
+   "service": "npm",
+   "parent_app_id": "npm",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The rows are the registry API used by the npm CLI; no official source read here states which hosts or paths the www.npmjs.com website calls.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "npm-registry-base",
+     "function": "Public registry host (CLI default)",
+     "verified": true,
+     "surface": "client",
+     "signals": {
+      "host_sni": [
+       "registry.npmjs.org"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.npmjs.com/cli/v11/using-npm/registry",
+     "citation_page_date": "CLI v11 docs, 'Last edited by reggi on February 11, 2026'",
+     "notes": "npm Docs 'registry': 'npm is configured to use the npm public registry at https://registry.npmjs.org by default'. npm-registry-fetch lib/default-opts.js: registry: 'https://registry.npmjs.org/'. registry.npmjs.org is under npmjs.org in the pack.",
+     "citation_also": [
+      "https://registry.npmjs.org/npm-registry-fetch/-/npm-registry-fetch-20.0.2.tgz"
+     ]
+    },
+    {
+     "child_id": "npm-publishing",
+     "function": "Publish a package version (tarball inside a JSON document)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "registry.npmjs.org"
+      ],
+      "http_method": "PUT",
+      "path_pattern": "/{package}",
+      "content_type": "application/json",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://registry.npmjs.org/libnpmpublish/-/libnpmpublish-12.0.1.tgz",
+     "citation_page_date": "libnpmpublish 12.0.1 (npm org, workspaces/libnpmpublish of npm/cli)",
+     "notes": "libnpmpublish lib/publish.js: npmFetch(opts.stage ? stageRoute : spec.escapedName, { ... method: opts.stage ? 'POST' : 'PUT', body: metadata }); root._attachments[tarballName] = { content_type: 'application/octet-stream', data: tarballData.toString('base64') ... }. npm-registry-fetch lib/index.js sets headers['content-type'] = ... 'application/json' for an object body. Host is the default registry (npm-registry-fetch default-opts.js). A staged publish uses POST /-/stage/package/{package} instead (stageRoute = `/-/stage/package/${spec.escapedName}`).",
+     "citation_also": [
+      "https://registry.npmjs.org/npm-registry-fetch/-/npm-registry-fetch-20.0.2.tgz"
+     ]
+    },
+    {
+     "child_id": "npm-downloading",
+     "function": "Download a package tarball",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "registry.npmjs.org"
+      ],
+      "http_method": null,
+      "path_pattern": "/{package}/-/{package}-{version}.tgz",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/npm/registry/HEAD/docs/REGISTRY-API.md",
+     "citation_page_date": "npm/registry HEAD, read 2026-11-27",
+     "notes": "REGISTRY-API.md, Version object: 'dist: and object containing a shasum and tarball url, usually in the form of https://registry.npmjs.org/<name>/-/<name>-<version>.tgz'. The doc gives the URL form only, so http_method is left null."
+    },
+    {
+     "child_id": "npm-reading",
+     "function": "Read package metadata (packument) and search",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "registry.npmjs.org"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/{package} | /{package}/{version} | /-/v1/search",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/npm/registry/HEAD/docs/REGISTRY-API.md",
+     "citation_page_date": "npm/registry HEAD, read 2026-11-27",
+     "notes": "REGISTRY-API.md Endpoints: 'GET /{package}' ('responds with the package metadata document, sometimes informally called a \"packument\"'), 'GET /{package}/{version}', 'GET /-/v1/search'. Host per the Version object's tarball URL form https://registry.npmjs.org/..."
+    },
+    {
+     "child_id": "npm-unpublishing",
+     "function": "Unpublish a package or version",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "registry.npmjs.org"
+      ],
+      "http_method": "DELETE",
+      "path_pattern": "/{package}/-rev/{rev} | /{package}/-/{package}-{version}.tgz/-rev/{rev}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://registry.npmjs.org/libnpmpublish/-/libnpmpublish-12.0.1.tgz",
+     "citation_page_date": "libnpmpublish 12.0.1",
+     "notes": "libnpmpublish lib/unpublish.js: npmFetch(`${pkgUri}/-rev/${pkg._rev}`, { method: 'DELETE' }) for the whole package; for one version it PUTs the trimmed document to `${pkgUri}/-rev/${pkg._rev}` (method: 'PUT') then npmFetch(`${tarballUrl}/-rev/${_rev}`, { method: 'DELETE' }). pkgUri = spec.escapedName.",
+     "citation_also": [
+      "https://registry.npmjs.org/npm-registry-fetch/-/npm-registry-fetch-20.0.2.tgz"
+     ]
+    }
+   ]
+  },
+  {
+   "service": "PyPI",
+   "parent_app_id": "pypi",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "No official source read here states which paths the pypi.org website calls; the JSON and Index APIs share the host pypi.org with the website but the docs do not say the web UI uses them.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "pypi-uploading",
+     "function": "Upload a distribution (twine / legacy upload API)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "upload.pypi.org"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/legacy/",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.pypi.org/api/upload/",
+     "citation_page_date": "PyPI docs, read 2026-11-27",
+     "notes": "Upload API: 'The API endpoint served at https://upload.pypi.org/legacy/ is Warehouse's emulation of the legacy PyPI upload API'; 'Route: POST upload.pypi.org/legacy/ The upload API can be used to upload artifacts by sending a multipart/form-data POST request with the following fields: :action set to file_upload ...'. upload.pypi.org is under pypi.org in the pack."
+    },
+    {
+     "child_id": "pypi-reading",
+     "function": "JSON API: project and release metadata",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "pypi.org"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/pypi/{project}/json | /pypi/{project}/{version}/json",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.pypi.org/api/json/",
+     "citation_page_date": "PyPI docs, read 2026-11-27",
+     "notes": "JSON API: 'Route: GET /pypi/<project>/json'; 'Route: GET /pypi/<project>/<version>/json'; example request 'Host: pypi.org Accept: application/json'."
+    },
+    {
+     "child_id": "pypi-index-browsing",
+     "function": "Simple index (pip resolution)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "pypi.org"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/simple/ | /simple/{project}/",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.pypi.org/api/index-api/",
+     "citation_page_date": "PyPI docs, read 2026-11-27",
+     "notes": "Index API: 'Route: GET /simple/ Returns all of the projects that have been registered'; example request 'Host: pypi.org Accept: application/vnd...'. Same page: 'Route: GET /simple/<project>/ Get all of the distribution download URLs for the project's available releases (wheels and source distributions)'."
+    },
+    {
+     "child_id": "pypi-downloading",
+     "function": "Download a distribution file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "files.pythonhosted.org"
+      ],
+      "http_method": null,
+      "path_pattern": "/packages/{hash_prefix}/{hash}/{filename}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.pypi.org/api/json/",
+     "citation_page_date": "PyPI docs, read 2026-11-27",
+     "notes": "JSON API example response: \"url\" : \"https://files.pythonhosted.org/packages/30/52/547eb3719d0e872bdd6fe3ab60cef92596f95262e925e1943f68f840df88/sampleproject-1.2.0-py2...\". files.pythonhosted.org is under pythonhosted.org in the pack."
+    }
+   ]
+  },
+  {
+   "service": "Docker Hub",
+   "parent_app_id": "docker-hub",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "Docker's quickstart sends users to the web app at https://hub.docker.com, and the Docker Hub API spec's server is https://hub.docker.com, so the web app and the Hub API share a host. Docker does not state that the web app calls the documented /v2/ paths. The allowlist below is for Docker Desktop, not the browser. Not counted as web-UI evidence (PRO-550 review): the cited quote does not itself name the production web-client host.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "docker-hub-base",
+     "function": "Docker Hub and Docker Desktop hosts (firewall allowlist)",
+     "verified": true,
+     "surface": "client",
+     "signals": {
+      "host_sni": [
+       "hub.docker.com",
+       "registry-1.docker.io",
+       "production.cloudfront.docker.com",
+       "auth.docker.io",
+       "login.docker.com",
+       "auth.docker.com",
+       "api.docker.com",
+       "dhi.io"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.docker.com/desktop/setup/allow-list/",
+     "citation_page_date": "dateModified 2026-11-09",
+     "notes": "Docker Desktop allowlist table: 'https://auth.docker.io | Authentication', 'https://login.docker.com | Authentication', 'https://auth.docker.com | Authentication', 'https://hub.docker.com | Docker Hub', 'https://registry-1.docker.io | Docker Pull/Push', 'https://production.cloudfront.docker.com | Docker Pull/Push', 'https://api.docker.com | New API', 'https://dhi.io | Docker Hardened Images'. The page also lists cdn.auth0.com (Authentication) and Bugsnag and S3 hosts, which are not under the pack's docker-hub domains.",
+     "citation_also": [
+      "https://docs.docker.com/docker-hub/quickstart/"
+     ]
+    },
+    {
+     "child_id": "docker-hub-pushing",
+     "function": "Registry API: push an image (blob upload and manifest put)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "registry-1.docker.io"
+      ],
+      "http_method": "POST | PATCH | PUT",
+      "path_pattern": "/v2/{name}/blobs/uploads/ | /v2/{name}/blobs/uploads/{uuid} | /v2/{name}/manifests/{reference}",
+      "content_type": "application/octet-stream | application/vnd.docker.distribution.manifest.v2+json",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.docker.com/reference/api/registry/latest.yaml",
+     "citation_page_date": "spec info.version 2",
+     "notes": "Docker's 'Supported registry API for Docker Hub' (servers url https://registry-1.docker.io): POST /v2/{name}/blobs/uploads/ InitiateBlobUpload; PATCH /v2/{name}/blobs/uploads/{uuid} UploadBlobChunk requestBody 'application/octet-stream'; PUT /v2/{name}/blobs/uploads/{uuid} CompleteBlobUpload 'application/octet-stream'; PUT /v2/{name}/manifests/{reference} PutImageManifest 'application/vnd.docker.distribution.manifest.v2+json'."
+    },
+    {
+     "child_id": "docker-hub-pulling",
+     "function": "Registry API: pull an image (manifest and blobs)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "registry-1.docker.io"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v2/{name}/manifests/{reference} | /v2/{name}/blobs/{digest}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.docker.com/reference/api/registry/latest.yaml",
+     "citation_page_date": "spec info.version 2",
+     "notes": "GET /v2/{name}/manifests/{reference} GetImageManifest; GET /v2/{name}/blobs/{digest} GetBlob: 'This endpoint may return a 307 Temporary Redirect to a CDN or storage location. Clients must follow the redirect to obtain the actual blob content.' The CDN host the bytes then come from is per the allowlist 'https://production.cloudfront.docker.com | Docker Pull/Push' (docker-hub-base)."
+    },
+    {
+     "child_id": "docker-hub-registry-auth",
+     "function": "Registry token service",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "auth.docker.io"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/token",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.docker.com/reference/api/registry/auth/",
+     "citation_page_date": "dateModified 2026-09-17",
+     "notes": "Registry auth: 'the client will need to make a GET request to the URL https://auth.docker.io/token using the service and scope values from the WWW-Authenticate header'; example 'https://auth.docker.io/token?service=registry.docker.io&scope=repository:samalba/my-app:pull,push'."
+    },
+    {
+     "child_id": "docker-hub-api-login",
+     "function": "Docker Hub API: sign in and create access tokens",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "hub.docker.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v2/users/login | /v2/users/2fa-login | /v2/auth/token",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.docker.com/reference/api/hub/latest.yaml",
+     "citation_page_date": "spec info.version 2-beta",
+     "notes": "Docker HUB API spec (servers url https://hub.docker.com): POST /v2/users/login PostUsersLogin; POST /v2/users/2fa-login PostUsers2FALogin; POST /v2/auth/token AuthCreateAccessToken."
+    },
+    {
+     "child_id": "docker-hub-api-repositories",
+     "function": "Docker Hub API: read repositories and tags",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "hub.docker.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v2/namespaces/{namespace}/repositories/{repository} | /v2/namespaces/{namespace}/repositories/{repository}/tags",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.docker.com/reference/api/hub/latest.yaml",
+     "citation_page_date": "spec info.version 2-beta",
+     "notes": "GET /v2/namespaces/{namespace}/repositories/{repository} GetRepository; GET /v2/namespaces/{namespace}/repositories/{repository}/tags ListRepositoryTags."
+    }
+   ]
+  },
+  {
+   "service": "Netlify",
+   "parent_app_id": "netlify",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "netlify-base",
+     "function": "Netlify web app (app.netlify.com) and site hosting",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. docs.netlify.com returns curl 000 (agent proxy: no rule); no official host list was read. The swagger names app.netlify.com only as the OAuth authorizationUrl ('https://app.netlify.com/authorize'), not as the web app's API host."
+    },
+    {
+     "child_id": "netlify-api-deploying",
+     "function": "API: create a deploy (file digest manifest)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.netlify.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/v1/sites/{site_id}/deploys",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/netlify/open-api/HEAD/swagger.yml",
+     "citation_page_date": "swagger info.version 2.63.1",
+     "notes": "netlify/open-api swagger.yml: host 'api.netlify.com', basePath '/api/v1', consumes ['application/json']; POST /sites/{site_id}/deploys createSiteDeploy with body parameter 'deploy'."
+    },
+    {
+     "child_id": "netlify-api-uploading",
+     "function": "API: upload deploy files and functions",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.netlify.com"
+      ],
+      "http_method": "PUT",
+      "path_pattern": "/api/v1/deploys/{deploy_id}/files/{path} | /api/v1/deploys/{deploy_id}/functions/{name} | /api/v1/deploys/{deploy_id}/edge_functions/{code_sha} | /api/v1/deploys/{deploy_id}/server/{code_sha}",
+      "content_type": "application/octet-stream",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/netlify/open-api/HEAD/swagger.yml",
+     "citation_page_date": "swagger info.version 2.63.1",
+     "notes": "PUT /deploys/{deploy_id}/files/{path} uploadDeployFile consumes ['application/octet-stream'] (body 'file_body'); PUT /deploys/{deploy_id}/functions/{name} uploadDeployFunction, PUT /deploys/{deploy_id}/edge_functions/{code_sha} uploadDeployEdgeFunction and PUT /deploys/{deploy_id}/server/{code_sha} uploadDeployServer, all consumes ['application/octet-stream']; basePath /api/v1."
+    },
+    {
+     "child_id": "netlify-api-building",
+     "function": "API: trigger a build (optional zipped source)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.netlify.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/v1/sites/{site_id}/builds",
+      "content_type": "multipart/form-data",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/netlify/open-api/HEAD/swagger.yml",
+     "citation_page_date": "swagger info.version 2.63.1",
+     "notes": "POST /sites/{site_id}/builds createSiteBuild consumes ['multipart/form-data']."
+    },
+    {
+     "child_id": "netlify-api-reading",
+     "function": "API: read deployed site files",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.netlify.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/api/v1/sites/{site_id}/files | /api/v1/sites/{site_id}/files/{file_path}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/netlify/open-api/HEAD/swagger.yml",
+     "citation_page_date": "swagger info.version 2.63.1",
+     "notes": "GET /sites/{site_id}/files listSiteFiles; GET /sites/{site_id}/files/{file_path} getSiteFileByPathName."
+    }
+   ],
+   "sources_blocked": [
+    "https://docs.netlify.com/"
+   ]
+  },
+  {
+   "service": "Vercel",
+   "parent_app_id": "vercel",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "vercel-base",
+     "function": "Vercel dashboard (web app)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. vercel.com (docs and dashboard) returns curl 000 (agent proxy: no rule); no official host list was read."
+    },
+    {
+     "child_id": "vercel-api-deploying",
+     "function": "API: create a deployment",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.vercel.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v13/deployments",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/funcs/deploymentsCreateDeployment.ts",
+     "citation_page_date": "@vercel/sdk HEAD, sdkVersion 1.28.69",
+     "notes": "Vercel's official SDK (vercel/sdk, npm @vercel/sdk 1.28.69): deploymentsCreateDeployment.ts pathToFunc(\"/v13/deployments\"), \"Content-Type\": \"application/json\", method: \"POST\"; src/lib/config.ts ServerList \"https://api.vercel.com\" ('Production API'). api.vercel.com is under vercel.com in the pack.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/lib/config.ts"
+     ]
+    },
+    {
+     "child_id": "vercel-api-uploading",
+     "function": "API: upload a deployment file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.vercel.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v2/files",
+      "content_type": "application/octet-stream",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/funcs/deploymentsUploadFile.ts",
+     "citation_page_date": "@vercel/sdk HEAD, sdkVersion 1.28.69",
+     "notes": "deploymentsUploadFile.ts: pathToFunc(\"/v2/files\"), \"Content-Type\": \"application/octet-stream\", method: \"POST\"; server per src/lib/config.ts.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/lib/config.ts"
+     ]
+    },
+    {
+     "child_id": "vercel-api-downloading",
+     "function": "API: read a deployment file's contents",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.vercel.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v8/deployments/{id}/files/{fileId}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/funcs/deploymentsGetDeploymentFileContents.ts",
+     "citation_page_date": "@vercel/sdk HEAD, sdkVersion 1.28.69",
+     "notes": "deploymentsGetDeploymentFileContents.ts: encodePath(\"/v8/deployments/{id}/files/{fileId}\"), method: \"GET\".",
+     "citation_also": [
+      "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/lib/config.ts"
+     ]
+    },
+    {
+     "child_id": "vercel-api-caching",
+     "function": "API: Remote Cache artifact upload and download",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.vercel.com"
+      ],
+      "http_method": "PUT | GET",
+      "path_pattern": "/v8/artifacts/{hash}",
+      "content_type": "application/octet-stream",
+      "direction": "both",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/funcs/artifactsUploadArtifact.ts",
+     "citation_page_date": "@vercel/sdk HEAD, sdkVersion 1.28.69",
+     "notes": "artifactsUploadArtifact.ts: encodePath(\"/v8/artifacts/{hash}\"), \"Content-Type\": \"application/octet-stream\", method: \"PUT\" (upload); artifactsDownloadArtifact.ts: encodePath(\"/v8/artifacts/{hash}\"), method: \"GET\" (download). The content type applies to the PUT.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/funcs/artifactsDownloadArtifact.ts",
+      "https://raw.githubusercontent.com/vercel/sdk/HEAD/src/lib/config.ts"
+     ]
+    }
+   ],
+   "sources_blocked": [
+    "https://vercel.com/docs/rest-api"
+   ]
+  },
+  {
+   "service": "Hugging Face",
+   "parent_app_id": "hugging-face",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "No official page read states which hosts or paths the huggingface.co browser UI calls for upload or download; huggingface.js is documented as a JS client of the same endpoints, not as the web UI.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "hugging-face-base",
+     "function": "Hub website and API host",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "huggingface.co"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://huggingface.co/.well-known/openapi.json",
+     "citation_page_date": "Hub API OpenAPI info.version 0.0.1, accessed 2026-11-27 (no page date shown)",
+     "notes": "Official Hub OpenAPI (linked from https://huggingface.co/docs/hub/api): servers [{'url': 'https://huggingface.co', 'description': 'Hub'}]; info.description: 'The base URL for those endpoints below is `https://huggingface.co`.' huggingface.co is in the pack's app_domains for hugging-face.",
+     "citation_also": [
+      "https://huggingface.co/docs/hub/api"
+     ]
+    },
+    {
+     "child_id": "hugging-face-commit-uploading",
+     "function": "Hub API: create a commit (add, change or delete repo files)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "huggingface.co"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/models/{namespace}/{repo}/commit/{rev} | /api/datasets/{namespace}/{repo}/commit/{rev} | /api/spaces/{namespace}/{repo}/commit/{rev}",
+      "content_type": "application/x-ndjson | application/json",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://huggingface.co/.well-known/openapi.json",
+     "citation_page_date": "Hub API OpenAPI info.version 0.0.1, accessed 2026-11-27 (no page date shown)",
+     "notes": "OpenAPI paths 'POST /api/models/{namespace}/{repo}/commit/{rev}' (and the datasets and spaces paths), summary 'Commit'. Description: 'For legacy reason, we support both `application/json` and `application/x-ndjson` but we recommend using `application/x-ndjson` to create a commit.' Payload lines carry {\"key\": \"file\", \"value\": {\"path\", \"content\", \"encoding\": \"utf-8 | base64\"}} so small file content rides inline; large files are 'lfsFile' entries pointing at content uploaded to Xet (see hugging-face-xet-uploading). Companion 'POST /api/{models|datasets|spaces}/{namespace}/{repo}/preupload/{rev}' ('Check upload method', application/json) precedes it."
+    },
+    {
+     "child_id": "hugging-face-xet-cas",
+     "function": "Xet content-addressed storage (CAS) service host",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "cas-server.xethub.hf.co"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://huggingface.co/docs/xet/auth",
+     "citation_page_date": "Xet Protocol Specification Version 1.1.0, accessed 2026-11-27 (no page date shown)",
+     "notes": "Xet auth page: token endpoint 'https://huggingface.co/api/{repo_type}s/{repo_id}/xet-{token_type}-token/{revision}' returns 'casUrl is the API service endpoint URL'; its 'Example Response Object' gives \"casUrl\": \"https://cas-server.xethub.hf.co\". The host is returned per token, so this is the documented example, not a guaranteed fixed host. hf.co is in the pack's app_domains, so cas-server.xethub.hf.co falls under hugging-face if subdomains match."
+    },
+    {
+     "child_id": "hugging-face-xet-uploading",
+     "function": "Xet storage: upload xorbs and shards (large-file bytes)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": null,
+      "http_method": "POST",
+      "path_pattern": "/v1/xorbs/default/{hash} | /v1/shards | /v2/shards",
+      "content_type": "application/octet-stream",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://huggingface.co/docs/xet/api",
+     "citation_page_date": "Xet Protocol Specification Version 1.1.0, accessed 2026-11-27 (no page date shown)",
+     "notes": "CAS API page (served on the casUrl host, see hugging-face-xet-cas): '### 3. Upload Xorb ... Path: `/v1/xorbs/{prefix}/{hash}` ... Method: `POST` ... The only acceptable prefix for the Xorb upload API is `default`. ... Body: Serialized Xorb bytes (`application/octet-stream`).' '### 4. Upload Shard ... Path: `/v1/shards` ... Method: `POST` ... Body: Serialized Shard data as bytes (`application/octet-stream`)'; '/v2/shards' is the streaming variant. host_sni left null here because this page names no host ('obtain the API base URL, follow the instructions in Authentication'). With upload grants 'Xorb data is uploaded to object storage hosts such as `s3.us-east-1.amazonaws.com` and `s3.eu-west-3.amazonaws.com` rather than to the CAS server' (not Hugging Face hosts).",
+     "citation_also": [
+      "https://huggingface.co/docs/xet/upload-protocol"
+     ]
+    },
+    {
+     "child_id": "hugging-face-downloading",
+     "function": "Hub: download (resolve) a repository file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "huggingface.co"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/{namespace}/{repo}/resolve/{rev}/{path} | /datasets/{namespace}/{repo}/resolve/{rev}/{path} | /spaces/{namespace}/{repo}/resolve/{rev}/{path}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://huggingface.co/.well-known/openapi.json",
+     "citation_page_date": "Hub API OpenAPI info.version 0.0.1, accessed 2026-11-27 (no page date shown)",
+     "notes": "OpenAPI 'GET /{namespace}/{repo}/resolve/{rev}/{path}' (and datasets/spaces variants), summary 'Resolve a file', description 'This endpoint requires to follow redirection'. The JSON variant returns 'reconstructionUrl' ('The XET reconstruction URL for the file'), so the bytes may come from the Xet CAS host via redirect (CAS 'GET /v2/reconstructions/{file_id}' on the Xet API page); the redirect target host is not fixed on the page."
+    },
+    {
+     "child_id": "hugging-face-inference-prompting",
+     "function": "Inference Providers router: chat completion prompt",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "router.huggingface.co"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/chat/completions",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://huggingface.co/docs/inference-providers/index",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "Raw REST example: 'curl https://router.huggingface.co/v1/chat/completions \\ -H \"Authorization: Bearer $HF_TOKEN\" \\ -H 'Content-Type: application/json' \\ -d '{\"messages\": [...]'. OpenAI-compatible clients use base_url=\"https://router.huggingface.co/v1\". router.huggingface.co is under huggingface.co in the pack's app_domains."
+    }
+   ]
+  },
+  {
+   "service": "Microsoft Power BI",
+   "parent_app_id": "power-bi",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "Quote joins the allowlist table cells with ' | '. The allowlist names api.powerbi.com as a required 'Backend APIs' endpoint of the Power BI service, the same host as the REST API; paths used by the browser are not given.",
+   "web_ui_evidence": {
+    "uses_documented_api": "partial",
+    "citation_url": "https://learn.microsoft.com/en-us/power-bi/admin/power-bi-allow-list-urls",
+    "quote": "The Power BI service requires internet connectivity. The endpoints listed in the following tables should be reachable for customers who use the Power BI service. ... Required: Backend APIs | api.powerbi.com | TCP 443 ... Required: Portal | *.powerbi.com | TCP 443"
+   },
+   "children": [
+    {
+     "child_id": "power-bi-base",
+     "function": "Power BI service: portal and backend hosts",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "*.powerbi.com",
+       "api.powerbi.com",
+       "*.analysis.windows.net",
+       "*.pbidedicated.windows.net"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": "TCP 443, HTTP/2"
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/power-bi/admin/power-bi-allow-list-urls",
+     "citation_page_date": "Last updated 2026-02-13",
+     "notes": "Allowlist 'General site usage' table: 'Required: Portal *.powerbi.com TCP 443'; 'Required: Backend APIs api.powerbi.com'; 'Required: Backend APIs *.analysis.windows.net'; 'Required: Backend APIs *.pbidedicated.windows.net'. Also 'Required: Azure Blob Storage *.blob.core.windows.net' (shared Azure host, not Power BI specific, so left out of host_sni). 'All endpoints in the Power BI service support HTTP/2.' Only powerbi.com is in the pack's app_domains for power-bi; *.analysis.windows.net and *.pbidedicated.windows.net are not."
+    },
+    {
+     "child_id": "power-bi-api-importing",
+     "function": "REST API: import (upload) a .pbix, .rdl, .xlsx or model file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.powerbi.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1.0/myorg/imports",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/rest/api/power-bi/imports/post-import",
+     "citation_page_date": "REST reference ms.date 2018-03-14 (page metadata), accessed 2026-11-27",
+     "notes": "'POST https://api.powerbi.com/v1.0/myorg/imports?datasetDisplayName={datasetDisplayName}'; 'To import a file, specify the content type multipart/form-data in the request headers and encode the file as form data in the request body.' Workspace (groups/{groupId}) variants exist as separate 'In Group' operations not read here, so they are not in path_pattern."
+    },
+    {
+     "child_id": "power-bi-api-large-import-location",
+     "function": "REST API: create a temporary blob upload location for 1-10 GB .pbix imports",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.powerbi.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1.0/myorg/imports/createTemporaryUploadLocation",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/rest/api/power-bi/imports/create-temporary-upload-location",
+     "citation_page_date": "REST reference ms.date 2018-03-14 (page metadata), accessed 2026-11-27",
+     "notes": "'Creates a temporary blob storage upload location for importing large Power BI .pbix files that are between 1 GB and 10 GB in size.' 'POST https://api.powerbi.com/v1.0/myorg/imports/createTemporaryUploadLocation'. Response: 'The shared access signature URL for the temporary blob storage'; the bytes then go to Azure Blob Storage (*.blob.core.windows.net per the allowlist), not to a Power BI host."
+    },
+    {
+     "child_id": "power-bi-api-exporting",
+     "function": "REST API: export a report to a file (PDF, PPTX, PNG and others)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.powerbi.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1.0/myorg/reports/{reportId}/ExportTo",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/rest/api/power-bi/reports/export-to-file",
+     "citation_page_date": "REST reference ms.date 2018-03-14 (page metadata), accessed 2026-11-27",
+     "notes": "'Exports the specified report from My workspace to the requested file format.' 'POST https://api.powerbi.com/v1.0/myorg/reports/{reportId}/ExportTo'. 'The API is asynchronous.' The file itself is fetched with 'GET https://api.powerbi.com/v1.0/myorg/reports/{reportId}/exports/{exportId}/file' (Get File Of Export To File, response media types 'application/*', 'image/*', 'text/csv', 'text/xml', 'multipart/related').",
+     "citation_also": [
+      "https://learn.microsoft.com/en-us/rest/api/power-bi/reports/get-file-of-export-to-file"
+     ]
+    },
+    {
+     "child_id": "power-bi-api-pbix-downloading",
+     "function": "REST API: download a report as .pbix",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.powerbi.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1.0/myorg/reports/{reportId}/Export",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/rest/api/power-bi/reports/export-report",
+     "citation_page_date": "REST reference ms.date 2018-03-14 (page metadata), accessed 2026-11-27",
+     "notes": "'GET https://api.powerbi.com/v1.0/myorg/reports/{reportId}/Export'; response 'Media Types: \"application/zip\", \"application/octet-stream\"'. 'Large files are downloaded to a temporary blob.'"
+    }
+   ]
+  },
+  {
+   "service": "xAI Grok",
+   "parent_app_id": "xai-grok",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "No official page read says which hosts the grok.com browser app calls. The Grok Build CLI (a client, not the browser) uses cli-chat-proxy.grok.com for inference and needs api.x.ai 'Only ... when using api_key auth instead of the inference proxy' (https://docs.x.ai/build/enterprise), so the first-party client does not use the public API host by default.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "xai-grok-base",
+     "function": "grok.com consumer app and sign-in hosts",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "grok.com",
+       "*.grok.com",
+       "*.grokusercontent.com",
+       "auth.grok.com",
+       "accounts.x.ai",
+       "auth.x.ai"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.x.ai/x-subscription/sign-in-domains",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "Sign-in domains page: '`*.grok.com` (covers `auth.grok.com` and `grok.com`)', '`*.grokusercontent.com`', '`*.x.ai` (covers `accounts.x.ai`, `auth.x.ai`, and related auth hosts)'; minimum hosts include 'auth.grok.com', 'auth.grokusercontent.com', 'grok.com'. The page is written for the Cursor sign-in move to xAI accounts, so it lists sign-in hosts, not every grok.com service host. grok.com and x.ai are in the pack's app_domains; grokusercontent.com is not."
+    },
+    {
+     "child_id": "xai-grok-api-prompting",
+     "function": "xAI API: chat completion or Responses prompt",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.x.ai"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/chat/completions | /v1/responses",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.x.ai/openapi.json",
+     "citation_page_date": "OpenAPI info.version 1.0.0, accessed 2026-11-27 (no page date shown)",
+     "notes": "Official OpenAPI (listed in https://docs.x.ai/llms.txt as 'OpenAPI schema for the xAI REST API (https://api.x.ai)'): 'POST /v1/chat/completions' requestBody 'application/json' (handle_generic_completion_request); 'POST /v1/responses' requestBody 'application/json' (handle_generic_model_request). The Responses page also documents a WebSocket form 'wss://api.x.ai/v1/responses'. api.x.ai is under x.ai in the pack.",
+     "citation_also": [
+      "https://docs.x.ai/developers/rest-api-reference/inference/responses"
+     ]
+    },
+    {
+     "child_id": "xai-grok-api-uploading",
+     "function": "xAI API: upload a file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.x.ai"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/files",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.x.ai/developers/rest-api-reference/files/upload",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'## POST /v1/files Upload a file to xAI's storage. ... Maximum file size: 50 MB.' Field 'file (string, required) — ... the multipart `Content-Disposition: filename=` header is recorded'. OpenAPI: 'POST /v1/files' requestBody 'multipart/form-data' (handle_upload_file_request). Related: 'POST /v1/files/{file_id}/public-url' creates a public link to an uploaded file.",
+     "citation_also": [
+      "https://docs.x.ai/openapi.json"
+     ]
+    },
+    {
+     "child_id": "xai-grok-api-downloading",
+     "function": "xAI API: download file content",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.x.ai"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/files/{file_id}/content",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.x.ai/developers/rest-api-reference/files/download",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'## GET /v1/files/{file_id}/content Download the contents of a file as a stream of raw bytes. The response `Content-Type` is `application/octet-stream`.' (response type, so content_type left null as it describes the request)."
+    },
+    {
+     "child_id": "xai-grok-api-realtime-voice",
+     "function": "xAI API: realtime voice WebSocket",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.x.ai"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/realtime",
+      "content_type": null,
+      "direction": null,
+      "websocket": true,
+      "transport": null
+     },
+     "citation_url": "https://docs.x.ai/developers/rest-api-reference/inference/voice",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'## Realtime WebSocket endpoint: `wss://api.x.ai/v1/realtime` Real-time voice conversations with Grok models via WebSocket. The connection begins with an HTTP GET that is upgraded to WebSocket (status 101).' Ephemeral tokens come from 'POST /v1/realtime/client_secrets'."
+    },
+    {
+     "child_id": "xai-grok-build-cli",
+     "function": "Grok Build CLI: inference proxy and session sync",
+     "verified": true,
+     "surface": "client",
+     "signals": {
+      "host_sni": [
+       "cli-chat-proxy.grok.com",
+       "code.grok.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": "HTTPS port 443, TLS 1.2 or 1.3"
+     },
+     "citation_url": "https://docs.x.ai/build/enterprise",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "Enterprise Deployments, Network requirements: 'All connections use HTTPS (port 443).' Required: '`cli-chat-proxy.grok.com` | Inference proxy, settings'. Additional: '`code.grok.com` | Remote session sync, sharing, WebSocket relay'; '`api.x.ai` | xAI API (direct API-key path) | Only needed when using `api_key` auth instead of the inference proxy'. 'All connections use TLS 1.2 or TLS 1.3'. Both hosts are under grok.com in the pack."
+    }
+   ]
+  },
+  {
+   "service": "GitHub Copilot",
+   "parent_app_id": "github-copilot",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "Copilot Chat on GitHub (the browser) is listed among the features that use the plan-specific *.githubcopilot.com endpoints, the same hosts the allowlist calls 'API service for Copilot suggestions'; the page entry for the web UI itself is github.com/copilot/*, a github.com host. No paths are given for the web client.",
+   "web_ui_evidence": {
+    "uses_documented_api": "partial",
+    "citation_url": "https://docs.github.com/en/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-access/manage-network-access",
+    "quote": "Configuring Copilot subscription-based network routing will affect the following Copilot features: [...] Copilot Chat on GitHub [...] Copilot subscription-based network routing is enabled for all users. Requests use a plan-specific endpoint."
+   },
+   "children": [
+    {
+     "child_id": "github-copilot-base",
+     "function": "Copilot suggestion and chat API service hosts",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "*.githubcopilot.com",
+       "copilot-proxy.githubusercontent.com",
+       "origin-tracker.githubusercontent.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.github.com/en/copilot/reference/copilot-allowlist-reference",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "Allowlist 'Specific required domains': '`https://copilot-proxy.githubusercontent.com` | API service for Copilot suggestions'; '`https://origin-tracker.githubusercontent.com` | API service for Copilot suggestions'; '`https://*.githubcopilot.com/*` | API service for Copilot suggestions. Allows access to authorized users regardless of Copilot plan.' Also '`https://copilot-telemetry.githubusercontent.com/telemetry` | Copilot client telemetry'. All are in the pack's app_domains for github-copilot."
+    },
+    {
+     "child_id": "github-copilot-personal-plan",
+     "function": "Copilot via a personal (Individual) plan",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "*.individual.githubcopilot.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.github.com/en/copilot/how-tos/administer-copilot/manage-for-enterprise/manage-access/manage-network-access",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'Update your corporate network firewall to include `*.individual.githubcopilot.com` in your blocklist.' Business and Enterprise plans use '`*.business.githubcopilot.com`' and '`*.enterprise.githubcopilot.com`' ('The Copilot Enterprise endpoint also serves the Copilot access billing model'). The allowlist reference describes '`https://*.individual.githubcopilot.com` | API service for Copilot suggestions. Allows access to authorized users via a Copilot Individual plan.' This is the vendor-documented way to split personal from corporate Copilot use.",
+     "citation_also": [
+      "https://docs.github.com/en/copilot/reference/copilot-allowlist-reference"
+     ]
+    },
+    {
+     "child_id": "github-copilot-web-chat",
+     "function": "Copilot on GitHub.com (browser chat)",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "github.com"
+      ],
+      "http_method": null,
+      "path_pattern": "/copilot/*",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.github.com/en/copilot/reference/copilot-allowlist-reference",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "Allowlist: '`https://github.com/copilot/*` | Copilot on GitHub'. github.com maps to github in the pack, not github-copilot; a path rule on github.com would be needed. Image and PDF attachments are supported in Copilot Chat on GitHub (https://docs.github.com/en/copilot/how-tos/copilot-on-github/chat-with-copilot/chat-in-github: 'You can attach images and PDFs to your prompts'), but the upload path for the browser is not published there."
+    },
+    {
+     "child_id": "github-copilot-cloud-sessions",
+     "function": "Copilot cloud sessions in the browser: real-time event WebSocket",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "production-copilot-host.webpubsub.azure.com",
+       "production-copilot-host-centralus.webpubsub.azure.com",
+       "production-copilot-host-centralus-02.webpubsub.azure.com",
+       "production-copilot-host-eastasia.webpubsub.azure.com",
+       "production-copilot-host-austriaeast.webpubsub.azure.com",
+       "production-copilot-host-westus.webpubsub.azure.com",
+       "production-copilot-host-westus3.webpubsub.azure.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": true,
+      "transport": "WebSocket over TCP 443"
+     },
+     "citation_url": "https://docs.github.com/en/copilot/reference/copilot-allowlist-reference",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'`wss://production-copilot-host-centralus.webpubsub.azure.com` | Real-time WebSocket connection used by Copilot on GitHub to stream events and updates. Allow secure WebSocket traffic over TCP port 443.' (same text for the other six hosts). 'Cloud sessions in your browser use secure WebSocket connections to Azure Web PubSub to send and receive session events.' 'Use the required hostnames rather than allowing every Azure Web PubSub service with `*.webpubsub.azure.com`.' All seven hosts are in the pack's app_domains."
+    },
+    {
+     "child_id": "github-copilot-chat-attachments",
+     "function": "Copilot chat attachments endpoint",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "uploads.github.com"
+      ],
+      "http_method": null,
+      "path_pattern": "/copilot/chat/attachments/",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.github.com/en/copilot/reference/copilot-allowlist-reference",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "Listed in the Copilot cloud agent recommended allowlist under 'GitHub: Content & API': '`uploads.github.com/copilot/chat/attachments/`'. Method, content type and direction are not on the page, so they stay null; surface null because the list is the cloud agent's outbound firewall allowlist, not a browser list. uploads.github.com maps to github in the pack, not github-copilot."
+    }
+   ]
+  },
+  {
+   "service": "Cursor",
+   "parent_app_id": "cursor",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The cursor.com web app streams agent conversations through cursor.com '/api/connect-proxy/' (StreamConversation); the desktop client uses api2/api3/api5.cursor.sh and the public Cloud Agents API is api.cursor.com.",
+   "web_ui_evidence": {
+    "uses_documented_api": "different",
+    "citation_url": "https://cursor.com/docs/enterprise/network-configuration",
+    "quote": "The web app at `cursor.com` streams agent conversations and code review data as long-lived, compressed binary responses. [...] In the browser's developer tools, the Network tab shows a `StreamConversation` request under `/api/connect-proxy/` with no status code and nothing transferred."
+   },
+   "children": [
+    {
+     "child_id": "cursor-base",
+     "function": "Cursor backend domain patterns",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "*.cursor.sh",
+       "*.cursor-cdn.com",
+       "*.cursorapi.com",
+       "*.cursorvm.com",
+       "*.*.cursorvm.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": "HTTP/2 bidirectional streaming; HTTP/1.1 Server-Sent Events fallback"
+     },
+     "citation_url": "https://cursor.com/docs/enterprise/network-configuration",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'configure your firewall to allow traffic to these domain patterns: `*.cursor.sh` `*.cursor-cdn.com` `*.cursorapi.com` `*.cursorvm.com` `*.*.cursorvm.com`'. 'Cursor uses HTTP/2 bidirectional streaming by default for real-time chat and agent experiences.' 'Cursor automatically falls back to HTTP/1.1 Server-Sent Events (SSE) mode.' 'api2.cursor.sh: Used for most API requests.' Sign-in: this page names 'accounts.spacexsi.com' while https://docs.x.ai/x-subscription/sign-in-domains names 'accounts.spacex.ai'; the two vendor pages disagree, so neither is put in host_sni. All patterns are in the pack's app_domains."
+    },
+    {
+     "child_id": "cursor-agent",
+     "function": "Cursor agent requests (desktop client)",
+     "verified": true,
+     "surface": "client",
+     "signals": {
+      "host_sni": [
+       "api5.cursor.sh",
+       "agent.api5.cursor.sh",
+       "agentn.api5.cursor.sh",
+       "agent.us.api5.cursor.sh",
+       "agentn.us.api5.cursor.sh",
+       "agent.global.api5.cursor.sh",
+       "agentn.global.api5.cursor.sh"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://cursor.com/docs/enterprise/network-configuration",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'`api5.cursor.sh`: Used for Cursor's agent requests.' and '`api5.cursor.sh`: Used for network access layer (NAL) requests. These subdomains are also used: `agent.api5.cursor.sh` `agentn.api5.cursor.sh` `agent.us.api5.cursor.sh` `agentn.us.api5.cursor.sh` `agent.global.api5.cursor.sh` `agentn.global.api5.cursor.sh`'. The page states the hosts, not request paths."
+    },
+    {
+     "child_id": "cursor-tab",
+     "function": "Cursor Tab code completion (desktop client)",
+     "verified": true,
+     "surface": "client",
+     "signals": {
+      "host_sni": [
+       "api3.cursor.sh",
+       "api4.cursor.sh",
+       "us-asia.gcpp.cursor.sh",
+       "us-eu.gcpp.cursor.sh",
+       "us-only.gcpp.cursor.sh"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": "HTTP/2 only"
+     },
+     "citation_url": "https://cursor.com/docs/enterprise/network-configuration",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'`api3.cursor.sh`: Used for Cursor Tab requests (HTTP/2 only).' '`api4.cursor.sh`, `us-asia.gcpp.cursor.sh`, `us-eu.gcpp.cursor.sh`, `us-only.gcpp.cursor.sh`: Used for Cursor Tab requests depending on your location (HTTP/2 only).' Also '`repo42.cursor.sh`: Used for codebase search (HTTP/2 only).' (codebase search, a separate function, not included here)."
+    },
+    {
+     "child_id": "cursor-web-agents",
+     "function": "Cloud Agents in the cursor.com web app",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "cursor.com"
+      ],
+      "http_method": null,
+      "path_pattern": "/api/connect-proxy/",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://cursor.com/docs/enterprise/network-configuration",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'`cursor.com` and `*.cursor.com` (the web dashboard, Cloud Agents at `cursor.com/agents`, and code review pages)'. 'The web app at `cursor.com` streams agent conversations and code review data as long-lived, compressed binary responses.' 'the Network tab shows a `StreamConversation` request under `/api/connect-proxy/`'. Method and content type are not given. Web attachments exist ('Cloud Agent web attachment limits', per the Cloud Agents API page) but their path is not published."
+    },
+    {
+     "child_id": "cursor-api-agent-prompting",
+     "function": "Cloud Agents API: create an agent or send a follow-up prompt (images optional)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.cursor.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/agents | /v1/agents/{id}/runs",
+      "content_type": "application/json",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://cursor.com/docs/cloud-agent/api/endpoints",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'### Create An Agent POST `/v1/agents`'; example 'curl --request POST --url https://api.cursor.com/v1/agents ... --header 'Content-Type: application/json''. '### Send A Follow-Up Or Steer POST `/v1/agents/{id}/runs`'. 'prompt.images array (optional) Image inputs for the prompt. Each entry must include either `data` (base64-encoded bytes with a required `mimeType`) or `url` ... Maximum 5 images, 15 MB each' (hence direction upload). Repositories named in the request are cloned by Cursor, not uploaded by the caller. api.cursor.com is under cursor.com in the pack."
+    },
+    {
+     "child_id": "cursor-api-artifact-downloading",
+     "function": "Cloud Agents API: download an agent artifact",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.cursor.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/agents/{id}/artifacts/download",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://cursor.com/docs/cloud-agent/api/endpoints",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'### Download An Artifact GET `/v1/agents/{id}/artifacts/download` Retrieve a temporary 15-minute presigned S3 URL for a specific artifact.' Query 'path' 'Must be under `artifacts/`'. Example response '\"url\": \"https://cloud-agent-artifacts.s3.us-east-1.amazonaws.com/...\"': the bytes come from that S3 host, which is not in the pack's cursor app_domains."
+    }
+   ]
+  },
+  {
+   "service": "Google AI Studio (Gemini API)",
+   "parent_app_id": "google-ai-studio",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "No official page read states which hosts or paths the aistudio.google.com browser app calls; the quickstart only says 'select \"Get code\" ... to use the Gemini API'. Gemini API children (generativelanguage.googleapis.com) map to google-base in the pack, not google-ai-studio; wave-0 already covers /upload/v1beta/files (google-gemini-api-uploading) and Live (google-gemini-api-live), so they are not repeated here.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "google-ai-studio-base",
+     "function": "Google AI Studio web app",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "aistudio.google.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.google.com/a/answer/9012184",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "Google Workspace allowlist, group 'Generative AI': 'https://gemini.google.com', 'https://notebook.google.com', 'https://aistudio.google.com'. surface null: the page names the host, not the client. aistudio.google.com is the pack's only app_domain for google-ai-studio."
+    },
+    {
+     "child_id": "google-ai-studio-build-mode",
+     "function": "AI Studio Build mode (vibe-coding apps)",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "aistudio.google.com"
+      ],
+      "http_method": null,
+      "path_pattern": "/apps",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://aistudio.google.com/docs/aistudio-build-mode",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'Start vibe coding in Google AI Studio's [Build mode](https://aistudio.google.com/apps).' This is the page URL of the feature in the browser, not a request path of its API calls."
+    },
+    {
+     "child_id": "google-ai-studio-published-apps",
+     "function": "Web apps published from AI Studio (ai.studio subdomains)",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "*.ai.studio"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://aistudio.google.com/docs/aistudio-deploying",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "'`ai.studio` subdomains: Free built-in subdomains (for example, `https://your-app-name.ai.studio`)'; 'Each `ai.studio` subdomain is unique across AI Studio'. Custom domains are also possible ('Your own registered domain'), so *.ai.studio does not cover every published app; apps run on Google Cloud Run ('single Cloud Run region'). ai.studio is not in the pack's app_domains."
+    },
+    {
+     "child_id": "google-ai-studio-api-generating",
+     "function": "Gemini API: generateContent / streamGenerateContent prompt",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "generativelanguage.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1beta/models/{model}:generateContent | /v1beta/models/{model}:streamGenerateContent",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://generativelanguage.googleapis.com/$discovery/rest?version=v1beta",
+     "citation_page_date": "Discovery revision 20261126",
+     "notes": "Discovery rootUrl 'https://generativelanguage.googleapis.com/'; models.generateContent httpMethod 'POST' flatPath 'v1beta/models/{modelsId}:generateContent' ('Generates a model response given an input `GenerateContentRequest`'); models.streamGenerateContent 'POST' 'v1beta/models/{modelsId}:streamGenerateContent'. Host maps to google-base in the pack.",
+     "citation_also": [
+      "https://ai.google.dev/api/generate-content"
+     ]
+    },
+    {
+     "child_id": "google-ai-studio-api-interactions",
+     "function": "Gemini API: Interactions API prompt",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "generativelanguage.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1beta/interactions",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://ai.google.dev/gemini-api/docs/text-generation",
+     "citation_page_date": "accessed 2026-11-27 (no page date shown)",
+     "notes": "REST example: 'curl -X POST \"https://generativelanguage.googleapis.com/v1beta/interactions\" \\ -H \"x-goog-api-key: $GEMINI_API_KEY\" \\ -H 'Content-Type: application/json' \\ -H \"Api-Revision: 2026-05-20\"'. The AI Studio docs index calls this the default ('Get started with the Gemini API for Developers using the Interactions API'). Host maps to google-base in the pack."
+    },
+    {
+     "child_id": "google-ai-studio-api-file-search-uploading",
+     "function": "Gemini API: upload a file into a File Search store",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "generativelanguage.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/upload/v1beta/fileSearchStores/{fileSearchStoresId}:uploadToFileSearchStore | /resumable/upload/v1beta/fileSearchStores/{fileSearchStoresId}:uploadToFileSearchStore",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://generativelanguage.googleapis.com/$discovery/rest?version=v1beta",
+     "citation_page_date": "Discovery revision 20261126",
+     "notes": "Discovery media.uploadToFileSearchStore httpMethod 'POST', mediaUpload protocols {'simple': '/upload/v1beta/{+fileSearchStoreName}:uploadToFileSearchStore', 'resumable': '/resumable/upload/v1beta/{+fileSearchStoreName}:uploadToFileSearchStore'}; fileSearchStoreName is 'fileSearchStores/{fileSearchStoresId}' per the method flatPath. Content type is not fixed by the discovery doc. The plain Files API upload ('/upload/v1beta/files') is wave-0 child google-gemini-api-uploading. Host maps to google-base in the pack."
+    }
+   ]
+  },
+  {
+   "service": "Zendesk",
+   "parent_app_id": "zendesk",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The firewall article names assets.zendesk.com and static.zdassets.com for the web apps' static resources; it does not say which host or paths the agent web app uses for its API calls, so no evidence is recorded.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "zendesk-base",
+     "function": "Zendesk web apps and the customer's Zendesk subdomain",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "assets.zendesk.com",
+       "static.zdassets.com",
+       "*.zendesk.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.zendesk.com/hc/en-us/articles/4408842860186-Configuring-your-firewall-for-use-with-Zendesk",
+     "citation_page_date": "updated_at 2026-11-17T16:09:50Z (Help Center articles API)",
+     "notes": "Zendesk help 'Configuring your firewall for use with Zendesk' (read through the Help Center articles API, support.zendesk.com/api/v2/help_center/en-us/articles/4408842860186.json): 'assets.zendesk.com and static.zdassets.com must be reachable because Zendesk's web apps and related features load core static resources from those domains.' The subdomain host comes from 'Use the Zendesk IP API to retrieve your Zendesk subdomain's inbound and outbound IP addresses: https://{your-subdomain}.zendesk.com/ips'. The page also says 'Product URL paths are not guaranteed to remain static and may change' and 'Zendesk supports FQDN-based allowlists on a very limited basis.' All hosts are under the pack's zendesk.com / zdassets.com."
+    },
+    {
+     "child_id": "zendesk-api-uploading",
+     "function": "Support API: upload a file for a ticket comment attachment (returns a token)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.zendesk.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/v2/uploads.json",
+      "content_type": "application/binary",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/zendesk/zendesk_api_client_php/master/src/Zendesk/API/Resources/Core/Attachments.php",
+     "citation_page_date": "zendesk/zendesk_api_client_php HttpClient VERSION '4.1.0'",
+     "notes": "Zendesk's official PHP client (zendesk org; README: 'composer require zendesk/zendesk_api_client_php'). Attachments.php: \"'upload'       => \\\"uploads.json\\\"\" and Http::send(... 'method' => 'POST', 'contentType' => 'application/binary', 'file' => $params['file'], 'queryParams' => $queryParams) with $queryParams = ['filename' => $params['name']]. Base path: ResourceAbstract.php '__construct(HttpClient $client, $apiBasePath = 'api/v2/')'; host: HttpClient.php '$this->apiUrl = \"$scheme://$subdomain.$hostname:$port/\"' with '$hostname = \"zendesk.com\"'. The token is then sent as comment 'uploads' => [$attachment->upload->token] (README). Host {subdomain}.zendesk.com is under the pack's zendesk.com.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/zendesk/zendesk_api_client_php/master/src/Zendesk/API/Resources/ResourceAbstract.php",
+      "https://raw.githubusercontent.com/zendesk/zendesk_api_client_php/master/src/Zendesk/API/HttpClient.php",
+      "https://raw.githubusercontent.com/zendesk/zendesk_api_client_php/master/README.md"
+     ]
+    },
+    {
+     "child_id": "zendesk-api-ticket-creating",
+     "function": "Support API: create a ticket (with a comment and upload tokens)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.zendesk.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/v2/tickets.json",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/zendesk/zendesk_api_client_php/master/src/Zendesk/API/Resources/Core/Tickets.php",
+     "citation_page_date": "zendesk/zendesk_api_client_php HttpClient VERSION '4.1.0'",
+     "notes": "Tickets.php routes: \"'create'              => 'tickets.json'\"; the create is a POST (Traits/Resource/Create.php: 'return $this->client->post($route, [$this->objectName => $params]);'; the Ruby client README documents ticket creation with 'ticket.comment.uploads << \"img.jpg\"'). Base path 'api/v2/' (ResourceAbstract.php) on {subdomain}.zendesk.com (HttpClient.php). Content type is not set explicitly in these files, so it is left null.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/zendesk/zendesk_api_client_php/master/src/Zendesk/API/Resources/ResourceAbstract.php",
+      "https://raw.githubusercontent.com/zendesk/zendesk_api_client_php/master/src/Zendesk/API/HttpClient.php",
+      "https://raw.githubusercontent.com/zendesk/zendesk_api_client_php/master/src/Zendesk/API/Traits/Resource/Create.php",
+      "https://raw.githubusercontent.com/zendesk/zendesk_api_client_rb/main/README.md"
+     ]
+    },
+    {
+     "child_id": "zendesk-attachment-downloading",
+     "function": "Download a ticket attachment's content",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. The PHP client only finds attachment metadata ('attachments' Find trait); the content URL host is in the response and is not named in the client. The API reference page on developer.zendesk.com is blocked from this session."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.zendesk.com/api-reference/ticketing/tickets/ticket-attachments/",
+    "https://developer.zendesk.com/api-reference/"
+   ]
+  },
+  {
+   "service": "HubSpot",
+   "parent_app_id": "hubspot",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The knowledge page 'SSL and domain security in HubSpot' (Last updated: November 19, 2026) lists '*.hubapi.com connect-src API calls (HubDB, form submissions)' for HubSpot-hosted pages, i.e. customer websites, not the HubSpot web app; no official page read here says which hosts the app at hubspot.com calls.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "hubspot-webapp",
+     "function": "HubSpot web app (app.hubspot.com)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official page names the HubSpot web app's hosts; the knowledge page 'SSL and domain security in HubSpot' lists hosts for HubSpot-hosted pages (customer websites), not the app. developers.hubspot.com is blocked."
+    },
+    {
+     "child_id": "hubspot-api-file-uploading",
+     "function": "Files API: upload a file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hubapi.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/files/v3/files",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/HubSpot/hubspot-api-nodejs/master/codegen/files/apis/FilesApi.ts",
+     "citation_page_date": "@hubspot/api-client 14.1.3 (HubSpot/hubspot-api-nodejs package.json)",
+     "notes": "HubSpot's official Node client (npm @hubspot/api-client, repository HubSpot/hubspot-api-nodejs). FilesApi.ts upload(file?: HttpFile, ...): \"const localVarPath = '/files/v3/files';\", \"makeRequestContext(localVarPath, HttpMethod.POST)\", content type \"multipart/form-data\". Server: servers.ts 'new ServerConfiguration<{  }>(\"https://api.hubapi.com\", {  })'. api.hubapi.com is not under the pack's hubspot.com; batch P (research/apps/hubspot.md) proposes hubapi.com for hubspot-base.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/HubSpot/hubspot-api-nodejs/master/codegen/files/servers.ts"
+     ]
+    },
+    {
+     "child_id": "hubspot-api-file-importing",
+     "function": "Files API: import a file from a URL (asynchronous)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hubapi.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/files/v3/files/import-from-url/async",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/HubSpot/hubspot-api-nodejs/master/codegen/files/apis/FilesApi.ts",
+     "citation_page_date": "@hubspot/api-client 14.1.3 (HubSpot/hubspot-api-nodejs package.json)",
+     "notes": "FilesApi.ts importFromUrl(importFromUrlInput): \"const localVarPath = '/files/v3/files/import-from-url/async';\", HttpMethod.POST; HubSpot fetches the file from the given URL, so the request body is a JSON description, not the file (content type chosen by ObjectSerializer.getPreferredMediaType, left null). Server: servers.ts 'new ServerConfiguration<{  }>(\"https://api.hubapi.com\", {  })'. api.hubapi.com is not under the pack's hubspot.com; batch P (research/apps/hubspot.md) proposes hubapi.com for hubspot-base.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/HubSpot/hubspot-api-nodejs/master/codegen/files/servers.ts"
+     ]
+    },
+    {
+     "child_id": "hubspot-api-file-signed-url",
+     "function": "Files API: get a signed download URL for a private file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hubapi.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/files/v3/files/{fileId}/signed-url",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/HubSpot/hubspot-api-nodejs/master/codegen/files/apis/FilesApi.ts",
+     "citation_page_date": "@hubspot/api-client 14.1.3 (HubSpot/hubspot-api-nodejs package.json)",
+     "notes": "FilesApi.ts getSignedUrl(fileId, size?, expirationSeconds?, upscale?): \"const localVarPath = '/files/v3/files/{fileId}/signed-url'\", HttpMethod.GET. The file bytes come from the returned URL, whose host is not named in the client, so direction is left null. Server: servers.ts 'new ServerConfiguration<{  }>(\"https://api.hubapi.com\", {  })'. api.hubapi.com is not under the pack's hubspot.com; batch P (research/apps/hubspot.md) proposes hubapi.com for hubspot-base.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/HubSpot/hubspot-api-nodejs/master/codegen/files/servers.ts"
+     ]
+    },
+    {
+     "child_id": "hubspot-api-crm-importing",
+     "function": "CRM Imports API: start an import from uploaded files",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hubapi.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/crm/v3/imports/",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/HubSpot/hubspot-api-nodejs/master/codegen/crm/imports/apis/CoreApi.ts",
+     "citation_page_date": "@hubspot/api-client 14.1.3 (HubSpot/hubspot-api-nodejs package.json)",
+     "notes": "codegen/crm/imports/apis/CoreApi.ts create(files?: HttpFile, importRequest?: string): \"const localVarPath = '/crm/v3/imports/';\", HttpMethod.POST, \"multipart/form-data\". Server https://api.hubapi.com (codegen/crm/imports servers.ts, same ServerConfiguration line). api.hubapi.com is not under the pack's hubspot.com (batch P proposes hubapi.com for hubspot-base)."
+    },
+    {
+     "child_id": "hubspot-api-crm-exporting",
+     "function": "CRM Exports API: start an export of CRM records",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.hubapi.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/crm/v3/exports/export/async",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/HubSpot/hubspot-api-nodejs/master/codegen/crm/exports/apis/PublicExportsApi.ts",
+     "citation_page_date": "@hubspot/api-client 14.1.3 (HubSpot/hubspot-api-nodejs package.json)",
+     "notes": "codegen/crm/exports/apis/PublicExportsApi.ts start(publicExportRequest): \"const localVarPath = '/crm/v3/exports/export/async';\", HttpMethod.POST, \"application/json\"; status at GET '/crm/v3/exports/export/async/tasks/{taskId}/status' (ActionResponseWithSingleResultURI). The export file is fetched from the result URI, not named here, so direction is null. api.hubapi.com is not under the pack's hubspot.com (batch P proposes hubapi.com for hubspot-base)."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.hubspot.com/docs/api/files/files",
+    "https://developers.hubspot.com/docs/api/crm/imports"
+   ]
+  },
+  {
+   "service": "Smartsheet",
+   "parent_app_id": "smartsheet",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "smartsheet-base",
+     "function": "Smartsheet web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No official Smartsheet page listing the web app's hosts was found (earlier batch O search: 'connector relay only'); developers.smartsheet.com is blocked."
+    },
+    {
+     "child_id": "smartsheet-api-attachment-uploading",
+     "function": "API 2.0: attach a file to a sheet, row or comment, or upload a new version",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.smartsheet.com",
+       "api.smartsheet.eu",
+       "api.smartsheetgov.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/2.0/sheets/{sheetId}/attachments | /2.0/sheets/{sheetId}/rows/{rowId}/attachments | /2.0/sheets/{sheetId}/comments/{commentId}/attachments | /2.0/sheets/{sheetId}/attachments/{attachmentId}/versions",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/smartsheet/smartsheet-python-sdk/master/smartsheet/attachments.py",
+     "citation_page_date": "smartsheet-python-sdk 5.0.0 (PyPI)",
+     "notes": "Smartsheet's official Python SDK (smartsheet/smartsheet-python-sdk; README 'pip install smartsheet-python-sdk'). attachments.py attach_file_to_sheet: '_op[\"method\"] = \"POST\"', '_op[\"path\"] = \"/sheets/\" + str(sheet_id) + \"/attachments\"', '_op[\"files\"][\"file\"] = _file'; attach_file_to_row: \"/sheets/\" + str(sheet_id) + \"/rows/\" + str(row_id) + \"/attachments\"; attach_file_to_comment: \"/sheets/\" + str(sheet_id) + \"/comments/\" + str(comment_id) + \"/attachments\"; attach_new_version: POST \"/sheets/\" + str(sheet_id) + \"/attachments/\" + str(attachment_id) + \"/versions\" with the file. The same sheet-attachments path also takes attach_url_to_sheet with '_op[\"json\"]' (a link, not a file). Content type is set by the HTTP library from 'files', not stated in the SDK, so it is null. Hosts: __init__.py '__api_base__ = \"https://api.smartsheet.com/2.0\"', '__eu_base__ = \"https://api.smartsheet.eu/2.0\"', '__gov_base__ = \"https://api.smartsheetgov.com/2.0\"'; the request URL is self._api_base + _op[\"path\"] (smartsheet.py). The help article 'Smartsheet Regions' also names 'Australia:  https://api.smartsheet.au'. Only api.smartsheet.com is under the pack's smartsheet.com; smartsheet.eu, smartsheet.au and smartsheetgov.com are not in the pack.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/smartsheet/smartsheet-python-sdk/master/smartsheet/__init__.py",
+      "https://help.smartsheet.com/articles/2482446-introducing-smartsheet-regions"
+     ]
+    },
+    {
+     "child_id": "smartsheet-api-sheet-importing",
+     "function": "API 2.0: import a CSV or XLSX file as a new sheet",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.smartsheet.com",
+       "api.smartsheet.eu",
+       "api.smartsheetgov.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/2.0/sheets/import | /2.0/folders/{folderId}/sheets/import | /2.0/workspaces/{workspaceId}/sheets/import",
+      "content_type": "text/csv | application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/smartsheet/smartsheet-python-sdk/master/smartsheet/sheets.py",
+     "citation_page_date": "smartsheet-python-sdk 5.0.0 (PyPI)",
+     "notes": "sheets.py _import_sheet: '_op[\"method\"] = \"POST\"', '_op[\"path\"] = \"/sheets/import\"', headers '\"content-type\": file_type, \"content-disposition\": \"attachment\"', with file_type \"text/csv\" (import_csv_sheet) or \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\" (import_xlsx_sheet). folders.py: '\"/folders/\" + str(folder_id) + \"/sheets/import\"'; workspaces.py: '\"/workspaces/\" + str(workspace_id) + \"/sheets/import\"'. Hosts: __init__.py '__api_base__ = \"https://api.smartsheet.com/2.0\"', '__eu_base__ = \"https://api.smartsheet.eu/2.0\"', '__gov_base__ = \"https://api.smartsheetgov.com/2.0\"'; the request URL is self._api_base + _op[\"path\"] (smartsheet.py). The help article 'Smartsheet Regions' also names 'Australia:  https://api.smartsheet.au'. Only api.smartsheet.com is under the pack's smartsheet.com; smartsheet.eu, smartsheet.au and smartsheetgov.com are not in the pack.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/smartsheet/smartsheet-python-sdk/master/smartsheet/folders.py",
+      "https://raw.githubusercontent.com/smartsheet/smartsheet-python-sdk/master/smartsheet/workspaces.py",
+      "https://raw.githubusercontent.com/smartsheet/smartsheet-python-sdk/master/smartsheet/__init__.py"
+     ]
+    },
+    {
+     "child_id": "smartsheet-api-sheet-exporting",
+     "function": "API 2.0: download a sheet as CSV, Excel or PDF",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.smartsheet.com",
+       "api.smartsheet.eu",
+       "api.smartsheetgov.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/2.0/sheets/{sheetId}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/smartsheet/smartsheet-python-sdk/master/smartsheet/sheets.py",
+     "citation_page_date": "smartsheet-python-sdk 5.0.0 (PyPI)",
+     "notes": "sheets.py get_sheet_as_csv: '_op[\"method\"] = \"GET\"', '_op[\"path\"] = \"/sheets/\" + str(sheet_id)', '_op[\"header_params\"][\"Accept\"] = \"text/csv\"', '_op[\"dl_path\"] = download_path'; get_sheet_as_excel uses Accept \"application/vnd.ms-excel\" and get_sheet_as_pdf Accept \"application/pdf\". The export differs from a JSON sheet read only by the Accept request header (content_type stays null: it is the Accept header, not a request body type). Hosts: __init__.py '__api_base__ = \"https://api.smartsheet.com/2.0\"', '__eu_base__ = \"https://api.smartsheet.eu/2.0\"', '__gov_base__ = \"https://api.smartsheetgov.com/2.0\"'; the request URL is self._api_base + _op[\"path\"] (smartsheet.py). The help article 'Smartsheet Regions' also names 'Australia:  https://api.smartsheet.au'. Only api.smartsheet.com is under the pack's smartsheet.com; smartsheet.eu, smartsheet.au and smartsheetgov.com are not in the pack.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/smartsheet/smartsheet-python-sdk/master/smartsheet/__init__.py"
+     ]
+    },
+    {
+     "child_id": "smartsheet-attachment-downloading",
+     "function": "Download an attachment's file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. attachments.py download_attachment does 'requests.get(attachment_obj.url, stream=True)': the file host is the URL in the attachment object and is not named in the SDK."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.smartsheet.com/api/smartsheet/",
+    "https://developers.smartsheet.com/api/smartsheet/openapi"
+   ]
+  },
+  {
+   "service": "Airtable",
+   "parent_app_id": "airtable",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "airtable-base",
+     "function": "Airtable web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No official Airtable network or domain page was found (earlier batch O search); airtable.com, which hosts the developer documentation, is blocked."
+    },
+    {
+     "child_id": "airtable-api-record-creating",
+     "function": "Web API: create records (fields as JSON)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.airtable.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v0/{baseId}/{tableIdOrName}/",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/table.ts",
+     "citation_page_date": "airtable.js 0.12.2 (npm airtable, package.json)",
+     "notes": "Airtable's official JavaScript library (README: 'The official Airtable JavaScript library.'; npm package airtable, maintainers @airtable.com). table.ts create: 'this._base.runAction(\\'post\\', `/${this._urlEncodedNameOrId()}/`, {}, requestData, ...)' with requestData {records: ...} or {fields: ...}. Host and version: airtable.ts default_config 'endpointUrl: process.env.AIRTABLE_ENDPOINT_URL || \\'https://api.airtable.com\\'', 'apiVersion: \\'0.1.0\\''; run_action.ts builds '`${base._airtable._endpointUrl}/v${base._airtable._apiVersionMajor}/${`' + base id + path, so /v0/{baseId}. base.ts sets 'Content-Type', 'application/json'. api.airtable.com is under the pack's airtable.com.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/airtable.ts",
+      "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/run_action.ts",
+      "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/base.ts"
+     ]
+    },
+    {
+     "child_id": "airtable-api-record-updating",
+     "function": "Web API: update or replace records",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.airtable.com"
+      ],
+      "http_method": "PATCH | PUT",
+      "path_pattern": "/v0/{baseId}/{tableIdOrName}/",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/table.ts",
+     "citation_page_date": "airtable.js 0.12.2 (npm airtable, package.json)",
+     "notes": "table.ts update/replace: \"const method = isDestructiveUpdate ? 'put' : 'patch';\" then 'this._base.runAction(method, `/${this._urlEncodedNameOrId()}/`, {}, requestData, ...)' with requestData {records: recordsData, ...opts}. Host and version: airtable.ts default_config 'endpointUrl: process.env.AIRTABLE_ENDPOINT_URL || \\'https://api.airtable.com\\'', 'apiVersion: \\'0.1.0\\''; run_action.ts builds '`${base._airtable._endpointUrl}/v${base._airtable._apiVersionMajor}/${`' + base id + path, so /v0/{baseId}. base.ts sets 'Content-Type', 'application/json'. api.airtable.com is under the pack's airtable.com.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/airtable.ts",
+      "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/run_action.ts",
+      "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/base.ts"
+     ]
+    },
+    {
+     "child_id": "airtable-api-record-listing",
+     "function": "Web API: list records",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.airtable.com"
+      ],
+      "http_method": "GET | POST",
+      "path_pattern": "/v0/{baseId}/{tableIdOrName}/ | /v0/{baseId}/{tableIdOrName}/listRecords",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/table.ts",
+     "citation_page_date": "airtable.js 0.12.2 (npm airtable, package.json)",
+     "notes": "table.ts _listRecords: when the query string is over URL_CHARACTER_LENGTH_LIMIT or opts.method === 'post', \"path = `/${this._urlEncodedNameOrId()}/listRecords`\" and \"method = 'post'\"; otherwise \"method = 'get'\" and \"path = `/${this._urlEncodedNameOrId()}/`\". Host and version: airtable.ts default_config 'endpointUrl: process.env.AIRTABLE_ENDPOINT_URL || \\'https://api.airtable.com\\'', 'apiVersion: \\'0.1.0\\''; run_action.ts builds '`${base._airtable._endpointUrl}/v${base._airtable._apiVersionMajor}/${`' + base id + path, so /v0/{baseId}. base.ts sets 'Content-Type', 'application/json'. api.airtable.com is under the pack's airtable.com.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/airtable.ts",
+      "https://raw.githubusercontent.com/Airtable/airtable.js/master/src/run_action.ts"
+     ]
+    },
+    {
+     "child_id": "airtable-attachment-uploading",
+     "function": "Web API: upload an attachment to a record field",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. airtable.js has no attachment-upload method; the Web API reference page (airtable.com/developers) is blocked from this session."
+    }
+   ],
+   "sources_blocked": [
+    "https://airtable.com/developers/web/api/upload-attachment",
+    "https://airtable.com/developers/web/api/introduction"
+   ]
+  },
+  {
+   "service": "ClickUp",
+   "parent_app_id": "clickup",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "clickup-base",
+     "function": "ClickUp web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. clickup.com, help.clickup.com and developer.clickup.com are blocked from this session (curl code 000); no network or domain page could be read."
+    },
+    {
+     "child_id": "clickup-api-attachment-uploading",
+     "function": "API v2: upload a task attachment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.clickup.com is blocked; no ClickUp-owned SDK or spec was found on npm (search results are third-party packages such as clickup.js) and github.com is blocked."
+    },
+    {
+     "child_id": "clickup-api-task-creating",
+     "function": "API v2: create a task",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.clickup.com is blocked; no ClickUp-owned SDK or spec was found."
+    },
+    {
+     "child_id": "clickup-api-comment-posting",
+     "function": "API v2: post a task comment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.clickup.com is blocked; no ClickUp-owned SDK or spec was found."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.clickup.com/reference/createtaskattachment",
+    "https://developer.clickup.com/docs/attachments",
+    "https://help.clickup.com/hc/en-us/articles/6305780990487",
+    "https://clickup.com/api"
+   ]
+  },
+  {
+   "service": "Google NotebookLM",
+   "parent_app_id": "google-notebooklm",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The consumer help centre names only notebook.google.com for the web app; the Enterprise notebooks API is on discoveryengine.googleapis.com, and no reachable official page says whether either web client calls that API.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "google-notebooklm-base",
+     "function": "Gemini Notebook (formerly NotebookLM) web app",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "notebook.google.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.google.com/notebooklm/answer/16179559?hl=en",
+     "citation_page_date": "page title 'Use chat in Gemini Notebook - Gemini Notebook Help', read 2026-11-27",
+     "notes": "Help page 'Use chat in Gemini Notebook': 'To customize your chat responses: Go to notebook.google.com . Select an existing notebook or create a new one.' notebook.google.com is in the pack's google-notebooklm app_domains. The product is now named 'Gemini Notebook' on the help centre (support.google.com/notebooklm)."
+    },
+    {
+     "child_id": "google-notebooklm-source-uploading",
+     "function": "Web app: upload a source file (PDF, audio, documents) to a notebook",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. The help pages describe the function ('select Upload a source', 'up to 200MB for uploaded files', answers 16206563 and 16215270) but name no request host, method or path for the upload."
+    },
+    {
+     "child_id": "google-notebooklm-chatting",
+     "function": "Web app: ask questions about sources in the Chat panel",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Help page 16179559 describes the Chat panel but names no request path or transport; only the host notebook.google.com (google-notebooklm-base) is stated."
+    },
+    {
+     "child_id": "google-notebooklm-api-notebook-creating",
+     "function": "NotebookLM Enterprise API: create a notebook",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "discoveryengine.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1alpha/projects/{project}/locations/{location}/notebooks",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://discoveryengine.googleapis.com/$discovery/rest?version=v1alpha",
+     "citation_page_date": "Discovery Engine API v1alpha, revision 20261125",
+     "notes": "Official Discovery document: rootUrl 'https://discoveryengine.googleapis.com/'; method discoveryengine.projects.locations.notebooks.create, httpMethod 'POST', path 'v1alpha/{+parent}/notebooks', description 'Creates a notebook.', request/response '$ref': 'GoogleCloudNotebooklmV1alphaNotebook'. discoveryengine.googleapis.com is not in the pack's google-notebooklm app_domains (notebooklm.google.com, notebook.google.com); it is a Google Cloud API host."
+    },
+    {
+     "child_id": "google-notebooklm-api-source-adding",
+     "function": "NotebookLM Enterprise API: add sources (text, web, video, Drive) to a notebook",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "discoveryengine.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1alpha/projects/{project}/locations/{location}/notebooks/{notebook}/sources:batchCreate",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://discoveryengine.googleapis.com/$discovery/rest?version=v1alpha",
+     "citation_page_date": "Discovery Engine API v1alpha, revision 20261125",
+     "notes": "discoveryengine.projects.locations.notebooks.sources.batchCreate: httpMethod 'POST', path 'v1alpha/{+parent}/sources:batchCreate', 'Creates a list of Sources.'; request GoogleCloudNotebooklmV1alphaBatchCreateSourcesRequest: userContents 'Required. The UserContents to be uploaded.'; UserContent: textContent 'The text content uploaded as source.', webContent, videoContent, googleDriveContent, agentspaceContent. The Discovery document has no media-upload (file) method for notebooks. discoveryengine.googleapis.com is not in the pack's google-notebooklm app_domains (notebooklm.google.com, notebook.google.com); it is a Google Cloud API host."
+    },
+    {
+     "child_id": "google-notebooklm-api-audio-overview-generating",
+     "function": "NotebookLM Enterprise API: generate an Audio Overview",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "discoveryengine.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1alpha/projects/{project}/locations/{location}/notebooks/{notebook}/audioOverviews",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://discoveryengine.googleapis.com/$discovery/rest?version=v1alpha",
+     "citation_page_date": "Discovery Engine API v1alpha, revision 20261125",
+     "notes": "discoveryengine.projects.locations.notebooks.audioOverviews.create: httpMethod 'POST', flatPath 'v1alpha/projects/{projectsId}/locations/{locationsId}/notebooks/{notebooksId}/audioOverviews', 'Generates a new audio overview.' discoveryengine.googleapis.com is not in the pack's google-notebooklm app_domains (notebooklm.google.com, notebook.google.com); it is a Google Cloud API host."
+    }
+   ],
+   "sources_blocked": [
+    "https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/api-notebooks-sources",
+    "https://cloud.google.com/gemini/enterprise/notebooklm-enterprise/docs/overview"
+   ]
+  },
+  {
+   "service": "Egnyte",
+   "parent_app_id": "egnyte",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "Rows are the Public API as Egnyte's official JS SDK calls it, on the tenant host. No reachable official page says whether the browser web app uses the same /pubapi paths.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "egnyte-base",
+     "function": "Egnyte web app (tenant domain)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No official domain or firewall list was reachable: developers.egnyte.com, www.egnyte.com and helpdesk.egnyte.com are blocked by the network policy (curl 000). The SDK shows the API on the tenant host <domain>.egnyte.com, but not which hosts the web app uses."
+    },
+    {
+     "child_id": "egnyte-api-uploading",
+     "function": "Public API: upload a file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.egnyte.com (example: mydomain.egnyte.com)"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/pubapi/v1/fs-content/{path}",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/api_elements/storage.js",
+     "citation_page_date": "egnyte-js-sdk HEAD (file identical to npm egnyte-js-sdk 3.0.2), read 2026-11-27",
+     "notes": "Egnyte's official JS SDK (egnyte/egnyte-js-sdk; npm egnyte-js-sdk, maintainers @egnyte.com). storeFile: 'method: \"POST\", url: requestEngine.getEndpoint() + ENDPOINTS.fscontent + helpers.encodeURIPath(pathFromRoot), body: file'; endpoints.json '\"fscontent\": \"/v1/fs-content\"'. Host: src/docs/api.md 'var egnyte = Egnyte.init(\"https://mydomain.egnyte.com\", {' and authPrompt.js \"domain += '.egnyte.com'\"; reqengine.js getEndpoint 'return this.options.egnyteDomainURL + \"/pubapi\";' and the comment 'Rewrite /v1/ to /pubapi/v1/'. Content-Type is the caller's mimeType ('opts.headers[\"Content-Type\"] = mimeType'), so it is left null.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/enum/endpoints.json",
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/api_elements/reqengine.js",
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/docs/api.md"
+     ]
+    },
+    {
+     "child_id": "egnyte-api-uploading-chunked",
+     "function": "Public API: chunked upload of a large file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.egnyte.com (example: mydomain.egnyte.com)"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/pubapi/v1/fs-content-chunked/{path}",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/api_elements/chunkedUpload.js",
+     "citation_page_date": "egnyte-js-sdk HEAD (file identical to npm egnyte-js-sdk 3.0.2), read 2026-11-27",
+     "notes": "genericUpload: 'method: \"POST\", url: requestEngine.getEndpoint() + ENDPOINTS.fschunked + helpers.encodeURIPath(pathFromRoot), body: file'; endpoints.json '\"fschunked\": \"/v1/fs-content-chunked\"'; responses carry 'x-egnyte-upload-id' and 'x-egnyte-chunk-sha512-checksum'. api.md: streamToChunks 'uses chunked upload to send it to Egnyte'. Host: src/docs/api.md 'var egnyte = Egnyte.init(\"https://mydomain.egnyte.com\", {' and authPrompt.js \"domain += '.egnyte.com'\"; reqengine.js getEndpoint 'return this.options.egnyteDomainURL + \"/pubapi\";' and the comment 'Rewrite /v1/ to /pubapi/v1/'. ",
+     "citation_also": [
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/enum/endpoints.json",
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/api_elements/reqengine.js"
+     ]
+    },
+    {
+     "child_id": "egnyte-api-downloading",
+     "function": "Public API: download a file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.egnyte.com (example: mydomain.egnyte.com)"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/pubapi/v1/fs-content/{path}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/api_elements/storage.js",
+     "citation_page_date": "egnyte-js-sdk HEAD (file identical to npm egnyte-js-sdk 3.0.2), read 2026-11-27",
+     "notes": "storageProto.download: 'method: \"GET\", url: requestEngine.getEndpoint() + ENDPOINTS.fscontent + helpers.encodeURIPath(pathFromRoot)', optional param 'entry_id' for a version. Same path as upload; the method separates them. Host: src/docs/api.md 'var egnyte = Egnyte.init(\"https://mydomain.egnyte.com\", {' and authPrompt.js \"domain += '.egnyte.com'\"; reqengine.js getEndpoint 'return this.options.egnyteDomainURL + \"/pubapi\";' and the comment 'Rewrite /v1/ to /pubapi/v1/'. ",
+     "citation_also": [
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/enum/endpoints.json",
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/api_elements/reqengine.js"
+     ]
+    },
+    {
+     "child_id": "egnyte-api-sharing",
+     "function": "Public API: create a shared link",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.egnyte.com (example: mydomain.egnyte.com)"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/pubapi/v1/links",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/api_elements/link.js",
+     "citation_page_date": "egnyte-js-sdk HEAD (file identical to npm egnyte-js-sdk 3.0.2), read 2026-11-27",
+     "notes": "createLink: 'method: \"POST\", url: requestEngine.getEndpoint() + ENDPOINTS_links'; endpoints.json '\"links\": \"/v1/links\"'. api.md: 'API.link.createLink | `link_setup` | Creates a link'; options include 'send_email | optional | if True, send the link out via email'. Host: src/docs/api.md 'var egnyte = Egnyte.init(\"https://mydomain.egnyte.com\", {' and authPrompt.js \"domain += '.egnyte.com'\"; reqengine.js getEndpoint 'return this.options.egnyteDomainURL + \"/pubapi\";' and the comment 'Rewrite /v1/ to /pubapi/v1/'. ",
+     "citation_also": [
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/enum/endpoints.json",
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/docs/api.md"
+     ]
+    },
+    {
+     "child_id": "egnyte-api-deleting",
+     "function": "Public API: delete a file or folder",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.egnyte.com (example: mydomain.egnyte.com)"
+      ],
+      "http_method": "DELETE",
+      "path_pattern": "/pubapi/v1/fs/{path}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/api_elements/storage.js",
+     "citation_page_date": "egnyte-js-sdk HEAD (file identical to npm egnyte-js-sdk 3.0.2), read 2026-11-27",
+     "notes": "remove(): 'method: \"DELETE\", url: requestEngine.getEndpoint() + ENDPOINTS.fsmeta + helpers.encodeURIPath(pathFromRoot)'; endpoints.json '\"fsmeta\": \"/v1/fs\"'. Host: src/docs/api.md 'var egnyte = Egnyte.init(\"https://mydomain.egnyte.com\", {' and authPrompt.js \"domain += '.egnyte.com'\"; reqengine.js getEndpoint 'return this.options.egnyteDomainURL + \"/pubapi\";' and the comment 'Rewrite /v1/ to /pubapi/v1/'. ",
+     "citation_also": [
+      "https://raw.githubusercontent.com/egnyte/egnyte-js-sdk/HEAD/src/lib/enum/endpoints.json"
+     ]
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.egnyte.com/docs",
+    "https://developers.egnyte.com/docs/read/File_System_Management_API_Documentation",
+    "https://www.egnyte.com",
+    "https://helpdesk.egnyte.com"
+   ]
+  },
+  {
+   "service": "MediaFire",
+   "parent_app_id": "mediafire",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "mediafire-base",
+     "function": "MediaFire web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. www.mediafire.com is blocked by the network policy (curl 000); no domain list read."
+    },
+    {
+     "child_id": "mediafire-uploading",
+     "function": "Upload a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. The MediaFire Core API docs (www.mediafire.com/developers/) are blocked; no upload endpoint could be read."
+    },
+    {
+     "child_id": "mediafire-downloading",
+     "function": "Download a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. The MediaFire Core API docs are blocked; no download endpoint could be read."
+    }
+   ],
+   "sources_blocked": [
+    "https://www.mediafire.com/developers/core_api/1.5/getting_started/"
+   ]
+  },
+  {
+   "service": "Sync.com",
+   "parent_app_id": "sync-com",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "sync-com-base",
+     "function": "Sync.com web panel",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. www.sync.com is blocked by the network policy (curl 000); no domain list read. No official Sync.com SDK or spec was found on the reachable registries."
+    },
+    {
+     "child_id": "sync-com-uploading",
+     "function": "Upload a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official Sync.com source describes the upload endpoint."
+    },
+    {
+     "child_id": "sync-com-downloading",
+     "function": "Download a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official Sync.com source describes the download endpoint."
+    },
+    {
+     "child_id": "sync-com-sharing",
+     "function": "Create a share link",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official Sync.com source describes link creation."
+    }
+   ],
+   "sources_blocked": [
+    "https://www.sync.com/help/"
+   ]
+  },
+  {
+   "service": "transfer.sh",
+   "parent_app_id": "transfer-sh",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The web page and the API are one server (server.go serves '/' viewHandler, static files and the upload/download routes), but no official text says the browser upload uses a given route. The README does not state the public transfer.sh instance's status; it only says that instance is run separately ('the repo is not the place to direct requests and issues for any of the pubblic installation'). The README examples use the host transfer.sh.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "transfer-sh-uploading",
+     "function": "Upload a file (PUT)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "transfer.sh"
+      ],
+      "http_method": "PUT",
+      "path_pattern": "/{filename} | /put/{filename} | /upload/{filename}",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/README.md",
+     "citation_page_date": "dutchcoders/transfer.sh HEAD, read 2026-11-27",
+     "notes": "Project's own README: '$ curl -v --upload-file ./hello.txt https://transfer.sh/hello.txt' and the helper 'curl --request PUT --progress-bar --dump-header - --upload-file \"${file}\" \"https://transfer.sh/\"'. server/server.go routes: 'r.HandleFunc(\"/put/{filename}\", ...putHandler...).Methods(\"PUT\")', '\"/upload/{filename}\" ... Methods(\"PUT\")', '\"/{filename}\" ... Methods(\"PUT\")'. Response header 'x-url-delete: https://transfer.sh/hello.txt/BAYh0/hello.txt/PDw0NHPcqU'. Optional request headers 'Max-Downloads' and 'Max-Days'. README Disclaimer: the maintainer of the public installation 'happens to be a maintainer of this repository' but 'the repo is not the place to direct requests and issues for any of the pubblic installation', and 'you should host your own installation'; the host transfer.sh is the README's example host, and self-hosted instances use other hosts ('https://your-transfersh-instance.tld/').",
+     "citation_also": [
+      "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/server/server.go"
+     ]
+    },
+    {
+     "child_id": "transfer-sh-uploading-form",
+     "function": "Upload files (multipart POST)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "transfer.sh"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/server/server.go",
+     "citation_page_date": "dutchcoders/transfer.sh HEAD, read 2026-11-27",
+     "notes": "server.go: 'r.HandleFunc(\"/\", s.basicAuthHandler(http.HandlerFunc(s.postHandler))).Methods(\"POST\")'; server/handlers.go postHandler: 'if err := r.ParseMultipartForm(_24K); nil != err {' and 'for _, fHeaders := range r.MultipartForm.File {'. Host transfer.sh as in the README examples.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/server/handlers.go",
+      "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/README.md"
+     ]
+    },
+    {
+     "child_id": "transfer-sh-downloading",
+     "function": "Download a file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "transfer.sh"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/{token}/{filename} | /get/{token}/{filename} | /download/{token}/{filename} | /inline/{token}/{filename}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/README.md",
+     "citation_page_date": "dutchcoders/transfer.sh HEAD, read 2026-11-27",
+     "notes": "README: '$ curl https://transfer.sh/1lDau/test.txt | gpg --decrypt --output /tmp/hello.txt'; 'Create direct download link: https://transfer.sh/1lDau/test.txt --> https://transfer.sh/get/1lDau/test.txt'; 'Inline file: ... https://transfer.sh/inline/1lDau/test.txt'. server.go: 'r.HandleFunc(\"/{token}/{filename}\", getHandlerFn).Methods(\"GET\")' and '\"/{action:(?:download|get|inline)}/{token}/{filename}\", getHandlerFn).Methods(\"GET\")'. Archive variants: '\"/({files:.*}).zip\" ... Methods(\"GET\")' (.tar, .tar.gz too).",
+     "citation_also": [
+      "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/server/server.go"
+     ]
+    },
+    {
+     "child_id": "transfer-sh-deleting",
+     "function": "Delete an uploaded file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "transfer.sh"
+      ],
+      "http_method": "DELETE",
+      "path_pattern": "/{token}/{filename}/{deletionToken}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/README.md",
+     "citation_page_date": "dutchcoders/transfer.sh HEAD, read 2026-11-27",
+     "notes": "README: '$ curl -X DELETE <X-Url-Delete Response Header URL>' and 'The URL used to request the deletion of a file and returned as a response header'. server.go: 'r.HandleFunc(\"/{token}/{filename}/{deletionToken}\", s.deleteHandler).Methods(\"DELETE\")'.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/server/server.go"
+     ]
+    },
+    {
+     "child_id": "transfer-sh-scanning",
+     "function": "Upload a file for a VirusTotal or ClamAV scan",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "transfer.sh"
+      ],
+      "http_method": "PUT",
+      "path_pattern": "/{filename}/virustotal | /{filename}/scan",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/README.md",
+     "citation_page_date": "dutchcoders/transfer.sh HEAD, read 2026-11-27",
+     "notes": "README 'Upload to Virustotal': '$ curl -X PUT --upload-file nhgbhhj https://transfer.sh/test.txt/virustotal'. server.go: '\"/{filename}/virustotal\", s.virusTotalHandler).Methods(\"PUT\")', '\"/{filename}/scan\", s.scanHandler).Methods(\"PUT\")'.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/dutchcoders/transfer.sh/HEAD/server/server.go"
+     ]
+    }
+   ],
+   "sources_blocked": [
+    "https://transfer.sh"
+   ]
+  },
+  {
+   "service": "Facebook Messenger",
+   "parent_app_id": "facebook-messenger",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The verified row is the Page Send API on graph.facebook.com; whether the messenger.com web client uses it is not stated by any reachable official source.",
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "facebook-messenger-base",
+     "function": "Messenger web app (messenger.com)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. www.messenger.com and developers.facebook.com are blocked by the network policy (curl 000); no official domain list for the web client was read."
+    },
+    {
+     "child_id": "facebook-messenger-api-sending",
+     "function": "Messenger Platform Send API: send a message as a Page",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "graph.facebook.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v{version}/me/messages",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/fbsamples/original-coast-clothing/HEAD/services/graph-api.js",
+     "citation_page_date": "fbsamples/original-coast-clothing HEAD (config apiVersion v11.0), read 2026-11-27",
+     "notes": "Meta's official sample org fbsamples ('Copyright 2021-present, Facebook, Inc.'): callSendApi 'let url = new URL(`${config.apiUrl}/me/messages`);' ... 'method: \"POST\", headers: { \"Content-Type\": \"application/json\" }'; services/config.js 'apiDomain: \"https://graph.facebook.com\"', 'apiVersion: \"v11.0\"', apiUrl returns '`${this.apiDomain}/${this.apiVersion}`'. Older sample messenger-platform-samples/node/app.js: \"uri: 'https://graph.facebook.com/v2.6/me/messages', ... method: 'POST'\". This is the business (Page) bot API, not the consumer web client. Host graph.facebook.com maps to facebook (facebook.com) in the pack, not to facebook-messenger (messenger.com).",
+     "citation_also": [
+      "https://raw.githubusercontent.com/fbsamples/original-coast-clothing/HEAD/services/config.js",
+      "https://raw.githubusercontent.com/fbsamples/messenger-platform-samples/HEAD/node/app.js"
+     ]
+    },
+    {
+     "child_id": "facebook-messenger-web-sending",
+     "function": "Messenger web: send a message",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official Meta page describes the messenger.com web client's request hosts or paths; developers.facebook.com and www.messenger.com are blocked."
+    },
+    {
+     "child_id": "facebook-messenger-web-uploading",
+     "function": "Messenger web: send a file or photo",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official Meta page describes the web client's attachment upload."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.facebook.com/docs/messenger-platform/",
+    "https://www.messenger.com",
+    "https://www.facebook.com/help/messenger-app",
+    "https://graph.facebook.com"
+   ]
+  },
+  {
+   "service": "Stack Overflow",
+   "parent_app_id": "stack-overflow",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "web_ui_evidence": "none",
+   "children": [
+    {
+     "child_id": "stack-overflow-base",
+     "function": "Stack Overflow site",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. stackoverflow.com and meta.stackexchange.com are blocked by the network policy (curl 000); no official domain list read."
+    },
+    {
+     "child_id": "stack-overflow-api-reading",
+     "function": "Stack Exchange API: read questions and answers",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. api.stackexchange.com/docs is blocked. The StackExchange org on raw.githubusercontent.com has repositories (StackExchange.Redis, Stacks, StackExchange.DataExplorer) that are not the public API; the PyPI 'stackapi' (Andrew Wegner) and npm 'stackexchange' (Martijn Swaagman) packages are third-party, so not used."
+    },
+    {
+     "child_id": "stack-overflow-api-posting",
+     "function": "Stack Exchange API: post a question, answer or comment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. api.stackexchange.com/docs is blocked; no official write-method page read."
+    },
+    {
+     "child_id": "stack-overflow-web-posting",
+     "function": "Web: ask a question or post an answer",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official page describes the site's posting request paths."
+    }
+   ],
+   "sources_blocked": [
+    "https://api.stackexchange.com/docs",
+    "https://api.stackexchange.com/docs/questions",
+    "https://stackoverflow.com",
+    "https://stackapps.com",
+    "https://meta.stackexchange.com",
+    "https://stackoverflow.co"
+   ]
+  }
+ ]
+}

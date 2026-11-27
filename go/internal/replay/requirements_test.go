@@ -578,28 +578,28 @@ func TestSR57SMBTransportProtection(t *testing.T) {
 	requireRequirement(t, "TestSR57SMBTransportProtection")
 }
 
-// SR-58 (SECURITY-REQUIREMENTS.md).
+// SR-70 (SECURITY-REQUIREMENTS.md; numbered SR-58 until PRO-545, and the name keys its recorded cases).
 func TestSR58RDPSecurityPosture(t *testing.T) { requireRequirement(t, "TestSR58RDPSecurityPosture") }
 
-// SR-59 (SECURITY-REQUIREMENTS.md).
+// SR-71 (SECURITY-REQUIREMENTS.md; numbered SR-59 until PRO-545, and the name keys its recorded cases).
 func TestSR59DatabaseTransportProtection(t *testing.T) {
 	requireRequirement(t, "TestSR59DatabaseTransportProtection")
 }
 
-// SR-60 (SECURITY-REQUIREMENTS.md).
+// SR-72 (SECURITY-REQUIREMENTS.md; numbered SR-60 until PRO-545, and the name keys its recorded cases).
 func TestSR60SNMPv3SecurityLevel(t *testing.T) { requireRequirement(t, "TestSR60SNMPv3SecurityLevel") }
 
-// SR-61 (SECURITY-REQUIREMENTS.md).
+// SR-73 (SECURITY-REQUIREMENTS.md; numbered SR-61 until PRO-545, and the name keys its recorded cases).
 func TestSR61KerberosEncryptionTypes(t *testing.T) {
 	requireRequirement(t, "TestSR61KerberosEncryptionTypes")
 }
 
-// SR-62 (SECURITY-REQUIREMENTS.md).
+// SR-74 (SECURITY-REQUIREMENTS.md; numbered SR-62 until PRO-545, and the name keys its recorded cases).
 func TestSR62WeakCipherSuiteClasses(t *testing.T) {
 	requireRequirement(t, "TestSR62WeakCipherSuiteClasses")
 }
 
-// SR-63 (SECURITY-REQUIREMENTS.md).
+// SR-75 (SECURITY-REQUIREMENTS.md; numbered SR-63 until PRO-545, and the name keys its recorded cases).
 func TestSR63ServerNameCatalog(t *testing.T) { requireRequirement(t, "TestSR63ServerNameCatalog") }
 
 // SR-64 (SECURITY-REQUIREMENTS.md).

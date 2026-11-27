@@ -127,3 +127,7 @@ not that the peer is who it claims. Policies see one verdict per session, so
 they cannot express "allow web-browsing only inside this application's flow";
 dependency warnings exist because this engine cannot correlate flows. No
 blocking, logging destination, user or zone concept exists here.
+
+## Child applications (PRO-492, Go only)
+
+A decrypting proxy can classify one HTTP request into a child application per function (for example `app=gmail-uploading`, `container=gmail`) with `go/detector` `AppClassifier`; policies parsed with child applications match a parent, its children and every child matched on a host it owns (`host_owner`) with `containers`. The record is `go/detector/app-verdict.schema.json`. Data format, limits and the wave process: [docs/CHILD-APPS.md](docs/CHILD-APPS.md).

@@ -1,0 +1,1763 @@
+[
+{
+"adverse_cases": [
+"random_64",
+"random_4k",
+"random_20k",
+"clienthello_truncated_5",
+"clienthello_truncated_half",
+"clienthello_truncated_last",
+"clienthello_oversized",
+"clienthello_1byte_fragments",
+"fuzz:FuzzDatagramIsDeterministic/01c0db6a",
+"fuzz:FuzzDatagramIsDeterministic/0ba224cf",
+"fuzz:FuzzDatagramIsDeterministic/11b9d9e2",
+"fuzz:FuzzDatagramIsDeterministic/1a81c3d8",
+"fuzz:FuzzDatagramIsDeterministic/2f4b722c",
+"fuzz:FuzzDatagramIsDeterministic/30d905ca",
+"fuzz:FuzzDatagramIsDeterministic/3c6eeb16",
+"fuzz:FuzzDatagramIsDeterministic/417a055e",
+"fuzz:FuzzDatagramIsDeterministic/c2f2c858",
+"fuzz:FuzzEveryParserIsSplitInvariant/225399f2",
+"fuzz:FuzzEveryParserIsSplitInvariant/57bf995f",
+"fuzz:FuzzEveryParserIsSplitInvariant/859c4056",
+"fuzz:FuzzEveryParserIsSplitInvariant/9ae755e7",
+"fuzz:FuzzEveryParserIsSplitInvariant/c3d30cc4",
+"fuzz:FuzzEveryParserIsSplitInvariant/c94946ef",
+"fuzz:FuzzEveryParserIsSplitInvariant/rapid-sm",
+"fuzz:FuzzEveryParserIsSplitInvariant/rapid-sm",
+"fuzz:FuzzEveryParserIsSplitInvariant/rapid-so",
+"fuzz:FuzzFlowIsSplitInvariant/1245a13c",
+"fuzz:FuzzFlowIsSplitInvariant/191f0c86",
+"fuzz:FuzzFlowIsSplitInvariant/1e0868d3",
+"fuzz:FuzzFlowIsSplitInvariant/45fb2359",
+"fuzz:FuzzFlowIsSplitInvariant/518918fb",
+"fuzz:FuzzFlowIsSplitInvariant/59d6b13c",
+"fuzz:FuzzFlowIsSplitInvariant/64827bb3",
+"fuzz:FuzzFlowIsSplitInvariant/67472fdf",
+"fuzz:FuzzInspectorIsSplitInvariant/1763f322",
+"fuzz:FuzzInspectorIsSplitInvariant/4694c144",
+"fuzz:FuzzInspectorIsSplitInvariant/6a1504c1",
+"fuzz:FuzzInspectorIsSplitInvariant/8d3aadca",
+"fuzz:FuzzInspectorIsSplitInvariant/9314bb50",
+"fuzz:FuzzInspectorIsSplitInvariant/94a6838c",
+"fuzz:FuzzInspectorIsSplitInvariant/b70032c2",
+"fuzz:FuzzInspectorIsSplitInvariant/ba08ad1a",
+"fuzz:FuzzInspectorIsSplitInvariant/rapid-mq",
+"fuzz:FuzzInspectorNeverPanics/8088a95f"
+],
+"kinds": [
+{
+"Max": 600,
+"Name": "tls",
+"Rate": 60
+},
+{
+"Max": 300,
+"Name": "http1",
+"Rate": 25
+},
+{
+"Max": 300,
+"Name": "ssh",
+"Rate": 20
+},
+{
+"Max": 200,
+"Name": "inspect",
+"Rate": 10
+},
+{
+"Max": 300,
+"Name": "adverse",
+"Rate": 10
+},
+{
+"Max": 100,
+"Name": "quiet",
+"Rate": 2
+},
+{
+"Max": 40,
+"Name": "blocked",
+"Rate": 0.5
+}
+],
+"start_unix": 1795761860
+},
+{
+"counts": {
+"adverse": {
+"ok": 299
+},
+"blocked": {
+"ok": 4
+},
+"http1": {
+"ok": 749
+},
+"inspect": {
+"ok": 299
+},
+"quiet": {
+"ok": 29
+},
+"ssh": {
+"ok": 599
+},
+"tls": {
+"ok": 1799
+}
+},
+"final": false,
+"t_unix": 1795761890
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795761920
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1799
+}
+},
+"final": false,
+"t_unix": 1795761950
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 61
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795761980
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 59
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762010
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762040
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762070
+},
+{
+"counts": {
+"adverse": {
+"ok": 299
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 746
+},
+"inspect": {
+"ok": 299
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 597
+},
+"tls": {
+"ok": 1788
+}
+},
+"final": false,
+"t_unix": 1795762100
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762130
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762160
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762190
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1799
+}
+},
+"final": false,
+"t_unix": 1795762220
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762250
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762280
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762310
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762340
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762370
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762400
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1799
+}
+},
+"final": false,
+"t_unix": 1795762430
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762460
+},
+{
+"counts": {
+"adverse": {
+"err_connect": 1,
+"err_dial": 164,
+"ok": 135
+},
+"blocked": {
+"err_closed_early": 3,
+"err_dial": 8,
+"ok": 8
+},
+"http1": {
+"err_connect": 2,
+"err_dial": 410,
+"ok": 338
+},
+"inspect": {
+"err_connect": 1,
+"err_dial": 164,
+"err_inspect_ca": 3,
+"ok": 132
+},
+"quiet": {
+"err_dial": 32,
+"ok": 31
+},
+"ssh": {
+"err_connect": 1,
+"err_dial": 328,
+"ok": 271
+},
+"tls": {
+"err_connect": 5,
+"err_dial": 984,
+"ok": 811
+}
+},
+"final": false,
+"t_unix": 1795762490
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 11
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 57
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762520
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762550
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762580
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762610
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762640
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762670
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762700
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762730
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762760
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762790
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762820
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762850
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1799
+}
+},
+"final": false,
+"t_unix": 1795762880
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762910
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1799
+}
+},
+"final": false,
+"t_unix": 1795762940
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795762970
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763000
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1798
+}
+},
+"final": false,
+"t_unix": 1795763030
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763060
+},
+{
+"counts": {
+"adverse": {
+"err_connect": 1,
+"err_dial": 166,
+"ok": 133
+},
+"blocked": {
+"err_closed_early": 3,
+"err_dial": 8,
+"ok": 8
+},
+"http1": {
+"err_connect": 2,
+"err_dial": 415,
+"ok": 333
+},
+"inspect": {
+"err_connect": 1,
+"err_dial": 166,
+"err_inspect_ca": 3,
+"ok": 130
+},
+"quiet": {
+"err_dial": 33,
+"ok": 31
+},
+"ssh": {
+"err_connect": 2,
+"err_dial": 333,
+"ok": 265
+},
+"tls": {
+"err_connect": 5,
+"err_dial": 997,
+"ok": 798
+}
+},
+"final": false,
+"t_unix": 1795763090
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 11
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 56
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763120
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1798
+}
+},
+"final": false,
+"t_unix": 1795763150
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1799
+}
+},
+"final": false,
+"t_unix": 1795763180
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763210
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763240
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763270
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763300
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763330
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763360
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763390
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763420
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763450
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763480
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763510
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763540
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763570
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763600
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763630
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 61
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795763660
+},
+{
+"counts": {
+"adverse": {
+"ok": 1
+},
+"blocked": {
+"ok": 11
+},
+"http1": {
+"ok": 1
+},
+"inspect": {
+"ok": 1
+},
+"quiet": {
+"ok": 30
+},
+"ssh": {
+"ok": 1
+},
+"tls": {
+"ok": 1
+}
+},
+"final": true,
+"t_unix": 1795763680
+}
+]
