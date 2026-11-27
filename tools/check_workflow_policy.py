@@ -133,7 +133,13 @@
    `python -m pip` would run a repository `pip/` package) and the scanners themselves, so no
    repository code runs before them and can shadow them through the runner's path file.
    The configuration they read is rule 16's; requirements-dev.txt (hash-pinned, audited by
-   pip-audit) stays a reviewed change to the toolchain.
+   pip-audit) stays a reviewed change to the toolchain. The secret scan's history scope is
+   pinned per event (PRO-539): on a pull request `--log-opts=HEAD` (every commit the merge
+   commit reaches: the pull request's own and main's, no other branch), on every other event
+   gitleaks' default (the full history of every fetched ref), chosen by the literal-only
+   GITLEAKS_SCOPE expression since no tool may run first; and secret-scan.yml, the nightly
+   scan of every branch (`--log-opts=--all`, full fetch, daily schedule, failure summary),
+   is pinned whole (NIGHTLY_SCAN_STEPS).
 16. Scanner configuration: ruff's `[tool.ruff*]` sections of pyproject.toml, bandit.yaml and
    .gitleaks.toml are locked in `tools/scanner_config.lock.json` (`--write-scanner-lock`), so
    loosening a rule selection, an ignore, a skip or an allowlist means advancing a reviewed
@@ -146,7 +152,8 @@
    in every file but `.git`, Markdown and build directories included (task 16 round 2), and
    .gitleaks.toml may use bare keys only, so `disabledRules` cannot hide in a quoted, escaped,
    dotted or inline-table spelling (gitleaks reads keys case-insensitively, so neither can
-   `disabledrules`). And since gitleaks scans the full history, every commit after HISTORY_BASE
+   `disabledrules`). And since gitleaks scans the full history (on main, the schedule and the
+   nightly secret-scan.yml; a pull request scans its merge commit's), every commit after HISTORY_BASE
    (the first commit free of the token, tree and diff) is searched too: every blob introduced
    since, read raw with `rev-list --objects` and `cat-file --batch` and `--no-replace-objects`,
    so no .gitattributes (`-diff`, `binary`, textconv) or replace ref can hide a line the way
@@ -1160,6 +1167,9 @@ SCANNER_BUILD = ['mkdir -p "$RUNNER_TEMP/scanners"',
                  'cp tools/scanners/go.mod tools/scanners/go.sum "$RUNNER_TEMP/scanners/"',
                  'cd "$RUNNER_TEMP/scanners"']
 SCANNER_JOB_KEYS = {"name", "runs-on", "timeout-minutes", "steps"}
+# PRO-539: ci.yml's secret scan scope, a literal-only expression (no repository code may run before the scanner, so no
+# tool can decide it): HEAD on a pull request, gitleaks' default (every fetched ref) on every other event.
+GITLEAKS_SCOPE = "${{ github.event_name == 'pull_request' && 'HEAD' || '' }}"
 SCANNER_JOBS = {
     "static-analysis": (SCANNER_JOB_KEYS | {"permissions"}, {"contents": "read"}, [
         HARDEN_STEP,
@@ -1175,11 +1185,15 @@ SCANNER_JOBS = {
         # checked against the Go checksum database), built from a copy in RUNNER_TEMP on a supported Go,
         # run so that it ignores inline allow comments in every commit
         SETUP_GO,
-        {"env": GO_BUILD_ENV,
+        # PRO-539: a pull request scans the history of its merge commit only (--log-opts=HEAD); every other event
+        # keeps gitleaks' default, the full history of every fetched ref. secret-scan.yml scans every branch nightly.
+        {"env": dict(GO_BUILD_ENV, GITLEAKS_LOG_OPTS=GITLEAKS_SCOPE),
          "run": SCANNER_BUILD + ['GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8',
                                  'cd "$GITHUB_WORKSPACE"',
-                 '"$RUNNER_TEMP/bin/gitleaks" git --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . 2>&1 | '
-                 'tee -a "$GITHUB_STEP_SUMMARY"']},
+                                 ('echo "secret scan scope: event $GITHUB_EVENT_NAME, --log-opts=\'$GITLEAKS_LOG_OPTS\' (empty: '
+                                  'every fetched ref)" | tee -a "$GITHUB_STEP_SUMMARY"'),
+                                 ('"$RUNNER_TEMP/bin/gitleaks" git --log-opts="$GITLEAKS_LOG_OPTS" --ignore-gitleaks-allow --redact '
+                                  '--no-banner --exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"')]},
     ]),
     "workflow-lint": (SCANNER_JOB_KEYS, None, [
         HARDEN_STEP,
@@ -1300,6 +1314,44 @@ MUTATION_STEPS = [
              'cd "$RUNNER_TEMP/mutation/engine-modules"',
              "go mod download"]},
 ]
+
+
+# Rule 15 also covers the nightly secret scan of every branch (PRO-539): pinned whole, the same gitleaks build as
+# ci.yml's static-analysis, the full history of every branch (--log-opts=--all), and a failure-only summary step.
+NIGHTLY_SCAN_WORKFLOW = ".github/workflows/secret-scan.yml"
+NIGHTLY_SCAN_STEPS = [
+    HARDEN_STEP,
+    {"uses": "actions/checkout", "with": {"persist-credentials": "false", "fetch-depth": "0"}},
+    SETUP_GO,
+    {"env": GO_BUILD_ENV,
+     "run": SCANNER_BUILD + ['GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8',
+                             'cd "$GITHUB_WORKSPACE"',
+                             ('echo "### Nightly secret scan: every branch (gitleaks --log-opts=--all, $(git branch -r | wc -l) '
+                              'remote refs)" | tee -a "$GITHUB_STEP_SUMMARY"'),
+                             ('"$RUNNER_TEMP/bin/gitleaks" git --log-opts=--all --ignore-gitleaks-allow --redact --no-banner '
+                              '--exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"'),
+                             'echo "secret scan: ok, no leak on any branch" | tee -a "$GITHUB_STEP_SUMMARY"']},
+    {"if": "failure()",
+     "run": ["{", "echo",
+             'echo "**secret scan: FAILED.** gitleaks reported a leak on at least one branch (redacted above, with its"',
+             'echo "commit and file). Pull requests are not blocked: each scans only its own history. Report it on the board"',
+             'echo "to the branch\'s lane; the secret is rotated and the branch fixed, never allowlisted to get green."',
+             '} >> "$GITHUB_STEP_SUMMARY"']},
+]
+
+
+def check_nightly_scan(workflows, path=NIGHTLY_SCAN_WORKFLOW, job="secret-scan"):
+    """Rule 15 (PRO-539): the nightly secret scan is exactly NIGHTLY_SCAN_STEPS, contents: read, 20 minutes, on a schedule."""
+    if path not in workflows:
+        return ["{} is missing (the nightly scan of every branch, PRO-539)".format(path)]
+    text = workflows[path]
+    problems = check_pinned_job(path, text, job, SCANNER_JOB_KEYS | {"permissions"}, {"contents": "read"},
+                                "ubuntu-24.04", NIGHTLY_SCAN_STEPS)
+    if not problems and strip_quotes(str(mapping_at(job_lines(text, job), 4, "timeout-minutes"))) != "20":
+        problems.append("{}: the {} job's timeout-minutes must be 20".format(path.rsplit("/", 1)[-1], job))
+    if not re.search(r'^on:\n  schedule:\n    - cron: "\d{1,2} \d{1,2} \* \* \*"\n  workflow_dispatch:\n', text, re.M):
+        problems.append("{}: must run on a daily `schedule` (and workflow_dispatch) only".format(path.rsplit("/", 1)[-1]))
+    return problems
 
 
 def check_mutation_build(workflows, path=MUTATION_WORKFLOW, job="mutation"):
@@ -1795,6 +1847,7 @@ def main(root, history_base=HISTORY_BASE):
         problems += check_ci_masking(texts)
         problems += check_scanner_order(texts)
         problems += check_mutation_build(texts)
+        problems += check_nightly_scan(texts)
         scanner_lock = root / SCANNER_LOCK
         problems += check_scanner_config(root, scanner_lock.read_text(encoding="utf-8") if scanner_lock.exists() else "missing")
         if (root / ".git").exists():
@@ -2595,6 +2648,36 @@ def self_test():
     }.items():
         assert text != nightly, label
         assert check_mutation_build({MUTATION_WORKFLOW: text}), label
+    # PRO-539: the nightly scan of every branch is pinned whole, and ci.yml's pull request scope stays HEAD
+    assert check_nightly_scan(real) == [], check_nightly_scan(real)
+    nightly_scan = real[NIGHTLY_SCAN_WORKFLOW]
+    for label, text in {
+        "branch scope only": nightly_scan.replace("git --log-opts=--all --ignore", "git --log-opts=HEAD --ignore", 1),
+        "inline allows honoured": nightly_scan.replace(" --ignore-gitleaks-allow", "", 1),
+        "exit code dropped": nightly_scan.replace(" --exit-code 1 .", " --exit-code 0 .", 1),
+        "shallow checkout": nightly_scan.replace("          fetch-depth: 0\n", "          fetch-depth: 1\n", 1),
+        "failure summary dropped": nightly_scan.replace("        if: failure()\n", "", 1),
+        "repository code first": nightly_scan.replace("      - name: Set up Go for the pinned scanner build\n",
+                                                     "      - run: python3 tools/x.py\n      - name: Set up Go for the pinned scanner build\n", 1),
+        "extra step": nightly_scan + "      - run: true\n",
+        "write permission": in_job(nightly_scan, "secret-scan", "      contents: read\n", "      contents: write\n"),
+        "longer timeout": nightly_scan.replace("    timeout-minutes: 20\n", "    timeout-minutes: 200\n", 1),
+        "no schedule": nightly_scan.replace('  schedule:\n    - cron: "41 1 * * *"\n', "", 1),
+        "weekly": nightly_scan.replace('"41 1 * * *"', '"41 1 * * 1"', 1),
+        "no job": nightly_scan.replace("\n  secret-scan:\n", "\n  secret-scan-renamed:\n", 1),
+    }.items():
+        assert text != nightly_scan, label
+        assert check_nightly_scan({NIGHTLY_SCAN_WORKFLOW: text}), label
+    assert check_nightly_scan({}), "a missing nightly scan fails"
+    ci_scope = real[".github/workflows/ci.yml"]
+    for label, text in {
+        "pull request scans every branch again": ci_scope.replace("&& 'HEAD' ||", "&& '--all' ||", 1),
+        "pull request scans only its range": ci_scope.replace("&& 'HEAD' ||", "&& 'origin/main..HEAD' ||", 1),
+        "push narrowed to HEAD": ci_scope.replace("&& 'HEAD' || '' }}", "&& 'HEAD' || 'HEAD' }}", 1),
+        "scope not passed": ci_scope.replace(' git --log-opts="$GITLEAKS_LOG_OPTS" --ignore', " git --ignore", 1),
+    }.items():
+        assert text != ci_scope, label
+        assert check_scanner_order({".github/workflows/ci.yml": text}), label
     # item 16: the independent scanners run before any repository code in their jobs
     assert check_scanner_order(real) == [], check_scanner_order(real)
     zizmor_step = "      - name: Audit every workflow for security weaknesses (zizmor, pedantic persona, offline audits)\n"
