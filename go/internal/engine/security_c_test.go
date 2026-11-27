@@ -8,6 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/hex"
 	"fmt"
+	"github.com/leenadav/protocol-detector/go/internal/parsertest"
 	"math/big"
 	"math/rand"
 	"strings"
@@ -384,7 +385,7 @@ func TestCertificateWatchIsOptInBoundedAndEmitsStructureLabelsOnly(t *testing.T)
 	if watched.Metrics.BytesInspected != len(flight) {
 		t.Fatalf("inspected %d of %d bytes", watched.Metrics.BytesInspected, len(flight))
 	}
-	rendering := fmt.Sprintf("%+v", watched.Observation)
+	rendering := parsertest.Rendered(watched.Observation)
 	for _, secret := range []string{"secretname", "SecretName", "5ec7e75e71a1", "5EC7E75E71A1", hex.EncodeToString(leaf[len(leaf)-8:])} {
 		if strings.Contains(rendering, secret) {
 			t.Fatalf("the observation carries certificate content %q: %s", secret, rendering)
@@ -446,7 +447,7 @@ func scInspect(t *testing.T, data []byte, hint string) contracts.Observation {
 
 func scNoLeak(t *testing.T, name string, o contracts.Observation, secrets ...[]byte) {
 	t.Helper()
-	rendering := fmt.Sprintf("%+v", o)
+	rendering := parsertest.Rendered(o)
 	for _, s := range secrets {
 		if strings.Contains(rendering, string(s)) || strings.Contains(rendering, hex.EncodeToString(s)) {
 			t.Fatalf("%s: the observation carries %q: %s", name, s, rendering)

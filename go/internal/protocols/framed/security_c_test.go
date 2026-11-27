@@ -2,6 +2,7 @@ package framed
 
 import (
 	"fmt"
+	"github.com/leenadav/protocol-detector/go/internal/parsertest"
 	"hash/crc32"
 	"strings"
 	"testing"
@@ -60,7 +61,7 @@ func scParse(p *Parser, data []byte) (string, error) {
 	if !p.Done() {
 		return "", fmt.Errorf("not done")
 	}
-	return fmt.Sprintf("%+v", *p.Result()), nil
+	return parsertest.Rendered(*p.Result()), nil
 }
 
 func scU16(n int) []byte { return []byte{byte(n >> 8), byte(n)} }
@@ -196,7 +197,7 @@ func TestTCPServerRepliesMustCoverTheirFramesExactlyAndNeverLeak(t *testing.T) {
 		if _, err := p.Feed(c.data); err != nil || !p.Done() || p.Result().ProtocolName != c.label {
 			t.Fatalf("%s: %v %+v", name, err, p.Result())
 		}
-		rendering := fmt.Sprintf("%+v", *p.Result())
+		rendering := parsertest.Rendered(*p.Result())
 		for _, s := range secrets {
 			if strings.Contains(rendering, s) {
 				t.Fatalf("%s: %q emitted: %s", name, s, rendering)
@@ -243,7 +244,7 @@ func TestKerberosEtypeLabelsDropOnSubstructureFaultsAndStayClosed(t *testing.T) 
 		if err != nil || m == nil || m.Protocol != "kerberos" {
 			t.Fatalf("%s: the identification changed: %v %+v", name, err, m)
 		}
-		rendering := fmt.Sprintf("%+v", m)
+		rendering := parsertest.Rendered(m)
 		for _, secret := range []string{"secretuser", "SECRETREALM", "12345678", "\x12\x34\x56\x78"} {
 			if strings.Contains(rendering, secret) {
 				t.Fatalf("%s: %q emitted: %s", name, secret, rendering)
@@ -313,7 +314,7 @@ func TestSmartHomeDatagramsNeedTheirWholeProfileAndNeverLeak(t *testing.T) {
 		if err != nil || m == nil {
 			t.Fatalf("%s: %v", name, err)
 		}
-		rendering := fmt.Sprintf("%+v", *m)
+		rendering := parsertest.Rendered(*m)
 		for _, secret := range []string{"TARGET", "SRCE", "SECRETPAYLOAD", "544152474554"} {
 			if strings.Contains(rendering, secret) {
 				t.Fatalf("%s: %q emitted: %s", name, secret, rendering)

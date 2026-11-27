@@ -1,14 +1,14 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "4b9cf5de07daa37c018b990cfbea99204346896a",
+  "commit": "b54e4e2c8fc35c186cd94ec783ee40bf37010274",
   "branch": "claude/pensive-carson-f94p62",
-  "build_digest": "b01e54fc58c37a90213ea7894606d4bd587a4e06c5add21d089c12c171553a97",
+  "build_digest": "4f142564e684d96986b22a94a29bbbdaeb35d89e1f2fcc7fa84938f2ea8372f7",
   "components": {
     "engine": {
       "root": "go",
       "version": "0.66.0",
-      "files": 135
+      "files": 136
     },
     "launchers": {
       "root": ".",
@@ -351,6 +351,11 @@
       "path": "go/internal/parsertest/parsertest.go",
       "component": "engine",
       "sha256": "69436e18eb92005cbdacada4260541de9c91576eb11b30c2af1fa27c6871b065"
+    },
+    {
+      "path": "go/internal/parsertest/rendered.go",
+      "component": "engine",
+      "sha256": "cdbdc4ba6b0d3ca745b8aad26f4b1216b5423cc4584bf076b2a8a5ee189cbafd"
     },
     {
       "path": "go/internal/parsing/credit.go",
