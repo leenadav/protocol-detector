@@ -1,7 +1,8 @@
 # Security requirements
 
 Each requirement names the test(s) that verify it. `tools/check_security_requirements.py`
-fails CI when a referenced module or test no longer exists, when a row starting with `SR` does not parse, on a
+fails CI when a referenced module or test no longer exists, when a table line other than the header does not
+parse (a missing leading pipe or a look-alike id such as a Cyrillic `S` fails too), on a
 duplicate id, and when the id set differs from `tools/security_requirements.lock.json` (a deleted or unpinned
 row). A new row is pinned with `python3 -B tools/check_security_requirements.py --write-lock`, committed with the
 row; a requirement is removed only with `--write-lock --retire SR-n`, and a retired id is never reused. Format of
