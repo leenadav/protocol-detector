@@ -25,12 +25,12 @@ func TestSecurityHandlerPoolRejectsBeyondItsBoundWithoutQueueing(t *testing.T) {
 		s.slots <- struct{}{} // every handler is busy
 	}
 	go s.Serve()
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 	conn, err := net.Dial("tcp", listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	_ = conn.SetReadDeadline(time.Now().Add(3 * time.Second))
 	reply, err := io.ReadAll(conn)
 	if err != nil || !strings.HasPrefix(string(reply), "HTTP/1.1 503 Service Unavailable\r\n") ||

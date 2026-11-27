@@ -51,7 +51,7 @@ func securityCall(t *testing.T, port int, method, path, body string, headers map
 	if err != nil {
 		t.Fatalf("%s %s: %v", method, path, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	data, _ := io.ReadAll(resp.Body)
 	return resp.StatusCode, string(data)
 }

@@ -601,7 +601,7 @@ func h2Fields(in *Inspector) map[string]string {
 func TestSecurityHTTP2HeaderBlockBoundsAndNoValueLeakage(t *testing.T) {
 	settings := h2frame(4, 0, 0, nil)
 	ping := h2frame(6, 0, 0, make([]byte, 8))
-	open := append(append([]byte{}, []byte(h2Preface)...), settings...)
+	open := append(append([]byte{}, h2Preface...), settings...)
 	decoded := func(name string, stream []byte, want bool) map[string]string {
 		t.Helper()
 		in, fields := h2run(t, "", stream)
