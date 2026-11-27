@@ -233,6 +233,15 @@ The commits after it are documentation only: `1437060` (the packet), `a88d679`, 
 
 ## 7. Pitfalls learned
 
+- **Go `regexp` classes match runes, not bytes (PRO-403).** `[\x80-\xff]` is U+0080..U+00FF, so on wire bytes it
+  refuses a raw obs-text byte and a negated class accepts one. Check byte ranges with a loop (`statusLine`,
+  `isIMAPAtom` in textroute); the recorded requirement cases found two such divergences.
+- **Security requirements replay the reference's recorded inputs (PRO-403).** `go/internal/replay::TestSR*` replay
+  `migration/fixtures/requirements.json.gz` (inputs the removed Python tests made, by test) and the families'
+  parity cases. A Go change that moves one of those answers is a reviewed divergence pinned in
+  `migration/parity/requirement-deltas.json` (deltas.json form), never a re-recording. Re-recording needs a
+  `python-final` extract: `git archive python-final | tar -x -C DIR`, then
+  `python3 -B migration/parity/requirement_cases.py --reference DIR`.
 - **The differential gates replay golden files (PRO-401).** A change that moves Go's answer fails `make go-check`
   until the golden file is re-recorded (`make golden-record`, with the reference) or, after the reference is gone,
   until the new answer is reviewed in. Never re-record to make a red gate green without reading the diff.
