@@ -9,14 +9,24 @@ and a case name such as "session key" next to one reads as key=value too; a seco
 decoding to an HTTP/1 start line only in go/**/*_test.go (SEC-CI-1), because the same hex anywhere else could be a
 captured request with a cookie or bearer token. This tool proves both allowlists stay that narrow.
 
+It also checks the scan's history scope by event (PRO-539): a pull request scans with --log-opts=HEAD (every commit
+its merge commit reaches, the pull request's own and main's, but no other branch, so a leak on one lane's branch no
+longer fails every other pull request); a push to main, the schedule and a dispatch keep gitleaks' default (the full
+history of every fetched ref); and .github/workflows/secret-scan.yml scans every branch nightly (--log-opts=--all).
+
   --self-test  reads the entry from .gitleaks.toml and checks its path and regex against fixed samples (Python's re
                reads these two patterns as Go's RE2 does): CNAME chains pass only in live-results TSVs; keys,
                tokens and passwords, in that file or anywhere else, do not; hex HTTP/1 passes only in Go tests
-               under go/, and a hex secret that is not an HTTP message passes nowhere.
+               under go/, and a hex secret that is not an HTTP message passes nowhere. It reads the scan scope
+               from ci.yml (HEAD on pull_request, empty otherwise) and secret-scan.yml (--all, full fetch, daily).
   --bin DIR    builds a throwaway git repository with the same samples and runs the real gitleaks (DIR/gitleaks)
                with this .gitleaks.toml: exactly the chain in the live-results TSV is allowed; every secret, and the
                same chain in any other file, is still reported; a hex HTTP/1 request is allowed in a Go test under
-               go/ and reported in a Python file, a JSON fixture and a Go file that is not a test.
+               go/ and reported in a Python file, a JSON fixture and a Go file that is not a test. Then the scope
+               proof: in a second repository with main, a lane branch carrying a secret and two pull requests
+               merged into main as GitHub's merge commit is, --log-opts=HEAD still fails on a secret the pull
+               request added (and deleted again) in its own history, passes a clean pull request although the lane
+               branch leaks, and the push default and the nightly --all both report every branch's secret.
 
     check_gitleaks_allowlist.py --self-test
     check_gitleaks_allowlist.py --bin DIR
@@ -52,6 +62,17 @@ PLACEHOLDER = "s3cr3t" + "-placeholder"
 PLACEHOLDER_LINE = '\tsecret := "{}"\n'
 # A different made-up value for the same line shape, which must still be reported in that file.
 OTHER_VALUE = "Wn5" + "cR8xLq2ZtV7mPk4Hd9Js"
+# PRO-539: the secret scan's history scope by event. ci.yml chooses it with one literal-only expression (no repository
+# code may run before the scanner, rule 15); secret-scan.yml scans every branch nightly.
+CI = Path(".github/workflows/ci.yml")
+NIGHTLY = Path(".github/workflows/secret-scan.yml")
+CI_SCOPE = re.compile(r"^          GITLEAKS_LOG_OPTS: \$\{\{ github\.event_name == 'pull_request' && '([^']*)' \|\| '([^']*)' \}\}$", re.M)
+CI_SCAN = ' git --log-opts="$GITLEAKS_LOG_OPTS" --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . '
+NIGHTLY_SCAN = " git --log-opts=--all --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . "
+GITLEAKS_RUN = re.compile(r'"\$RUNNER_TEMP/bin/gitleaks" git ')
+# The scope proof's own synthetic leaks (the aws-access-token and github-pat shapes above), assembled at run time.
+LANE_LEAK = "AKIA" + "Q2ZJ7XKP4MWN6RTB"
+PR_LEAK = "ghp" + "_" + "ZqY8mN2pR4tV6xB9cD1fG3hJ5kL7nP0sQ2wE"
 
 
 def live_allowlist(text):
@@ -96,6 +117,28 @@ def placeholder_allowlist(text):
     return None
 
 
+def scope_problems(ci_text, nightly_text):
+    """The scan scope per event, read from the two workflows; fails closed on anything it cannot read."""
+    problems = []
+    scopes = CI_SCOPE.findall(ci_text)
+    if len(scopes) != 1:
+        problems.append("ci.yml: expected exactly one GITLEAKS_LOG_OPTS scope expression, found {}".format(len(scopes)))
+    elif scopes[0] != ("HEAD", ""):
+        problems.append("ci.yml: the scan scope must be --log-opts=HEAD on pull_request and empty (gitleaks' default, every "
+                        "fetched ref) otherwise; it is {!r} / {!r}".format(*scopes[0]))
+    if len(GITLEAKS_RUN.findall(ci_text)) != 1 or ci_text.count(CI_SCAN) != 1:
+        problems.append("ci.yml: the one gitleaks run must pass --log-opts=\"$GITLEAKS_LOG_OPTS\" with inline allows ignored")
+    if nightly_text is None:
+        return problems + ["{} is missing: no nightly scan covers the branches a pull request no longer scans".format(NIGHTLY)]
+    if len(GITLEAKS_RUN.findall(nightly_text)) != 1 or nightly_text.count(NIGHTLY_SCAN) != 1:
+        problems.append("secret-scan.yml: the one gitleaks run must scan --log-opts=--all with inline allows ignored")
+    if nightly_text.count("          fetch-depth: 0\n") != 1:
+        problems.append("secret-scan.yml: the checkout must fetch every branch (fetch-depth: 0)")
+    if not re.search(r'^  schedule:\n    - cron: "\d{1,2} \d{1,2} \* \* \*"$', nightly_text, re.M):
+        problems.append("secret-scan.yml: must run on a daily schedule")
+    return problems
+
+
 def allowed(entry, path, match):
     path_re, match_re = entry
     return bool(re.search(path_re, path)) and bool(re.search(match_re, match))
@@ -135,7 +178,25 @@ def self_test():
     for secret in (PLACEHOLDER + "1", "x" + PLACEHOLDER, PLACEHOLDER.upper(), HEX_REQUEST, OTHER_VALUE) + tuple(
             value for _, value in SECRETS):
         assert not allowed(placeholder, PLACEHOLDER_TEST, secret), secret
-    print("check_gitleaks_allowlist self-test: ok (live-results CNAME chains only; hex HTTP/1 only in Go tests under go/; "
+    ci_text = CI.read_text(encoding="utf-8")
+    nightly_text = NIGHTLY.read_text(encoding="utf-8") if NIGHTLY.exists() else None
+    problems = scope_problems(ci_text, nightly_text)
+    assert not problems, problems
+    for label, ci_bad, nightly_bad in (
+            ("pull request scans every branch", ci_text.replace("&& 'HEAD' ||", "&& '--all' ||", 1), nightly_text),
+            ("pull request scans its range only", ci_text.replace("&& 'HEAD' ||", "&& 'origin/main..HEAD' ||", 1), nightly_text),
+            ("push narrowed", ci_text.replace("|| '' }}", "|| 'HEAD' }}", 1), nightly_text),
+            ("scope not passed", ci_text.replace(CI_SCAN, " git --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . ", 1),
+             nightly_text),
+            ("inline allows honoured", ci_text.replace(CI_SCAN, CI_SCAN.replace(" --ignore-gitleaks-allow", ""), 1), nightly_text),
+            ("nightly missing", ci_text, None),
+            ("nightly on HEAD", ci_text, nightly_text.replace(NIGHTLY_SCAN, NIGHTLY_SCAN.replace("--all", "HEAD"), 1)),
+            ("nightly shallow", ci_text, nightly_text.replace("          fetch-depth: 0\n", "          fetch-depth: 1\n", 1)),
+            ("nightly weekly", ci_text, re.sub(r'(cron: "\d+ \d+ \* \* )\*"', r'\g<1>1"', nightly_text, count=1))):
+        assert (ci_bad, nightly_bad) != (ci_text, nightly_text), label
+        assert scope_problems(ci_bad, nightly_bad), label
+    print("check_gitleaks_allowlist self-test: ok (scan scope: pull_request HEAD, other events every fetched ref, nightly "
+          "--all; live-results CNAME chains only; hex HTTP/1 only in Go tests under go/; "
           "the SR-8 placeholder only in its test; {} secret shapes, other paths and malformed values still flag)".format(
               len(SECRETS)))
     return 0
@@ -181,6 +242,69 @@ def run(bin_dir):
           "{} secrets there, the chain in docs/notes.tsv and the hex request in {} other files reported; the SR-8 "
           "placeholder allowed only in {}, another value there and the placeholder elsewhere reported)".format(
               LIVE, GO_TEST, len(SECRETS), len(hex_files) - 1, PLACEHOLDER_TEST))
+    return run_scope(bin_dir)
+
+
+def run_scope(bin_dir):
+    """PRO-539 proof with the real gitleaks: what each event's --log-opts reports, on a repository shaped like ci's."""
+    with tempfile.TemporaryDirectory() as scratch:
+        repo = Path(scratch) / "repo"
+        repo.mkdir()
+        git = ["git", "-C", str(repo), "-c", "user.email=ci@example.invalid", "-c", "user.name=ci", "-c", "commit.gpgsign=false"]
+
+        def sh(*command):
+            return subprocess.run(git + list(command), check=True, stdout=subprocess.PIPE,  # noqa: S603,S607
+                                  universal_newlines=True).stdout.strip()
+
+        def commit(path, text, message):
+            (repo / path).parent.mkdir(parents=True, exist_ok=True)
+            (repo / path).write_text(text, encoding="utf-8")
+            sh("add", "-A")
+            sh("commit", "-qm", message)
+
+        sh("init", "-q", "-b", "main")
+        commit("README", "clean\n", "main")
+        sh("checkout", "-q", "-b", "lane-a")
+        commit("lane/config.txt", "aws = {}\n".format(LANE_LEAK), "lane leak")
+        sh("checkout", "-q", "main")
+        sh("checkout", "-q", "-b", "pr-leak")
+        commit("pr/config.txt", "token = {}\n".format(PR_LEAK), "pull request leak")
+        commit("pr/config.txt", "token = removed\n", "delete it again: the history still holds it")
+        sh("checkout", "-q", "main")
+        sh("checkout", "-q", "-b", "pr-clean")
+        commit("pr/notes.txt", "clean change\n", "clean pull request")
+        merges = {}
+        for branch in ("pr-leak", "pr-clean"):   # refs/pull/N/merge: the base merged with the head, detached
+            sh("checkout", "-q", "--detach", "main")
+            sh("merge", "-q", "--no-ff", "-m", "Merge " + branch, branch)
+            merges[branch] = sh("rev-parse", "HEAD")
+
+        def scan(head, log_opts):
+            sh("checkout", "-q", "--detach", head)
+            report = Path(scratch) / "scope.json"
+            done = subprocess.run([str(Path(bin_dir) / "gitleaks"), "git", "--log-opts=" + log_opts,  # noqa: S603
+                                   "--ignore-gitleaks-allow", "--no-banner", "--exit-code", "1", "--report-format", "json",
+                                   "--report-path", str(report), str(repo)],
+                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+            return done.returncode, sorted({item["File"] for item in json.loads(report.read_text())})
+
+        both = (1, ["lane/config.txt", "pr/config.txt"])
+        cases = [("pull request with its own leak, --log-opts=HEAD", merges["pr-leak"], "HEAD", (1, ["pr/config.txt"])),
+                 ("clean pull request while lane-a leaks, --log-opts=HEAD", merges["pr-clean"], "HEAD", (0, [])),
+                 ("push to main (gitleaks' default, every ref)", "main", "", both),
+                 ("nightly, --log-opts=--all", "main", "--all", both)]
+        failed = False
+        for label, head, log_opts, expected in cases:
+            found = scan(head, log_opts)
+            if found != expected:
+                print("FAILED: scope: {}: gitleaks exited {} reporting {}; expected {} reporting {}".format(
+                    label, found[0], found[1], expected[0], expected[1]))
+                failed = True
+    if failed:
+        return 1
+    print("check_gitleaks_allowlist: scope ok with the real gitleaks ({} cases: a pull request's own secret, deleted again, "
+          "still fails --log-opts=HEAD; a clean pull request passes while another branch leaks; the push default and the "
+          "nightly --all report every branch)".format(len(cases)))
     return 0
 
 

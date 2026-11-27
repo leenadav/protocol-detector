@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "86816b23ff741993ab3ad87c84a27a19c84aaf4f",
+  "commit": "342e214be90b8b0104f3dce58c47dc8cd229f9d1",
   "branch": "claude/engine-PRO-513-sec-child-6",
-  "build_digest": "7cb0d68cbe82f3203289d28d344428c8c811663bbcc6496852fdcd4ee919631b",
+  "build_digest": "2b9313921e397b290d3ea8f0f77cee7ebf46fba321e93e0056371e2bf33a1693",
   "components": {
     "engine": {
       "root": "go",
@@ -160,12 +160,12 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "b9df99f72a61ad29f9c05741734eabb2882e423870745382c5793b6e4c6702ee"
+      "sha256": "161c20b747d8b35f9ef78ef357f0e38a5f74c301d0ffc467901e5ee90b9d2d88"
     },
     {
       "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "33e3e0fadabb9fa53c804a0a311a83810003c9bfe3471cb8a67868614f46fd1b"
+      "sha256": "efc18c4761f1762012e23cfd3e9c3582f46ea36a63d8ae06c92a9b3530b4c500"
     },
     {
       "path": "go/internal/childapp/pin.go",
