@@ -148,8 +148,11 @@ class BuildIdentityTests(unittest.TestCase):
         try:
             url = "http://127.0.0.1:%d" % httpd.server_port
             expected = json.loads((server.ROOT / "SOURCE.json").read_text())["build_digest"]
-            self.assertTrue(launch.matching_server(url, expected))
-            self.assertFalse(launch.matching_server(url, "0" * 16))
+            self.assertTrue(launch.same_build(url, expected))
+            self.assertFalse(launch.same_build(url, "0" * 16))
+            # PRO-192: the Python reference server is never reused by the Go-only launcher, even for this build.
+            self.assertEqual(launch.server_backend(url), "python")
+            self.assertFalse(launch.matching_server(url, expected))
             import urllib.request
             health = json.loads(urllib.request.urlopen(url + "/api/health", timeout=5).read())
             self.assertEqual(health["build_digest"], expected)
