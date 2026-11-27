@@ -45,7 +45,7 @@ and content-pack patches for the Engine lane.
   `hermes/research-data-pro168` `f721a8c`) are nine specs and batch Q (PRO-169); rows 34, 35, 37, 39 and 41 stay BLOCKED.
   Batch Q's 128 unverified names (new ones and existing ones no round has checked) wait on live round 8 (`live-hosts-r8.txt`).
 - Child apps (PRO-492 App-ID model): wave 0 for 30 services already in the pack is in `research/child-apps/`
-  (PRO-495, 2026-11-27): 103 proposed children, 62 with an official citation (Box, Discord, X and Mega from the vendors'
+  (PRO-495, 2026-11-27): 105 proposed children, 64 with an official citation (Box, Discord, X and Mega from the vendors'
   own spec and SDK repositories, PRO-501); three services fully blocked (WhatsApp, Pastebin, Reddit) until allowlist
   batch R2 (`allowlist-requests.md`; rows 45 to 58 of `blocked-urls.md`). `tools/check_child_apps.py` checks the
   file (parents in the pack, null unverified rows, cited verified rows, the md counts). Later

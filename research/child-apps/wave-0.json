@@ -87,6 +87,46 @@
           "notes": "Allowlist row 'https://www.googleapis.com/upload/gmail'. The page lists the URL only; which operations (send, insert, import) use it is in the Gmail API reference, which is SOURCE BLOCKED."
         },
         {
+          "child_id": "gmail-api-uploading-simple",
+          "function": "Gmail API media upload (simple and multipart)",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "gmail.googleapis.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/upload/gmail/v1/users/{userId}/messages/send | /upload/gmail/v1/users/{userId}/drafts | /upload/gmail/v1/users/{userId}/drafts/send | /upload/gmail/v1/users/{userId}/messages | /upload/gmail/v1/users/{userId}/messages/import",
+            "content_type": "message/*",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+          "citation_page_date": "discovery revision 20261116",
+          "notes": "Gmail's official Discovery document: rootUrl https://gmail.googleapis.com/; mediaUpload.protocols.simple.path of users.messages.send, users.drafts.create, users.drafts.send, users.messages.insert and users.messages.import; accept ['message/*']; global parameter uploadType 'Legacy upload protocol for media (e.g. \"media\", \"multipart\")'. The uploadType value is a query parameter, not part of the path (PRO-510)."
+        },
+        {
+          "child_id": "gmail-api-uploading-resumable",
+          "function": "Gmail API resumable media upload",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "gmail.googleapis.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/resumable/upload/gmail/v1/users/{userId}/messages/send | /resumable/upload/gmail/v1/users/{userId}/drafts | /resumable/upload/gmail/v1/users/{userId}/drafts/send | /resumable/upload/gmail/v1/users/{userId}/messages | /resumable/upload/gmail/v1/users/{userId}/messages/import",
+            "content_type": "message/*",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+          "citation_page_date": "discovery revision 20261116",
+          "notes": "Same Discovery document: mediaUpload.protocols.resumable.path of the same five methods (multipart true). Only the protocol paths the document states are listed; the guide pages on developers.google.com stay blocked (blocked-urls row 45) (PRO-510)."
+        },
+        {
           "child_id": "gmail-uploading",
           "function": "attachment upload in the Gmail web UI",
           "verified": false,
@@ -187,19 +227,18 @@
           "surface": "api",
           "signals": {
             "host_sni": [
-              "graph.microsoft.com",
-              "outlook.office.com"
+              "graph.microsoft.com"
             ],
-            "http_method": "POST then PUT",
-            "path_pattern": "POST /me/messages/{id}/attachments/createUploadSession; then PUT to the returned uploadUrl (example host outlook.office.com, path /api/.../AttachmentSessions(...))",
-            "content_type": null,
+            "http_method": "POST",
+            "path_pattern": "/v1.0/me/messages/{id}/attachments/createUploadSession | /v1.0/users/{id}/messages/{id}/attachments/createUploadSession",
+            "content_type": "application/json",
             "direction": "upload",
             "websocket": null,
             "transport": null
           },
           "citation_url": "https://learn.microsoft.com/en-us/graph/api/attachment-createuploadsession?view=graph-rest-1.0",
           "citation_page_date": "2024-04-04",
-          "notes": "The uploadUrl is documented as opaque; match the POST, treat the PUT host/path as an example only."
+          "notes": "The rule is the documented POST that opens the session (page: 'POST /me/messages/{id}/attachments/createUploadSession'; example request 'Content-type: application/json'). The bytes then go by PUT to the returned uploadUrl, which is opaque (examples on outlook.office.com/api/.../AttachmentSessions(...)): that host and path are not rule fields (PRO-507)."
         },
         {
           "child_id": "outlook-web-downloading",
@@ -347,7 +386,7 @@
           },
           "citation_url": "https://knowledge.workspace.google.com/admin/drive/drive-and-sites-firewall-and-proxy-settings?hl=en",
           "citation_page_date": "2026-11-10",
-          "notes": "Docs editors have no app id of their own: docs.google.com is a google-drive domain in the pack. Proposed as a child of google-drive."
+          "notes": "Docs editors have no app id of their own: docs.google.com is a google-drive domain in the pack. Proposed as a child of google-drive. Re-read 2026-11-27 (PRO-507): the page lists 'docs.google.com:443/HTTPS', '*.docs.google.com:443/HTTPS', '*.c.docs.google.com:443/HTTPS', 'sheets.google.com:443/HTTPS', 'slides.google.com:443/HTTPS' for 'Google Drive, Google Docs editors, and Google Sites' (page 'Last updated 2026-11-10 UTC')."
         },
         {
           "child_id": "google-docs-editing",
@@ -764,9 +803,9 @@
             "websocket": null,
             "transport": null
           },
-          "citation_url": "https://slack.com/help/articles/360001603387-Manage-Slack-connection-issues",
+          "citation_url": "https://slack.com/help/articles/360024821873-Approve-Slack-workspaces-for-your-network",
           "citation_page_date": null,
-          "notes": "Article lists the allowlist at my.slack.com/help/urls (workspace-specific, not readable here)."
+          "notes": "'IT administrators can configure an on-premises or cloud-based proxy server to intercept traffic to slack.com'. Re-cited (PRO-507): the earlier article named slack.com only in a help-centre link. Its WebSocket hosts wss-primary, wss-backup and wss-mobile.slack.com are under slack.com; the full allowlist is workspace-specific (my.slack.com/help/urls)."
         },
         {
           "child_id": "slack-messaging",
@@ -1830,7 +1869,7 @@
           "child_id": "google-gemini-base",
           "function": "Gemini app",
           "verified": true,
-          "surface": "web",
+          "surface": null,
           "signals": {
             "host_sni": [
               "gemini.google.com"
@@ -1844,7 +1883,7 @@
           },
           "citation_url": "https://support.google.com/a/answer/9012184",
           "citation_page_date": "2026-11-10",
-          "notes": "Allowlist group 'Generative AI'."
+          "notes": "Allowlist group 'Generative AI': 'https://gemini.google.com'. surface left null: the allowlist page names the host but not which client uses it (PRO-507)."
         },
         {
           "child_id": "google-gemini-uploading",
@@ -2051,14 +2090,14 @@
             ],
             "http_method": "POST",
             "path_pattern": "/repos/{owner}/{repo}/releases/{release_id}/assets?name=",
-            "content_type": "application/octet-stream",
+            "content_type": null,
             "direction": "upload",
             "websocket": null,
             "transport": null
           },
           "citation_url": "https://docs.github.com/en/rest/releases/assets",
           "citation_page_date": null,
-          "notes": ""
+          "notes": "Content type left null: the page says 'Use the required Content-Type header to provide the media type of the asset'; application/octet-stream appears only in its curl example (PRO-507)."
         },
         {
           "child_id": "github-posting",
@@ -2353,9 +2392,9 @@
             "websocket": null,
             "transport": "TCP 80, 443, 6568"
           },
-          "citation_url": "https://support.anydesk.com/knowledge/firewall",
+          "citation_url": "https://support.anydesk.com/firewall",
           "citation_page_date": "2026-01-21",
-          "notes": "AnyDesk asks for HTTPS scanning and DPI to be excluded because they 'disrupt AnyDesk's TLS encryption': a decrypting proxy should bypass, so only SNI is observable."
+          "notes": "AnyDesk asks for HTTPS scanning and DPI to be excluded because they 'disrupt AnyDesk's TLS encryption': a decrypting proxy should bypass, so only SNI is observable. Re-verified 2026-11-27 (PRO-507): the old URL support.anydesk.com/knowledge/firewall answers 301 to this page ('Configure firewalls for AnyDesk', 'Updated on Jan 21, 2026'), which states '*.net.anydesk.com' and 'TCP ports: 80, 443, and 6568'."
         },
         {
           "child_id": "anydesk-file-transfer",
