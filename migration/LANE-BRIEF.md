@@ -231,10 +231,15 @@ SEC-QUIC-1 budget (PRO-122, against `main` `23bbc0c`, PR #145): `79cf9dd58e33e36
 documentation commit after it.
 PRO-448 (PR #148, against `main` `23bbc0c`): `81b331d` (fix and tests), `0c51e26` (the pro448 self-test fix), and `b45979c` (PRO-459: main merged in, keeping both the pro448 reference model and the SEC-SESS-1 pins in `analyze_diff.py`), and `dcd932b` (PRO-460: the 9 SEC-SESS-1 analyze pins refreshed for the PRO-448 counters, and limits_test.go set to the half-open budget), and `790b81f` (PRO-460 again: main `6c6d4dd` merged in after #127; `analyze_diff.py` keeps main's golden replay and loads the pro448 model only for a recording run, and `migration/fixtures/golden/analyze.json.gz` is re-recorded with that model: 300 captures, 0 mismatched; then main `359b444`, PR #145, merged in with no code conflict), with the documentation commits after them.
 
+PRO-590 (PR #174 with the #166..#169 chain head `97edba3`, merge commits only): `57f68b4410e93b2333f734de446bdf477f6b6f0d` (conflict resolution: ci gate, REVIEW.md rules, Makefile, the SR table and gate) and the documentation commit after it; the #181 merge is recorded in `migration/notes/PRO-590.md`.
+
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
 
+- **An SR row's id is not its Go test's name (PRO-590).** `TestSR58RDPSecurityPosture`..`TestSR63ServerNameCatalog`
+  verify SR-70..SR-75 since PRO-545 renumbered the duplicates; the names key `requirements.json.gz`, so renaming a
+  test means re-recording its cases at `python-final`. Change the row id (and the lock), not the test name.
 - **Go `regexp` classes match runes, not bytes (PRO-403).** `[\x80-\xff]` is U+0080..U+00FF, so on wire bytes it
   refuses a raw obs-text byte and a negated class accepts one. Check byte ranges with a loop (`statusLine`,
   `isIMAPAtom` in textroute); the recorded requirement cases found two such divergences.
