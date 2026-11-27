@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-24 (PRO-169: specs and batch Q from Research Lab's read of blocked-URL rows 30 to 44).
+Updated 2026-11-27 (PRO-495: child apps wave 0).
 
 **Rule (PRO-347, 2026-11-24): every task adds its own `migration/notes/PRO-<n>.md`** (front matter: task, lane,
 date, title, PRs, SHAs; then one paragraph; `migration/notes/README.md`) in the same push as the task; it is the
@@ -44,6 +44,10 @@ and content-pack patches for the Engine lane.
 - Majestic ranking run 2 is in (66 of 79 specs ranked). Rows 30 to 44: the ten read rows (PRO-168, relayed on
   `hermes/research-data-pro168` `f721a8c`) are nine specs and batch Q (PRO-169); rows 34, 35, 37, 39 and 41 stay BLOCKED.
   Batch Q's 128 unverified names (new ones and existing ones no round has checked) wait on live round 8 (`live-hosts-r8.txt`).
+- Child apps (PRO-492 App-ID model): wave 0 for 30 services already in the pack is in `research/child-apps/`
+  (PRO-495, 2026-11-27): 99 proposed children, 53 with an official citation; seven services fully blocked until
+  allowlist batch R2 (`allowlist-requests.md`, vendor API references; rows 45 to 54 of `blocked-urls.md`). Later
+  waves for new services come from Research Lab's PRO-491 list. PROTOCOL and ENGINE-FIELD items are Go only.
 - Branches: since 2026-11-23 each task gets its own branch from `main` (`claude/app-research-<PRO-n>-<slug>`, one PR).
   PRO-169's branch `claude/app-research-PRO-169-rows30-44-specs` merged `claude/app-research` (`8dcdadf`) first, because
   batch P, rounds 6 and 7 and ranking run 2 were not on `main`; its PR therefore carries that earlier lane work too.
