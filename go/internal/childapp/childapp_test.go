@@ -54,8 +54,9 @@ func TestClassifyExamples(t *testing.T) {
 		{"gmail upload", Request{SNI: "gmail.googleapis.com", Host: "gmail.googleapis.com", Method: "POST",
 			Path: "/upload/gmail/v1/users/me/messages?uploadType=multipart", ContentType: "message/rfc822",
 			RequestBodyBytes: 4096, ResponseBodyBytes: -1}, "gmail-uploading", "gmail", BasisRequestRule, ReasonChildMatched},
+		// SEC-CHILD-3: uploadType is a legacy parameter; the upload path alone names the function.
 		{"gmail upload without uploadType", Request{Host: "gmail.googleapis.com", Method: "POST",
-			Path: "/upload/gmail/v1/users/me/messages", ContentType: "message/rfc822"}, "google-base", "", BasisServerName, ReasonNoChildMatched},
+			Path: "/upload/gmail/v1/users/me/messages", ContentType: "message/rfc822"}, "gmail-uploading", "gmail", BasisRequestRule, ReasonChildMatched},
 		{"gmail send through the upload path is sending (more specific)", Request{Host: "gmail.googleapis.com", Method: "POST",
 			Path: "/upload/gmail/v1/users/me/messages/send?uploadType=multipart", ContentType: "message/rfc822"},
 			"gmail-sending", "gmail", BasisRequestRule, ReasonChildMatched},
@@ -72,8 +73,9 @@ func TestClassifyExamples(t *testing.T) {
 			"dropbox", "", BasisServerName, ReasonNoChildMatched},
 		{"dropbox upload session", Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload_session/start",
 			ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}}, "dropbox-uploading", "dropbox", BasisRequestRule, ReasonChildMatched},
+		// SEC-CHILD-3: the argument may travel elsewhere (an 'arg' URL parameter is unverified); the path names the function.
 		{"dropbox upload without its argument header", Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload",
-			ContentType: "application/octet-stream"}, "dropbox", "", BasisServerName, ReasonNoChildMatched},
+			ContentType: "application/octet-stream"}, "dropbox-uploading", "dropbox", BasisRequestRule, ReasonChildMatched},
 		{"onedrive upload through a colon path", Request{Host: "graph.microsoft.com", Method: "PUT",
 			Path: "/v1.0/me/drive/items/root-id:/report.pdf:/content"}, "ms-onedrive-uploading", "ms-onedrive", BasisRequestRule, ReasonChildMatched},
 		{"telegram bot upload, token matched by shape", Request{Host: "api.telegram.org", Method: "POST", Path: "/bot123:abc/sendDocument",

@@ -18,8 +18,9 @@
 // host could apply but the request was refused (a path that is not canonical), capped (a field or work ceiling) or
 // ambiguous (a repeated query parameter or a malformed content type a rule reads, a trailing slash a pattern only
 // matches without): the verdict then names the parent and no child, and a policy denies the status with
-// child_status. Before matching, percent-encoded unreserved bytes (RFC 3986 section 2.3) in the path and the query
-// are decoded and every other escape is upper-cased, so %6f and o match alike.
+// child_status. Before matching, percent-encoded unreserved bytes (RFC 3986 section 2.3) in the path and the query,
+// and sub-delimiters, ':' and '@' in the path (SEC-CHILD-3), are decoded and every other escape is upper-cased, so
+// %6f and o match alike.
 package childapp
 
 import (
@@ -142,6 +143,7 @@ type rule struct {
 	direction    string
 	minBytes     int64
 	websocket    bool
+	foldCase     bool // path literals are lower case; matched against the lower-cased path
 }
 
 // Set is the validated child-app component over one content pack.
@@ -155,6 +157,7 @@ type Set struct {
 	exact    map[string][]int // host -> rule orders, ascending
 	suffix   map[string][]int // domain -> rule orders, ascending
 	opts     Options
+	foldCase bool // some rule matches its path case-insensitively
 }
 
 // Release identifies the child-app component.
@@ -263,9 +266,17 @@ func unreserved(c byte) bool {
 	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '_' || c == '~'
 }
 
-// normalizePercent decodes escapes of unreserved bytes and upper-cases every other escape (RFC 3986 sections
-// 6.2.2.1 and 6.2.2.2). ok is false on a malformed escape and, when path is true, on an escape of '/', '\', '.',
-// '%' or a control byte. The output is never longer than the input.
+// pathDecodable reports a byte a server reads the same encoded or plain in a path: an unreserved byte, a
+// sub-delimiter, ':' or '@' (RFC 3986 section 3.3), so /v1.0/%24batch is /v1.0/$batch (SEC-CHILD-3). In a query
+// only unreserved bytes are decoded: '+', '&' and '=' mean something else there plain than encoded.
+func pathDecodable(c byte) bool {
+	return unreserved(c) || strings.IndexByte("!$&'()*+,;=:@", c) >= 0
+}
+
+// normalizePercent decodes escapes of unreserved bytes (and, when path is true, of the other pathDecodable bytes)
+// and upper-cases every other escape (RFC 3986 sections 6.2.2.1 and 6.2.2.2), so a UTF-8 name stays encoded and a
+// placeholder still matches it. ok is false on a malformed escape and, when path is true, on an escape of '/',
+// '\', '.', '%' or a control byte. The output is never longer than the input.
 func normalizePercent(in string, path bool) (string, bool) {
 	if strings.IndexByte(in, '%') < 0 {
 		return in, true
@@ -290,7 +301,7 @@ func normalizePercent(in string, path bool) (string, bool) {
 		if path && (d == '/' || d == '\\' || d == '.' || d == '%' || d < 0x20 || d == 0x7f) {
 			return "", false
 		}
-		if unreserved(d) {
+		if unreserved(d) || (path && pathDecodable(d)) {
 			out = append(out, d)
 		} else {
 			out = append(out, '%', hexdigits[hi], hexdigits[lo])
@@ -464,7 +475,7 @@ func parseQuery(target string) (map[string][]string, bool) {
 // rule holds only if an ambiguous field is read its way: a query parameter it reads is repeated, the content type
 // it reads is malformed, or a path pattern holds only without a trailing slash. Servers disagree on those
 // readings, so such a rule never picks a child and, if it would be the most specific, the child is undetermined.
-func (r *rule) matches(req *Request, path, ct string, query map[string][]string, headers map[string]bool) (hit bool, score int, ambiguous bool) {
+func (r *rule) matches(req *Request, path, lower, ct string, query map[string][]string, headers map[string]bool) (hit bool, score int, ambiguous bool) {
 	if r.methods != nil && !r.methods[req.Method] {
 		return false, 0, false
 	}
@@ -473,6 +484,9 @@ func (r *rule) matches(req *Request, path, ct string, query map[string][]string,
 	}
 	pathScore := 0
 	if r.pathPrefixes != nil || r.pathPatterns != nil {
+		if r.foldCase {
+			path = lower
+		}
 		hit := false
 		for _, prefix := range r.pathPrefixes {
 			if strings.HasPrefix(path, prefix) && len(prefix) > pathScore {
@@ -640,6 +654,10 @@ func (s *Set) Classify(req Request) Result {
 			headers[strings.ToLower(h)] = true
 		}
 	}
+	lower := path
+	if s.foldCase {
+		lower = strings.ToLower(path) // no copy when the path has no upper case
+	}
 	heads := make([]int, len(lists))
 	last := -1
 	var winner *rule
@@ -672,7 +690,7 @@ func (s *Set) Classify(req Request) Result {
 		}
 		// Precedence: the highest score wins; on a tie the earlier rule (file order) keeps it. An ambiguous rule
 		// competes too: if it would win, no reading of the request decides the child.
-		if hit, score, ambiguous := r.matches(&req, path, ct, query, headers); hit && (winner == nil || score > winnerScore) {
+		if hit, score, ambiguous := r.matches(&req, path, lower, ct, query, headers); hit && (winner == nil || score > winnerScore) {
 			winner, winnerScore, winnerAmbiguous = r, score, ambiguous
 		}
 	}

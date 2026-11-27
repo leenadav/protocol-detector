@@ -31,7 +31,13 @@ key `containers`, which holds for the named application itself, for each of its 
 on a host it owns in the server-name catalog (`AppVerdict.host_owner`; SEC-CHILD-2). A child never moves a request
 out from under its host's owner: `deny containers:[ms-base]` still denies Graph `sendMail` (outlook-sending, container
 outlook-web, host owner ms-base), and `containers:[google-base]` Gmail send and Drive uploads on `googleapis.com`.
-`AppVerdict.Matches` holds for the same three names:
+Every other rule keyed on the host owner's identity also holds on its children (SEC-CHILD-7): a child on a host
+another application owns is evaluated as itself and as that owner (the owner's name, category, subcategory and
+technology, both characteristic sets, the higher risk), and a rule applies when either identity satisfies it. So
+`deny apps:[ms-base]`, `subcategories:[internet-utility]` or `characteristics:[pervasive]` still denies Graph
+`sendMail`, and `apps:[dropbox]` still denies `dropbox-uploading` on `content.dropboxapi.com`, as before child apps
+existed. The first matching rule decides, so a child-specific rule goes before a broader owner rule
+(`allow apps:[ms-base]` first allows `outlook-sending` too). `AppVerdict.Matches` holds for the same three names:
 
 ```json
 {"version": 1, "default": "allow", "rules": [
@@ -56,7 +62,8 @@ Every verdict carries `child_status`:
 A `deny` entry that names a child in `apps` or `containers` also holds for an `undetermined` verdict of an
 application the child's hosts may belong to, its container or one of its `depends_on` (Gmail's API hosts belong to
 `google-base`; SEC-CHILD-8). So the plain `no-uploads` rule above denies a Gmail or Dropbox upload sent with a
-repeated `uploadType`, a `//` or `./` segment, or a path over 4,096 bytes, with no extra rule. The widening is for
+`//` or `./` segment or a path over 4,096 bytes, with no extra rule (a repeated `uploadType` is simply an upload: the
+rule no longer reads it, SEC-CHILD-3). The widening is for
 `deny` only: an `allow` or `alert` entry naming a child matches that child alone, so an undetermined request never
 gains an allow. Every other condition of the rule still applies, so an explicit `child_status` narrows it:
 `{"apps": ["gmail-uploading"], "child_status": ["matched"]}` denies only the decided upload. A rule for the owners'
@@ -100,6 +107,9 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
     `{name}` for exactly one non-empty segment, a literal with `{name}` placeholders inside it (`/bot{token}/sendDocument`,
     `/v1beta/models/{model}:generateContent`, `/{owner}/{repo}.git/info/refs`; each placeholder non-empty, never two in
     a row), or a final `**` for any rest. No regular expressions; matching is linear in the path;
+  - `path_case_insensitive: true` (needs a path condition): the path literals are compared in ASCII lower case, for
+    vendors that state their path names are case-insensitive (Microsoft Graph resource names, Telegram Bot API
+    methods; SEC-CHILD-3). Placeholders match as before;
   - `content_types`: `type/subtype` or `type/*`, against the request Content-Type without parameters;
   - `query`: `name=v1|v2`, `name={value}` (any non-empty value) or `name` (present). Names and values are unreserved
     characters compared byte for byte, and a parameter that appears twice never satisfies a condition. Needs a
@@ -118,17 +128,20 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
 ## Paths are matched only in canonical form
 
 The fragment is ignored and the query is read only by `query` conditions. Before matching, percent escapes of
-unreserved bytes (`A-Z a-z 0-9 - _ ~`, RFC 3986 section 2.3) are decoded in the path and in query names and values,
-and every other escape is upper-cased (sections 6.2.2.1 and 6.2.2.2), so `/upl%6fad` matches `/upload` and
-`upload%54ype=media` matches `uploadType=media`. A path with a dot segment, an empty segment, a backslash, a
-control byte, a malformed escape or an encoded `/`, `\`, `.`, `%` or control byte is not matched (reason
-`path_not_canonical`, `child_status` `undetermined`; the parent is still reported), so a filter and a server can
-never read one path two ways.
+unreserved bytes (`A-Z a-z 0-9 - _ ~`, RFC 3986 section 2.3) are decoded in the path and in query names and values;
+in the path the sub-delimiters (`$`, `!`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `;`, `=`), `:` and `@` are decoded too,
+as the server reads them (SEC-CHILD-3); every other escape is upper-cased (sections 6.2.2.1 and 6.2.2.2). So
+`/upl%6fad` matches `/upload`, `/v1.0/%24batch` is `/v1.0/$batch`, `/2/files/%75pload` is `/2/files/upload` and
+`upload%54ype=media` matches `uploadType=media`; any other encoding, such as a UTF-8 file name, stays encoded and a
+placeholder still matches it. A path with a dot segment, an empty segment, a backslash, a control byte, a malformed
+escape or an encoded `/`, `\`, `.`, `%` or control byte is not matched (reason `path_not_canonical`, `child_status`
+`undetermined`; the parent is still reported), so a filter and a server can never read one path two ways.
 
 A rule is ambiguous, and never picks a child, when it holds only for one server reading of the request: a query
 parameter it reads is repeated (also through an encoded name), the content type it reads does not parse, or a path
-pattern holds only without a trailing slash. If an ambiguous rule would be the most specific, the verdict is
-`request_ambiguous` and `undetermined`; if a definite rule outranks it, that rule's child stands. SNI and Host of different catalog owners give no application
+pattern holds only without a trailing slash. A field the rule does not read never makes it ambiguous. If an
+ambiguous rule would be the most specific, the verdict is `request_ambiguous` and `undetermined`; if a definite
+rule outranks it, that rule's child stands. SNI and Host of different catalog owners give no application
 (`sni_host_owner_mismatch`, domain fronting); a coalesced HTTP/2 connection of one owner is classified on the Host.
 
 ## Work ceiling (never silent)
@@ -156,7 +169,31 @@ conservative:
 - `direction` is recorded, not enforced: a proxy often knows body sizes only after the response, and method plus
   path already name the function.
 
-Wave 0 gives 47 children over 20 of its 30 services (the other 10 had no separable cited function; the 30 base
+### SEC-CHILD-3 hardenings (PRO-510, release 2026.11.2)
+
+The wave-0 rules missed real request forms. `make child-apps` therefore also reads App Research's vendor evidence
+(`sec_child_3` in `migration/fixtures/child-apps/wave-1.json`, a byte copy of `research/child-apps/wave-1.json` on
+`main` at `05705a3`; PRO-524), and the converter applies one hardening per verified item. Each widens what a child
+matches and cites its source in the child's `evidence`:
+
+| Item | Change |
+|---|---|
+| `gmail-multipart-resumable` | On Google media upload paths (`/upload/`, `/resumable/upload/` on `googleapis.com`: Gmail, Drive, YouTube) the content-type and `uploadType` conditions are dropped: Discovery's `accept` (`message/*`) is the media part's type, while a multipart upload is `multipart/related` and a resumable one starts with JSON or no body type. Gmail `drafts.update` (PUT) is added. |
+| `drive-v2` | Drive v2 upload (POST `/upload/drive/v2/files`, PUT `.../files/{fileId}`, both also under `/resumable`) and download (`alt=media`, `/export`) rules beside v3's. Drive v2 sharing is not in the evidence. |
+| `google-batch` | New children `gmail-batch` (POST `/batch` on `gmail.googleapis.com`) and `google-drive-batch` (POST `/batch/drive/v3`, `/batch/drive/v2`). |
+| `graph-beta` | Every `graph.microsoft.com` path under `/v1.0/` also under `/beta/`. |
+| `graph-case-insensitive` | Every `graph.microsoft.com` rule is `path_case_insensitive` (`/V1.0/ME/SENDMAIL` is `outlook-sending`). |
+| `graph-dollar-batch` | New child `ms-base-graph-batch` (container `ms-base`, POST `/v1.0/$batch`, `/beta/$batch`, case-insensitive). |
+| `telegram-case-insensitive` | `api.telegram.org` rules are `path_case_insensitive` (`SENDDOCUMENT` is `sendDocument`). |
+| `discord-versions` | Every `discord.com` `/api/` path unversioned and as `v10`, `v9`, `v8`, `v7` and `v6` (v5 and older are discontinued and not matched). |
+| `dropbox-arg` | On `content.dropboxapi.com` the `Dropbox-API-Arg` header and content-type conditions are dropped: the path names the function, and whether the argument may instead be an `arg` URL parameter is unverified (vendor HTTP docs blocked, `research/blocked-urls.md` row 48). |
+
+A batch request carries several API calls in its body (up to 20 for Graph), so its inner functions are not in the
+request line: the batch child is reported instead, and a policy that denies a function child should deny the
+matching batch child too (`deny apps:[gmail-uploading, gmail-batch]`). Parsing batch bodies is not done (follow-up
+in `migration/POST-MERGE-BACKLOG.md`). `deny containers:[ms-base]` and `containers:[google-base]` still cover them.
+
+Wave 0 gives 47 children (50 with the three batch children) over 20 of its 30 services (the other 10 had no separable cited function; the 30 base
 children map to their parents; 3 children are skipped:
 `telegram-bot-downloading`, whose only path is a multi-segment variable, and the two `google-gemini-api` children,
 whose parent is not yet in the pack). Most rules describe vendor APIs (`client_scope: api`): the vendors do not
@@ -166,8 +203,8 @@ publish their own web clients' request paths, so a browser session of Gmail is `
 
 1. App Research (wave 0, PRO-495) or Research Lab (later waves, PRO-491) delivers `research/child-apps/wave-N.json`
    with official citations.
-2. Copy it to `migration/fixtures/child-apps/`, run `python3 -B tools/child_apps_wave.py <file> --version <next>
-   --write`, review `docs/child-apps/wave-N-rules.md`, add example requests for the new children to
+2. Copy it to `migration/fixtures/child-apps/`, run `python3 -B tools/child_apps_wave.py <file> --evidence
+   migration/fixtures/child-apps/wave-1.json --version <next> --write`, review `docs/child-apps/wave-N-rules.md`, add example requests for the new children to
    `childapp_test.go`, and add the file to `make child-apps`.
 3. `cd go && go test ./internal/childapp/ ./detector/`, `make check`, then one PR per wave of about 30 services from a
    fresh branch off `main`.

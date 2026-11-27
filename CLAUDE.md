@@ -2,8 +2,9 @@
 
 @AGENTS.md
 
-AGENTS.md (imported above) holds the review priorities, the Code Review Rules, the scope limits and the lane
-rules. This file adds only what a Claude Code session needs to work here.
+AGENTS.md (imported above) holds the scope limits and the lane rules; `REVIEW.md` holds the review policy (the
+three passes, the Code Review Rules, severity and what not to report). This
+file adds only what a Claude Code session needs to work here.
 
 ## Commands (from the repository root)
 
@@ -48,6 +49,15 @@ The counts above are those of `main` at the time of writing. A changed count is 
 - **Editing the other lane's files.** Engine owns `go/`, `migration/` and product code; CI/CD owns `.github/`,
   its `tools/` and the locks. Send the other lane a patch instead.
 
+## Guardrail hooks (PRO-75)
+
+`.claude/settings.json` runs `.claude/hooks/guard.py` before every Bash, file-writing and GitHub MCP call, in the
+terminal and in cloud sessions alike. It blocks force-push, pushes to `main`, tags, rebase or `reset --hard` of a
+shared `claude/*` branch this session did not create, `gh pr merge` / approve / close, settings, secret and release
+changes, and likely secrets in a write or a command (`go/**/testdata/` allowed). A block prints the reason and the
+approval route: ask Hermes, never work around it. A false positive is a fix to `guard.py` with a test
+(`python3 -B .claude/hooks/guard.py --self-test`, also run by `make workflow-policy` and ci `workflow-lint`).
+
 ## Skills to use
 
 Project skills in `.claude/skills/` (MIT, upstream and changes in `.claude/skills/THIRD_PARTY.md`):
@@ -55,6 +65,7 @@ Project skills in `.claude/skills/` (MIT, upstream and changes in `.claude/skill
 - **Debugging:** `systematic-debugging` before any fix; its `root-cause-tracing` and `defense-in-depth` for bugs deep in a call chain.
 - **New behaviour or a bug fix:** `test-driven-development` (a failing test first; `writing-good-tests` for test anti-patterns).
 - **Done claims:** `verification-before-completion` before DONE, a push or a PR: run the gate and quote its numbers.
+- **Reviewing a pull request** (`/code-review`, a review task): follow `REVIEW.md`; at most 5 nits.
 - **Review findings (Codex, Hermes, bots):** `receiving-code-review`: verify each claim against the code before changing it.
 - **Go tests, performance, errors:** `golang-testing`, `golang-performance`, `golang-error-handling` (listed once a `.go` file is open); the
   repository rules above win (offline Go, vendored dependencies, `parsing.Budget` / `parsing.Malformed`).

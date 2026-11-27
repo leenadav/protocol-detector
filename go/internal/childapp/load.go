@@ -214,7 +214,7 @@ func validVersion(v string) bool {
 
 var childKeys = []string{"name", "container", "description", "risk", "characteristics", "depends_on", "evidence", "rules"}
 var ruleKeys = []string{"hosts", "host_suffixes", "methods", "path_prefixes", "path_patterns", "content_types",
-	"query", "header_present", "direction", "min_bytes", "websocket"}
+	"query", "header_present", "direction", "min_bytes", "websocket", "path_case_insensitive"}
 
 func (s *Set) addChild(i int, raw json.RawMessage) error {
 	doc, err := object(raw, childKeys, "name", "container", "description", "evidence", "rules")
@@ -414,6 +414,27 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 	}
 	if r.pathPrefixes != nil || r.pathPatterns != nil {
 		r.conditions++
+	}
+	if raw, ok := doc["path_case_insensitive"]; ok {
+		// The vendor states its path names are case-insensitive (Graph resource names, Telegram Bot API methods;
+		// SEC-CHILD-3): literals are compared in ASCII lower case, so SENDMAIL is sendMail.
+		if err := json.Unmarshal(raw, &r.foldCase); err != nil || !r.foldCase {
+			return fmt.Errorf("path_case_insensitive must be true when present")
+		}
+		if r.pathPrefixes == nil && r.pathPatterns == nil {
+			return fmt.Errorf("path_case_insensitive needs a path condition")
+		}
+		for i, p := range r.pathPrefixes {
+			r.pathPrefixes[i] = strings.ToLower(p)
+		}
+		for _, pattern := range r.pathPatterns {
+			for i := range pattern {
+				for k, l := range pattern[i].lits {
+					pattern[i].lits[k] = strings.ToLower(l)
+				}
+			}
+		}
+		s.foldCase = true
 	}
 	if raw, ok := doc["content_types"]; ok {
 		if r.contentTypes, err = strs(raw, MaxListEntries); err != nil {

@@ -110,6 +110,9 @@ type Policy struct {
 	Rules       []*Rule
 	Default     string
 	Description string
+	// owners is the catalog a child verdict's host owner is looked up in; set only by FromJSONWithChildren, so
+	// the reference path (FromJSON) never evaluates a second identity (SEC-CHILD-7).
+	owners map[string]*content.Application
 }
 
 // Decision is the outcome of one evaluation.
@@ -594,7 +597,46 @@ func FromJSONWithChildren(text []byte, pack *content.Pack, children Children) (*
 	if duplicate {
 		return nil, fail("Rule names must be unique")
 	}
+	if children != nil {
+		p.owners = pack.Applications
+	}
 	return p, nil
+}
+
+// ownerView is the verdict seen as its host owner (SEC-CHILD-7): a child matched on a host the catalog gives
+// another application (outlook-sending on ms-base's graph.microsoft.com, dropbox-uploading on dropbox's
+// content.dropboxapi.com) is still that application, so every rule keyed on the owner's identity (apps,
+// categories, subcategories, technologies, characteristics, risk) keeps holding. The view takes the owner's name,
+// category, subcategory and technology, the union of both characteristic sets and the higher risk; everything
+// else is the child verdict's. It is nil when the verdict is not a child on an owned host, or outside
+// FromJSONWithChildren.
+func (p *Policy) ownerView(v *appid.Verdict) *appid.Verdict {
+	if p.owners == nil || v == nil || v.HostOwner == nil || *v.HostOwner == v.App {
+		return nil
+	}
+	owner := p.owners[*v.HostOwner]
+	if owner == nil {
+		return nil
+	}
+	view := *v
+	view.App, view.Category, view.Subcategory, view.Technology = owner.Name, owner.Category, owner.Subcategory, owner.Technology
+	if owner.Risk > view.Risk {
+		view.Risk = owner.Risk
+	}
+	view.Characteristics = append([]string{}, v.Characteristics...)
+	for _, c := range owner.Characteristics {
+		if !contains(view.Characteristics, c) {
+			view.Characteristics = append(view.Characteristics, c)
+		}
+	}
+	return &view
+}
+
+// holds is rule.matches over the verdict and, for a child on an owned host, its owner view: the rule applies when
+// either identity satisfies it, so a child never narrows the policy of the host it was matched on.
+func (r *Rule) holds(v, owner *appid.Verdict, portUsageValue, transport string, serverPort int, hasPort bool, context map[string]string, skipPredicates bool) bool {
+	return r.matches(v, portUsageValue, transport, serverPort, hasPort, context, skipPredicates) ||
+		(owner != nil && r.matches(owner, portUsageValue, transport, serverPort, hasPort, context, skipPredicates))
 }
 
 // equalsOne is Python's `value == 1` for a JSON value: 1, 1.0 and true compare equal.
@@ -709,8 +751,9 @@ func sortedPredicates(r *Rule) []string {
 // reference's server_port None; transport "" its transport None.
 func (p *Policy) Evaluate(v *appid.Verdict, transport string, serverPort int, hasPort bool, layers map[string]interface{}, observation string) Decision {
 	context := Context(v, layers, "", observation)
+	owner := p.ownerView(v)
 	for _, rule := range p.Rules {
-		if rule.matches(v, v.PortUsage, transport, serverPort, hasPort, context, false) {
+		if rule.holds(v, owner, v.PortUsage, transport, serverPort, hasPort, context, false) {
 			reasons := []string{fmt.Sprintf("rule '%s' matched %s", rule.Name, v.App)}
 			if rule.ApplicationDefault {
 				reasons = append(reasons, "application-default: port usage "+v.PortUsage)
@@ -729,13 +772,13 @@ func (p *Policy) Evaluate(v *appid.Verdict, transport string, serverPort int, ha
 	reasons := []string{fmt.Sprintf("no rule matched %s; policy default", v.App)}
 	for _, rule := range p.Rules {
 		if rule.ApplicationDefault && rule.Action == "allow" && v.PortUsage == "nonstandard" &&
-			rule.matches(v, "standard", transport, serverPort, hasPort, context, false) {
+			rule.holds(v, owner, "standard", transport, serverPort, hasPort, context, false) {
 			reasons = append(reasons, fmt.Sprintf("rule '%s' would allow %s on its application-default ports only", rule.Name, v.App))
 			break
 		}
 	}
 	for _, rule := range p.Rules {
-		if len(rule.predicates) > 0 && rule.matches(v, v.PortUsage, transport, serverPort, hasPort, context, true) {
+		if len(rule.predicates) > 0 && rule.holds(v, owner, v.PortUsage, transport, serverPort, hasPort, context, true) {
 			var missing []string
 			for _, key := range sortedPredicates(rule) {
 				if !rule.predicates[key][context[key]] {

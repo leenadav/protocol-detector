@@ -38,12 +38,19 @@ func TestSecChild1BypassesFailClosed(t *testing.T) {
 			"gmail-uploading", appid.ChildMatched, ReasonChildMatched, ""},
 		{"encoded query value", gmailReq(gmailUpload+"?uploadType=m%65dia", "message/rfc822"),
 			"gmail-uploading", appid.ChildMatched, ReasonChildMatched, ""},
-		{"repeated query parameter", gmailReq(gmailUpload+"?uploadType=media&uploadType=media", "message/rfc822"),
+		// The Gmail upload rule reads neither the query nor the content type since SEC-CHILD-3, so those fields
+		// cannot make it ambiguous: it holds for every server reading.
+		{"repeated query parameter a rule does not read", gmailReq(gmailUpload+"?uploadType=media&uploadType=media", "message/rfc822"),
+			"gmail-uploading", appid.ChildMatched, ReasonChildMatched, ""},
+		{"malformed content type a rule does not read", gmailReq(gmailUpload+"?uploadType=media", "message/rfc822 x"),
+			"gmail-uploading", appid.ChildMatched, ReasonChildMatched, ""},
+		// Rules that do read them: Drive downloads read alt=media, LinkedIn uploads read the content type.
+		{"repeated query parameter", Request{Host: "www.googleapis.com", Method: "GET", Path: "/drive/v3/files/f1?alt=media&alt=media"},
 			"google-base", appid.ChildUndetermined, ReasonAmbiguous, ""},
-		{"repeated through an encoded name", gmailReq(gmailUpload+"?uploadType=json&upload%54ype=media", "message/rfc822"),
+		{"repeated through an encoded name", Request{Host: "www.googleapis.com", Method: "GET", Path: "/drive/v3/files/f1?alt=json&%61lt=media"},
 			"google-base", appid.ChildUndetermined, ReasonAmbiguous, ""},
-		{"malformed content type", gmailReq(gmailUpload+"?uploadType=media", "message/rfc822 x"),
-			"google-base", appid.ChildUndetermined, ReasonAmbiguous, ""},
+		{"malformed content type", Request{Host: "api.linkedin.com", Method: "POST", Path: "/rest/images?action=initializeUpload", ContentType: "application/json x"},
+			"linkedin", appid.ChildUndetermined, ReasonAmbiguous, ""},
 		{"trailing slash on a pattern", Request{Host: "gmail.googleapis.com", Method: "POST", Path: "/gmail/v1/users/me/messages/send/"},
 			"google-base", appid.ChildUndetermined, ReasonAmbiguous, ""},
 		{"double slash", gmailReq("/upload//gmail/v1/users/me/messages?uploadType=media", "message/rfc822"),
@@ -240,7 +247,7 @@ func TestSecChild8PlainChildDenyFailsClosed(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		v := s.Verdict(s.Classify(gmailReq(gmailUpload+"?uploadType=media&uploadType=media", "message/rfc822")))
+		v := s.Verdict(s.Classify(gmailReq("/upload//gmail/v1/users/me/messages?uploadType=media", "message/rfc822")))
 		if got := pol.Evaluate(v, "tcp", 443, true, nil, ""); got.Action != c.want {
 			t.Errorf("%s: %s, want %s", c.match, got.Action, c.want)
 		}

@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-27 (PRO-495: child apps wave 0).
+Updated 2026-11-27 (PRO-569: child apps wave 3; PRO-550: wave 2; PRO-524: wave 1; PRO-495: wave 0).
 
 **Rule (PRO-347, 2026-11-24): every task adds its own `migration/notes/PRO-<n>.md`** (front matter: task, lane,
 date, title, PRs, SHAs; then one paragraph; `migration/notes/README.md`) in the same push as the task; it is the
@@ -48,8 +48,17 @@ and content-pack patches for the Engine lane.
   (PRO-495, 2026-11-27): 105 proposed children, 64 with an official citation (Box, Discord, X and Mega from the vendors'
   own spec and SDK repositories, PRO-501); three services fully blocked (WhatsApp, Pastebin, Reddit) until allowlist
   batch R2 (`allowlist-requests.md`; rows 45 to 58 of `blocked-urls.md`). `tools/check_child_apps.py` checks the
-  file (parents in the pack, null unverified rows, cited verified rows, the md counts). Later
-  waves for new services come from Research Lab's PRO-491 list. PROTOCOL and ENGINE-FIELD items are Go only.
+  file (parents in the pack, null unverified rows, cited verified rows, the md counts). Wave 1 (PRO-524,
+  2026-11-27): 30 more services in the pack plus Pastebin and Reddit retries, 115 children, 61 cited (43 pages); nine
+  services blocked (rows 59 to 71, allowlist batch R3); it also holds the SEC-CHILD-3 vendor evidence for Engine
+  (PRO-510: Gmail and Drive upload forms, Graph /beta, case rules and $batch, Google batch, Telegram case-insensitive
+  methods, Discord versions, Dropbox-API-Arg; the Dropbox `arg` URL parameter stays unverified). Where a vendor's docs
+  site is blocked, its own OpenAPI spec or SDK on raw.githubusercontent.com is cited (PRO-501 rule). Later waves for
+  new services come from Research Lab's PRO-491 list; Bitbucket is PR #166 row 47. Wave 2 (PRO-550, 2026-11-27):
+  30 more services in the pack (mail, e-signature, dev platforms, AI assistants, file sharing), 150 children, 111 cited
+  (96 pages); six blocked (rows 72 to 92, allowlist batch R4). New per-service field `web_ui_evidence` (whether the
+  browser app uses the documented API, only from an official source; checked from wave 2 on): Power BI and Copilot
+  partial, Cursor different, the rest none. Azure DevOps is PR #166 row 48 (not in the pack). Wave 3 (PRO-569, 2026-11-27): 30 more services in the pack (file sharing, webmail, AI model APIs, package registries, CRM and ticketing, e-signature, social), 159 children, 118 cited (118 pages, every first quote machine-checked against its cited file); five blocked (rows 93 to 116, allowlist batch R5); web UI: Postman different, crates.io same. Most vendor docs sites are refused here, so rows cite vendor SDK/spec repositories pinned to a commit; packages whose vendor ownership is unconfirmed are rejected. PROTOCOL and ENGINE-FIELD items are Go only.
 - Branches: since 2026-11-23 each task gets its own branch from `main` (`claude/app-research-<PRO-n>-<slug>`, one PR).
   PRO-169's branch `claude/app-research-PRO-169-rows30-44-specs` merged `claude/app-research` (`8dcdadf`) first, because
   batch P, rounds 6 and 7 and ranking run 2 were not on `main`; its PR therefore carries that earlier lane work too.

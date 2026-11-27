@@ -1,0 +1,634 @@
+[
+ {
+  "id": "dingtalk",
+  "name": "DingTalk",
+  "class": "messaging",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "oapi.dingtalk.io",
+    "role": "api",
+    "source_url": "https://help.dingtalk.io/open/development/upload-media-files.md",
+    "quote": "https://oapi.dingtalk.io/media/upload (POST multipart/form-data)"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "oapi.dingtalk.com",
+    "how_seen": "community Q&A posts (developer.aliyun.com) for same media/upload path; unsourced"
+   },
+   {
+    "domain": "api.dingtalk.com",
+    "how_seen": "commonly known new-API host; no official page fetched naming it (open.dingtalk.com rendered empty); unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "file-upload",
+    "evidence_url": "https://help.dingtalk.io/open/development/upload-media-files.md",
+    "path_or_host": "POST oapi.dingtalk.io/media/upload",
+    "separable": "http",
+    "note": "Same host as other API calls; needs path visibility"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://help.dingtalk.io/open/development/upload-media-files.md",
+    "path_or_host": "oapi.dingtalk.io",
+    "separable": "sni",
+    "note": "Open-platform API host distinct from client hosts"
+   }
+  ],
+  "notes": "Official domain evidence limited to international docs mirror dingtalk.io; open.dingtalk.com pages did not render. China domains dingtalk.com unsourced.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 41
+ },
+ {
+  "id": "feishu-lark",
+  "name": "Feishu/Lark",
+  "class": "messaging",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "open.feishu.cn",
+    "role": "api",
+    "source_url": "https://open.feishu.cn/document/server-docs/api-call-guide/calling-process/get-access-token",
+    "quote": "example request uses https://open.feishu.cn/open-apis/..."
+   },
+   {
+    "domain": "open.larksuite.com",
+    "role": "api",
+    "source_url": "https://open.larksuite.com/document/server-docs/im-v1/image/create.md",
+    "quote": "Lark international API at https://open.larksuite.com/open-apis"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "im-image-upload",
+    "evidence_url": "https://open.larksuite.com/document/server-docs/im-v1/image/create.md",
+    "path_or_host": "POST /open-apis/im/v1/images",
+    "separable": "http",
+    "note": "Same API host as everything else"
+   },
+   {
+    "name": "drive-upload",
+    "evidence_url": "https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/reference/drive-v1/media/upload_all.md",
+    "path_or_host": "POST /open-apis/drive/v1/files/upload_all",
+    "separable": "http",
+    "note": "Files up to 20M; chunked flow above"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://open.feishu.cn/document/server-docs/api-call-guide/calling-process/get-access-token",
+    "path_or_host": "open.feishu.cn / open.larksuite.com",
+    "separable": "sni",
+    "note": "Feishu (CN) and Lark (intl) split by hostname"
+   }
+  ],
+  "notes": "Client/web hosts (feishu.cn, larksuite.com, larkoffice.com) not confirmed from official network docs; only API hosts sourced.",
+  "confidence": "medium",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 42
+ },
+ {
+  "id": "wecom",
+  "name": "WeCom (WeChat Work)",
+  "class": "messaging",
+  "pack_overlap": "partial: weixin.qq.com already under unknown app (WeCom hosts qyapi/work/developer.work.weixin.qq.com are subdomains)",
+  "domains": [
+   {
+    "domain": "qyapi.weixin.qq.com",
+    "role": "api",
+    "source_url": "https://developer.work.weixin.qq.com/document/path/90664",
+    "quote": "example request https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=ID"
+   },
+   {
+    "domain": "work.weixin.qq.com",
+    "role": "web",
+    "source_url": "https://developer.work.weixin.qq.com/document/path/90664",
+    "quote": "site link seen on official page (navigation)"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "api",
+    "evidence_url": "https://developer.work.weixin.qq.com/document/path/90664",
+    "path_or_host": "qyapi.weixin.qq.com",
+    "separable": "sni",
+    "note": "Distinct from consumer WeChat hosts by hostname"
+   },
+   {
+    "name": "media-upload",
+    "evidence_url": "https://developer.work.weixin.qq.com/document/path/90664",
+    "path_or_host": "POST /cgi-bin/media/upload",
+    "separable": "http",
+    "note": "Path named in doc index; path confirmed only via third-party text"
+   },
+   {
+    "name": "group-robot-upload",
+    "evidence_url": "https://developer.work.weixin.qq.com/document/path/90664",
+    "path_or_host": "POST /cgi-bin/webhook/upload_media",
+    "separable": "http",
+    "note": "Third-party sourced"
+   }
+  ],
+  "notes": "Domains are subdomains of weixin.qq.com which is already in pack; SNI-level separation is possible on subdomain only if pack does not wildcard it.",
+  "confidence": "medium",
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "wwcdn.weixin.qq.com",
+    "role": "cdn",
+    "source_url": "https://developer.work.weixin.qq.com/document/path/90664",
+    "quote": "static assets host seen on official page",
+    "excluded_reason": "shared CDN"
+   }
+  ],
+  "priority_rank": 40
+ },
+ {
+  "id": "wire",
+  "name": "Wire",
+  "class": "messaging",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "prod-nginz-ssl.wire.com",
+    "role": "api",
+    "source_url": "https://support.wire.com/hc/en-us/articles/115005341805-What-domain-names-and-ports-does-Wire-connect-to",
+    "quote": "Wire domain list, TCP 443 (via search snippet; page 403 on direct fetch)"
+   },
+   {
+    "domain": "turn.calling-prod-v01.wire.com",
+    "role": "relay",
+    "source_url": "https://support.wire.com/hc/en-us/articles/115005341805-What-domain-names-and-ports-does-Wire-connect-to",
+    "quote": "TURN SRV base domain (via search snippet)"
+   },
+   {
+    "domain": "sft.calling-prod-v01.wire.com",
+    "role": "relay",
+    "source_url": "https://support.wire.com/hc/en-us/articles/115005341805-What-domain-names-and-ports-does-Wire-connect-to",
+    "quote": "SFT conferencing server (via search snippet)"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "api-messaging",
+    "evidence_url": "https://support.wire.com/hc/en-us/articles/115005341805-What-domain-names-and-ports-does-Wire-connect-to",
+    "path_or_host": "prod-nginz-ssl.wire.com:443",
+    "separable": "sni",
+    "note": "Single API gateway; messages and assets share it"
+   },
+   {
+    "name": "voice-video-relay",
+    "evidence_url": "https://support.wire.com/hc/en-us/articles/115005341805-What-domain-names-and-ports-does-Wire-connect-to",
+    "path_or_host": "turn.calling-prod-v01.wire.com 3478/5349",
+    "separable": "sni",
+    "note": "UDP/TCP 3478, TLS 5349"
+   },
+   {
+    "name": "conference-sft",
+    "evidence_url": "https://support.wire.com/hc/en-us/articles/115005341805-What-domain-names-and-ports-does-Wire-connect-to",
+    "path_or_host": "sft.calling-prod-v01.wire.com",
+    "separable": "sni",
+    "note": "Group calls"
+   }
+  ],
+  "notes": "Support page returned 403 to fetch; details taken from search-result summary of the official page. Other hosts (assets, web app) not verified.",
+  "confidence": "medium",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 44
+ },
+ {
+  "id": "mattermost",
+  "name": "Mattermost",
+  "class": "messaging",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "push-test.mattermost.com",
+    "how_seen": "community forum thread (forum.mattermost.com) naming it as push server; unsourced"
+   },
+   {
+    "domain": "push.mattermost.com",
+    "how_seen": "not found in any result; unsourced"
+   },
+   {
+    "domain": "pdat.matterlytics.com",
+    "how_seen": "forum post on ad-blocker flag; telemetry; unsourced"
+   },
+   {
+    "domain": "api.rudderlabs.com",
+    "how_seen": "forum post; telemetry; unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api",
+    "evidence_url": "https://docs.mattermost.com/api",
+    "path_or_host": "/api/v4 on customer-chosen host",
+    "separable": "no",
+    "note": "Mostly self-hosted at arbitrary customer domains; no vendor fixed host"
+   },
+   {
+    "name": "push-notifications",
+    "evidence_url": "https://docs.mattermost.com/deployment-guide/server/prepare-network",
+    "path_or_host": "EmailSettings.PushNotificationServer TCP 443",
+    "separable": "sni",
+    "note": "Only if default hosted push proxy is used"
+   }
+  ],
+  "notes": "Self-hosted product; official docs name no real hostnames. Cloud tenants use *.cloud.mattermost.com (not verified from docs).",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 43
+ },
+ {
+  "id": "mastodon",
+  "name": "Mastodon (mastodon.social)",
+  "class": "social",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "mastodon.social",
+    "how_seen": "flagship instance named by common knowledge; docs use mastodon.example placeholder; unsourced"
+   },
+   {
+    "domain": "files.mastodon.social",
+    "how_seen": "media host observed commonly; unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "media-upload",
+    "evidence_url": "https://docs.joinmastodon.org/methods/media/",
+    "path_or_host": "POST /api/v2/media",
+    "separable": "http",
+    "note": "Requires write:media scope"
+   },
+   {
+    "name": "streaming",
+    "evidence_url": "https://docs.joinmastodon.org/methods/streaming/",
+    "path_or_host": "wss://streaming.example/api/v1/streaming",
+    "separable": "sni",
+    "note": "May be a separate hostname per instance"
+   },
+   {
+    "name": "post-status",
+    "evidence_url": "https://docs.joinmastodon.org/methods/statuses/",
+    "path_or_host": "POST /api/v1/statuses",
+    "separable": "http",
+    "note": "Path-level only"
+   },
+   {
+    "name": "oauth",
+    "evidence_url": "https://docs.joinmastodon.org/methods/oauth/",
+    "path_or_host": "/oauth/authorize, /oauth/token",
+    "separable": "http",
+    "note": "Per-instance"
+   }
+  ],
+  "notes": "Federated: thousands of independent instance domains; only mastodon.social is one host. Domain-level blocking cannot cover the fediverse. Official docs give placeholders only.",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 45
+ },
+ {
+  "id": "truth-social",
+  "name": "Truth Social",
+  "class": "social",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "truthsocial.com",
+    "how_seen": "main site; no network-requirements doc; unsourced"
+   },
+   {
+    "domain": "static-assets-1.truthsocial.com",
+    "how_seen": "commonly seen asset host; unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://help.truthsocial.com/faq",
+    "path_or_host": "truthsocial.com",
+    "separable": "sni",
+    "note": "Web/app host"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://help.truthsocial.com/faq",
+    "path_or_host": "/api/v1/* (Mastodon-derived, undocumented)",
+    "separable": "http",
+    "note": "No official developer API docs found"
+   }
+  ],
+  "notes": "No official developer API or allowlist documentation found; third-party scrapers only. Software is Mastodon-derived (unconfirmed officially).",
+  "confidence": "low",
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "help.truthsocial.com",
+    "role": "web",
+    "source_url": "https://help.truthsocial.com/faq",
+    "quote": "official help center site",
+    "excluded_reason": "documentation/support page"
+   }
+  ],
+  "priority_rank": 46
+ },
+ {
+  "id": "bitbucket",
+  "name": "Bitbucket Cloud",
+  "class": "code-paste",
+  "pack_overlap": "partial: bitbucket.org and atlassian.com already in pack (app unknown)",
+  "domains": [
+   {
+    "domain": "bitbucket.org",
+    "role": "web",
+    "source_url": "https://support.atlassian.com/bitbucket-cloud/docs/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall/",
+    "quote": "IPv4 inbound for bitbucket.org, ssh.bitbucket.org"
+   },
+   {
+    "domain": "api.bitbucket.org",
+    "role": "api",
+    "source_url": "https://support.atlassian.com/bitbucket-cloud/docs/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall/",
+    "quote": "bitbucket.org, api.bitbucket.org, altssh.bitbucket.org share ranges"
+   },
+   {
+    "domain": "altssh.bitbucket.org",
+    "role": "other",
+    "source_url": "https://support.atlassian.com/bitbucket-cloud/docs/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall/",
+    "quote": "SSH over alternate port; same page"
+   },
+   {
+    "domain": "ssh.bitbucket.org",
+    "role": "other",
+    "source_url": "https://support.atlassian.com/bitbucket-cloud/docs/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall/",
+    "quote": "IPv4 inbound for bitbucket.org, ssh.bitbucket.org"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "bbuseruploads.s3.amazonaws.com",
+    "how_seen": "commonly seen attachment host; not in official page; unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "web",
+    "evidence_url": "https://support.atlassian.com/bitbucket-cloud/docs/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall/",
+    "path_or_host": "bitbucket.org",
+    "separable": "sni",
+    "note": "Already in pack"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://support.atlassian.com/bitbucket-cloud/docs/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall/",
+    "path_or_host": "api.bitbucket.org",
+    "separable": "sni",
+    "note": "Separate hostname"
+   },
+   {
+    "name": "git-ssh",
+    "evidence_url": "https://support.atlassian.com/bitbucket-cloud/docs/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall/",
+    "path_or_host": "ssh.bitbucket.org / altssh.bitbucket.org",
+    "separable": "sni",
+    "note": "Git push over SSH"
+   },
+   {
+    "name": "git-https-push",
+    "evidence_url": "https://support.atlassian.com/bitbucket-cloud/docs/what-are-the-bitbucket-cloud-ip-addresses-i-should-use-to-configure-my-corporate-firewall/",
+    "path_or_host": "POST bitbucket.org/<ws>/<repo>.git/git-receive-pack",
+    "separable": "http",
+    "note": "Path visible only with TLS inspection; path from general git protocol knowledge"
+   }
+  ],
+  "notes": "Core domain already shipped in pack; incremental value is sub-function split (api, ssh).",
+  "confidence": "medium",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 47
+ },
+ {
+  "id": "azure-devops",
+  "name": "Azure DevOps",
+  "class": "code-paste",
+  "pack_overlap": "partial: visualstudio.com and vsassets.io already in pack (app unknown); dev.azure.com not present",
+  "domains": [
+   {
+    "domain": "dev.azure.com",
+    "role": "web",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "ensure that dev.azure.com and *.dev.azure.com are open on port 443"
+   },
+   {
+    "domain": "vssps.visualstudio.com",
+    "role": "auth",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "https://*.vssps.visualstudio.com Authentication and sign-in related"
+   },
+   {
+    "domain": "ssh.dev.azure.com",
+    "role": "other",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "allow port 22 for ssh.dev.azure.com, vs-ssh.visualstudio.com"
+   },
+   {
+    "domain": "vsrm.dev.azure.com",
+    "role": "api",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "https://vsrm.dev.azure.com Hosts releases"
+   },
+   {
+    "domain": "login.microsoftonline.com",
+    "role": "auth",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "Authentication and sign-in related"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "web-api",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "path_or_host": "dev.azure.com/{org}",
+    "separable": "sni",
+    "note": "Shared host; org in path"
+   },
+   {
+    "name": "git-ssh",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "path_or_host": "ssh.dev.azure.com:22",
+    "separable": "sni",
+    "note": "Git over SSH"
+   },
+   {
+    "name": "agent-download",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "path_or_host": "download.agent.dev.azure.com",
+    "separable": "sni",
+    "note": "Pipeline agent software"
+   },
+   {
+    "name": "artifacts",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "path_or_host": "*.pkgs.visualstudio.com, *.blob.core.windows.net",
+    "separable": "sni",
+    "note": "Package feeds; blob host is shared Azure storage"
+   }
+  ],
+  "notes": "login.microsoftonline.com is shared Microsoft auth, do not block per-service. Legacy {org}.visualstudio.com already in pack.",
+  "confidence": "high",
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "download.agent.dev.azure.com",
+    "role": "download",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "Required to set up self-hosted agent",
+    "excluded_reason": "download host"
+   },
+   {
+    "domain": "vsassets.io",
+    "role": "cdn",
+    "source_url": "https://learn.microsoft.com/en-us/azure/devops/organizations/security/allow-list-ip-url",
+    "quote": "https://cdn.vsassets.io Hosts Azure DevOps CDN content",
+    "excluded_reason": "shared CDN"
+   }
+  ],
+  "priority_rank": 48
+ },
+ {
+  "id": "codeberg",
+  "name": "Codeberg",
+  "class": "code-paste",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "codeberg.org",
+    "role": "web",
+    "source_url": "https://docs.codeberg.org/",
+    "quote": "links to https://codeberg.org/Codeberg/Community/issues"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "base-git",
+    "evidence_url": "https://docs.codeberg.org/",
+    "path_or_host": "codeberg.org",
+    "separable": "sni",
+    "note": "Web, API and git over HTTPS share host"
+   },
+   {
+    "name": "pages-hosting",
+    "evidence_url": "https://docs.codeberg.org/codeberg-pages/",
+    "path_or_host": "*.codeberg.page",
+    "separable": "sni",
+    "note": "User-published static sites; wildcard subdomains"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://docs.codeberg.org/",
+    "path_or_host": "POST codeberg.org/api/v1/... (Forgejo API)",
+    "separable": "http",
+    "note": "Same host as web; path from Forgejo knowledge, not fetched"
+   }
+  ],
+  "notes": "Forgejo-based; API path not verified on fetched pages. Pages uses git-pages with custom domains (not enumerable).",
+  "confidence": "medium",
+  "status": "active",
+  "domains_not_a_match": [
+   {
+    "domain": "docs.codeberg.org",
+    "role": "web",
+    "source_url": "https://docs.codeberg.org/",
+    "quote": "contributor FAQ link uses this host",
+    "excluded_reason": "documentation/support page"
+   },
+   {
+    "domain": "codeberg.page",
+    "role": "other",
+    "source_url": "https://docs.codeberg.org/codeberg-pages/",
+    "quote": "a human-friendly address ({username}.codeberg.page)",
+    "excluded_reason": "shared user-content host"
+   },
+   {
+    "domain": "design.codeberg.org",
+    "role": "cdn",
+    "source_url": "https://docs.codeberg.org/",
+    "quote": "logo images are served from this host",
+    "excluded_reason": "design/docs host"
+   }
+  ],
+  "priority_rank": 49
+ },
+ {
+  "id": "rentry",
+  "name": "Rentry",
+  "class": "code-paste",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "rentry.co",
+    "role": "web",
+    "source_url": "https://github.com/radude/rentry",
+    "quote": "base URL is https://rentry.co (official CLI repo README)"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "rentry.org",
+    "how_seen": "alias seen in search results; not on official doc fetched; unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "create",
+    "evidence_url": "https://github.com/radude/rentry",
+    "path_or_host": "POST /api/new",
+    "separable": "http",
+    "note": "Same host as web"
+   },
+   {
+    "name": "edit",
+    "evidence_url": "https://github.com/radude/rentry",
+    "path_or_host": "POST /api/edit/{url}",
+    "separable": "http",
+    "note": "Edit code required"
+   },
+   {
+    "name": "raw-read",
+    "evidence_url": "https://github.com/radude/rentry",
+    "path_or_host": "GET /api/raw/{url}",
+    "separable": "http",
+    "note": "Also /raw/ read path"
+   },
+   {
+    "name": "base",
+    "evidence_url": "https://github.com/radude/rentry",
+    "path_or_host": "rentry.co",
+    "separable": "sni",
+    "note": "Whole-site block only"
+   }
+  ],
+  "notes": "Only unofficial-adjacent author CLI repo documents API; rentry.co/api page returned empty. Read vs write separable only via HTTP inspection.",
+  "confidence": "medium",
+  "status": "active",
+  "domains_not_a_match": [],
+  "priority_rank": 50
+ }
+]
