@@ -1,6 +1,6 @@
 # Lane brief: application research (read this first)
 
-Updated 2026-11-27 (PRO-524: child apps wave 1; PRO-495: wave 0).
+Updated 2026-11-27 (PRO-550: child apps wave 2; PRO-524: wave 1; PRO-495: wave 0).
 
 **Rule (PRO-347, 2026-11-24): every task adds its own `migration/notes/PRO-<n>.md`** (front matter: task, lane,
 date, title, PRs, SHAs; then one paragraph; `migration/notes/README.md`) in the same push as the task; it is the
@@ -54,7 +54,11 @@ and content-pack patches for the Engine lane.
   (PRO-510: Gmail and Drive upload forms, Graph /beta, case rules and $batch, Google batch, Telegram case-insensitive
   methods, Discord versions, Dropbox-API-Arg; the Dropbox `arg` URL parameter stays unverified). Where a vendor's docs
   site is blocked, its own OpenAPI spec or SDK on raw.githubusercontent.com is cited (PRO-501 rule). Later waves for
-  new services come from Research Lab's PRO-491 list; Bitbucket is PR #166 row 47. PROTOCOL and ENGINE-FIELD items are Go only.
+  new services come from Research Lab's PRO-491 list; Bitbucket is PR #166 row 47. Wave 2 (PRO-550, 2026-11-27):
+  30 more services in the pack (mail, e-signature, dev platforms, AI assistants, file sharing), 150 children, 111 cited
+  (96 pages); six blocked (rows 72 to 92, allowlist batch R4). New per-service field `web_ui_evidence` (whether the
+  browser app uses the documented API, only from an official source; checked from wave 2 on): Power BI and Copilot
+  partial, Cursor different, the rest none. Azure DevOps is PR #166 row 48 (not in the pack). PROTOCOL and ENGINE-FIELD items are Go only.
 - Branches: since 2026-11-23 each task gets its own branch from `main` (`claude/app-research-<PRO-n>-<slug>`, one PR).
   PRO-169's branch `claude/app-research-PRO-169-rows30-44-specs` merged `claude/app-research` (`8dcdadf`) first, because
   batch P, rounds 6 and 7 and ranking run 2 were not on `main`; its PR therefore carries that earlier lane work too.
