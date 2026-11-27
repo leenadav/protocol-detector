@@ -61,7 +61,7 @@ func openKeyLogWithin(t *testing.T, path string, limit time.Duration) error {
 	case <-time.After(limit):
 		// Unblock the stuck open with a writer so the goroutine ends, then fail.
 		if f, err := os.OpenFile(path, os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
-			f.Close()
+			_ = f.Close()
 		}
 		t.Fatalf("OpenKeyLog(%s) did not return within %s", path, limit)
 		return nil
