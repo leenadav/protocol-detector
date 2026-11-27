@@ -77,6 +77,17 @@ git -C culvert am lab/culvert/culvert-lab-ef94311.patch lab/culvert/culvert-lab-
 cd culvert && GOWORK=/path/to/go.work go test -race -run 'TestLab' . ./internal/pdobs ./internal/protodetect
 ```
 
+## Child applications under load (PRO-516, 2026-11-27)
+
+`tools/childappload/` drives the PRO-504 lab build with vegeta v12.12.0 at 200, 1,000 and 3,000 req/s over a
+five-request decrypted mix (gmail upload, a Drive child, a parent-only request, an unowned host, a `..` path), on
+HTTP/1.1 and HTTP/2, child-app lab off against on, 3 repetitions of 60 s. Result: +16.2 heap allocations and about
++0.8 KB per request on both protocols at every rate (the PRO-504 benchmark, averaged over the mix), about +8 to
++12 µs proxy CPU per request on HTTP/1.1, latency and throughput unchanged within noise. Results, profiles and the
+comparison with the ADR-0011 budget: `docs/integration/CHILDAPP-LOAD.md`; data in `results-childapp-load/`.
+The lab-only `tools/childappload/zz_labmetrics_lab.go` (loopback `runtime/metrics` and pprof) is copied into the
+clone before the build and is not part of the lab patch.
+
 ## Load test with vegeta (PRO-269, 2026-11-24)
 
 `tools/loadtest.py` sends sustained HTTPS (CONNECT, observed) and HTTP (forward proxy, the control) load with
