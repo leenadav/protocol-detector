@@ -96,6 +96,11 @@ Verdict: no growth slope, no panic, no leaked reservation, and the new version i
 Recovery to within 10% of the baseline fails: Culvert's bounded request-log ring, the lazily built child-app
 classifier, and a baseline taken before two idle keep-alive connections closed.
 
+**Re-run with revision 1 (PRO-564, 2026-11-27): P1 to P5 all pass.** `ENDURANCE-RERUN.md` and
+`results-endurance-rerun/`. The revision was recorded in the manifest before the run: 60 s of warm-up, then the
+baseline at least 120 s after start. The thresholds are unchanged. After load: 25 goroutines vs 25, and a live
+heap of 10.30 MB vs 11.02 MB (−6.5%).
+
 ## What was built on the Culvert lab branch
 
 Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/protocol-detector` (4 commits, push disabled). The patch is `culvert-lab-52eb9d1.patch`; it leaves out `frontend/dist`, which `npm run build` regenerates.
