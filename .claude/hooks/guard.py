@@ -385,8 +385,9 @@ class Context:
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(sorted(names)))
-        except OSError:
-            pass
+        except OSError as error:
+            # Fail safe: an unrecorded branch counts as not created here, so its rewrite stays blocked.
+            sys.stderr.write("guard.py: could not record branch {} ({}); it stays guarded\n".format(branch, error))
 
 
 # ---------------------------------------------------------------------------------------------------------------

@@ -156,6 +156,16 @@ class HistoryRewriteTest(RepoTest):
             self.allowed(command)
             self.assertIn(branch, guard.Context(self.repo.path, "s1").created(self.repo.path))
 
+    def test_unwritable_record_fails_safe(self):
+        common = Path(self.repo.path, ".git", "claude-hooks")
+        common.write_text("not a directory")
+        self.allowed("git checkout -b claude/unrecorded")
+        self.assertNotIn("claude/unrecorded", guard.Context(self.repo.path, "s1").created(self.repo.path))
+        self.repo.checkout("claude/unrecorded", create=True)
+        subprocess.run(["git", "update-ref", "refs/remotes/origin/claude/unrecorded", "HEAD"],
+                       cwd=self.repo.path, check=True)
+        self.blocked("git reset --hard")
+
     def test_unshared_branches_are_free(self):
         self.repo.checkout("main")
         self.allowed("git reset --hard origin/main")

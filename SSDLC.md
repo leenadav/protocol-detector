@@ -979,7 +979,7 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    blocks the call and shows the reason and the approval route. It blocks force-pushes, pushes to `main`, tag and
    mirror pushes, rebase or `reset --hard` of a shared `claude/*` branch the session did not create, merges,
    approvals, PR closes, repository-settings, secret and release changes (`gh` and MCP), and likely secrets in a
-   write or a command (`go/**/testdata/` allowed). Its 29 tests run in `make workflow-policy` and the ci
+   write or a command (`go/**/testdata/` allowed). Its 30 tests run in `make workflow-policy` and the ci
    `workflow-lint` job. It is a guardrail for honest mistakes, not a sandbox: an alias, a script file or another
    interpreter is out of its reach, so the instructions, branch protection and review stay the controls.
 18. First real runs (blocked on the Actions billing limit, which Lee will
