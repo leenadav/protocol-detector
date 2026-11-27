@@ -52,6 +52,15 @@ The counts above are those of `main` at the time of writing (after PRO-403). A c
 - **Editing the other lane's files.** Engine owns `go/`, `migration/` and product code; CI/CD owns `.github/`,
   its `tools/` and the locks. Send the other lane a patch instead.
 
+## Guardrail hooks (PRO-75)
+
+`.claude/settings.json` runs `.claude/hooks/guard.py` before every Bash, file-writing and GitHub MCP call, in the
+terminal and in cloud sessions alike. It blocks force-push, pushes to `main`, tags, rebase or `reset --hard` of a
+shared `claude/*` branch this session did not create, `gh pr merge` / approve / close, settings, secret and release
+changes, and likely secrets in a write or a command (`go/**/testdata/` allowed). A block prints the reason and the
+approval route: ask Hermes, never work around it. A false positive is a fix to `guard.py` with a test
+(`python3 -B .claude/hooks/guard.py --self-test`, also run by `make workflow-policy` and ci `workflow-lint`).
+
 ## Skills to use
 
 Project skills in `.claude/skills/` (MIT, upstream and changes in `.claude/skills/THIRD_PARTY.md`):

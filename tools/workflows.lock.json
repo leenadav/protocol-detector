@@ -307,6 +307,7 @@
    "          echo \"zizmor $(zizmor --version | awk '{print $NF}'): $(tail -n 1 zizmor.txt)\" | tee -a \"$GITHUB_STEP_SUMMARY\"",
    "      - name: Workflow policy (gate covers every ci job, drift gate triggers on every workflow, releases serialize, tags must be on main)",
    "        run: |",
+   "          python -B .claude/hooks/guard.py --self-test",
    "          python -B tools/check_release_ref.py --self-test",
    "          python -B tools/check_release_exposure.py --self-test",
    "          python -B tools/check_release_checks.py --self-test",

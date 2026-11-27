@@ -1,0 +1,2722 @@
+{
+ "schema": "child-apps/v1",
+ "task": "PRO-524",
+ "feeds": "PRO-492 (Engine, enterprise App-ID child apps); SEC-CHILD-3 evidence for PRO-510",
+ "wave": 1,
+ "pack": {
+  "commit": "5cb35d29e6392b1d96d75c3f569baa378a0efe68",
+  "version": "2026.11.9",
+  "path": "go/internal/content/pack.json"
+ },
+ "accessed": "2026-11-27",
+ "pro491_overlap": "PR #166 (PRO-491 wave 1, enterprise-300.md) lists Bitbucket Cloud as row 47 ('bitbucket', not in the pack); it is linked there and not repeated here. None of the 30 services below is in PR #166's 65-service list (checked by name against its enterprise-300.md patch, 2026-11-27).",
+ "not_in_pack": "Google Calendar, Amazon S3 and Azure Blob Storage have no app id in pack 2026.11.9 (calendar.google.com and the Azure/AWS storage hosts are not separate apps); Outlook / Exchange Online is wave 0's outlook-web. They are left out instead of being given a guessed parent.",
+ "rules": [
+  "verified=false means every signals field is null: such a child is a proposal only and must not become a rule.",
+  "surface=api: documented vendor API endpoint (scripts, integrations). The first-party web UI's own request paths are not documented and must not be assumed equal.",
+  "host_sni lists names as the source spells them; a '*.' or '{...}' form is a pattern, not a literal.",
+  "path_pattern alternatives are separated by ' | '; '{version}' on graph.microsoft.com is v1.0 or beta.",
+  "transport is set for non-HTTP signals (ports, UDP media, SSH); those are invisible to an HTTP rule and UDP is off the Phase 1 observed path.",
+  "Hosts and paths are client assertions seen by a decrypting proxy, not authenticated identity.",
+  "Rows citing raw.githubusercontent.com cite the vendor's own published spec or SDK repository (Asana, Figma, Pinterest, Vimeo, Miro, Canva, Notion, monday.com, Proton, pCloud, Discord, Dropbox), used where the vendor's documentation site was not reachable; each note names the file and the line content."
+ ],
+ "services": [
+  {
+   "service": "Google Meet",
+   "parent_app_id": "google-meet",
+   "separability": "partial",
+   "not_separable": "Screen sharing and chat inside a meeting are not separable from the media session.",
+   "web_ui_note": "The Meet web client's own request paths are not published; screen sharing travels in the same media stream as audio and video.",
+   "children": [
+    {
+     "child_id": "google-meet-base",
+     "function": "Meet web app",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "meet.google.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.google.com/a/answer/9012184",
+     "citation_page_date": "2026-11-10 (\"Last updated 2026-11-10 UTC\")",
+     "notes": "Allowlist group 'Google Workspace user-facing services': 'https://meet.google.com'. Host only."
+    },
+    {
+     "child_id": "google-meet-signalling",
+     "function": "Meet API endpoint connectivity",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "meetings.googleapis.com",
+       "hangouts.googleapis.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.google.com/a/answer/1279090",
+     "citation_page_date": "2026-11-10 (\"Last updated 2026-11-10 UTC\")",
+     "notes": "Section 'Domains for API endpoint connectivity' lists meetings.googleapis.com and hangouts.googleapis.com (with accounts.google.com, apis.google.com, meet.google.com, apps.google.com, chat.google.com, docs.google.com, which are shared and left out). Both hosts map to google-base in pack 2026.11.9 (ENGINE-FIELD)."
+    },
+    {
+     "child_id": "google-meet-voice-video",
+     "function": "audio and video media",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": "UDP 3478, 19302-19309 (TCP/UDP 443 fallback)"
+     },
+     "citation_url": "https://support.google.com/a/answer/1279090",
+     "citation_page_date": "2026-11-10 (\"Last updated 2026-11-10 UTC\")",
+     "notes": "'For audio and video, set up outbound UDP ports 3478 and 19302-19309.' 'If UDP ports are blocked, TCP will be used.' UDP is off the Phase 1 observed path; the TCP fallback host is not named per function."
+    },
+    {
+     "child_id": "google-meet-live-streaming",
+     "function": "live streaming",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "stream.meet.google.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.google.com/a/answer/1279090",
+     "citation_page_date": "2026-11-10 (\"Last updated 2026-11-10 UTC\")",
+     "notes": "Section 'Domains for live streaming': meet.google.com, stream.meet.google.com. Only the second is specific."
+    },
+    {
+     "child_id": "google-meet-api-spaces",
+     "function": "Meet REST API: create and manage meeting spaces",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "meet.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v2/spaces",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://meet.googleapis.com/$discovery/rest?version=v2",
+     "citation_page_date": "discovery revision 20261117",
+     "notes": "rootUrl https://meet.googleapis.com/; spaces.create POST v2/spaces, spaces.patch PATCH v2/spaces/{spacesId}, spaces.endActiveConference POST v2/spaces/{spacesId}:endActiveConference. meet.googleapis.com maps to google-base (ENGINE-FIELD)."
+    },
+    {
+     "child_id": "google-meet-api-records",
+     "function": "Meet REST API: conference records, recordings, transcripts (metadata)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "meet.googleapis.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v2/conferenceRecords",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://meet.googleapis.com/$discovery/rest?version=v2",
+     "citation_page_date": "discovery revision 20261117",
+     "notes": "conferenceRecords.recordings.list/get, conferenceRecords.transcripts.list/get and transcripts.entries.list are GET v2/conferenceRecords/...; schema Recording: 'Recording is saved to Google Drive as an MP4 file' (driveDestination), so the recording bytes are a Drive download, not a Meet request."
+    }
+   ]
+  },
+  {
+   "service": "Google Photos",
+   "parent_app_id": "google-photos",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "google-photos-base",
+     "function": "Photos web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. photos.google.com is the pack's host, but no Google network page read here names it."
+    },
+    {
+     "child_id": "google-photos-api-library",
+     "function": "Library API: read albums and media items",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "photoslibrary.googleapis.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/albums | /v1/mediaItems",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://photoslibrary.googleapis.com/$discovery/rest?version=v1",
+     "citation_page_date": "discovery revision 20261124",
+     "notes": "rootUrl https://photoslibrary.googleapis.com/; albums.list GET v1/albums, mediaItems.list GET v1/mediaItems, mediaItems.get GET v1/mediaItems/{mediaItemsId}, mediaItems.search POST v1/mediaItems:search. Host maps to google-base (ENGINE-FIELD)."
+    },
+    {
+     "child_id": "google-photos-api-creating",
+     "function": "Library API: create media items from uploaded bytes",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "photoslibrary.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/mediaItems:batchCreate",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://photoslibrary.googleapis.com/$discovery/rest?version=v1",
+     "citation_page_date": "discovery revision 20261124",
+     "notes": "mediaItems.batchCreate POST v1/mediaItems:batchCreate: 'This is the second step for creating a media item. For details regarding Step 1, uploading the raw bytes to a Google Server, see Uploading media.' The byte upload endpoint is not in the Discovery document (guide SOURCE BLOCKED), so direction is left null."
+    },
+    {
+     "child_id": "google-photos-api-picker",
+     "function": "Picker API: user picks items for an app",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "photospicker.googleapis.com"
+      ],
+      "http_method": null,
+      "path_pattern": "/v1/sessions | /v1/mediaItems",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://photospicker.googleapis.com/$discovery/rest?version=v1",
+     "citation_page_date": "discovery revision 20261124",
+     "notes": "rootUrl https://photospicker.googleapis.com/; sessions.create POST v1/sessions, sessions.get GET v1/sessions/{sessionsId}, mediaItems.list GET v1/mediaItems."
+    },
+    {
+     "child_id": "google-photos-uploading",
+     "function": "upload raw bytes",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. The upload endpoint is in the 'Uploading media' guide on developers.google.com (SOURCE BLOCKED, row 59)."
+    },
+    {
+     "child_id": "google-photos-downloading",
+     "function": "download photos and videos",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Media are fetched from a baseUrl returned at run time; the host is not documented here."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.google.com/photos/library/guides/upload-media"
+   ]
+  },
+  {
+   "service": "Google Chat",
+   "parent_app_id": "google-chat",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "google-chat-base",
+     "function": "Chat web app",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "chat.google.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.google.com/a/answer/9012184",
+     "citation_page_date": "2026-11-10 (\"Last updated 2026-11-10 UTC\")",
+     "notes": "Allowlist row 'Google Chat: https://chat.google.com, https://mail.google.com/chat'. The second form is a path under Gmail's host, so a host-only rule sees it as Gmail."
+    },
+    {
+     "child_id": "google-chat-api-posting",
+     "function": "Chat API: create, update, search messages",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "chat.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/spaces/{spacesId}/messages",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://chat.googleapis.com/$discovery/rest?version=v1",
+     "citation_page_date": "discovery revision 20261126",
+     "notes": "rootUrl https://chat.googleapis.com/; spaces.messages.create POST v1/spaces/{spacesId}/messages, spaces.messages.update PUT and patch PATCH v1/spaces/{spacesId}/messages/{messagesId}. Host maps to google-base (ENGINE-FIELD)."
+    },
+    {
+     "child_id": "google-chat-api-uploading",
+     "function": "Chat API: upload an attachment",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "chat.googleapis.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/upload/v1/spaces/{spacesId}/attachments:upload | /resumable/upload/v1/spaces/{spacesId}/attachments:upload",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://chat.googleapis.com/$discovery/rest?version=v1",
+     "citation_page_date": "discovery revision 20261126",
+     "notes": "media.upload: mediaUpload.protocols simple '/upload/v1/{+parent}/attachments:upload' and resumable '/resumable/upload/v1/{+parent}/attachments:upload', accept ['*/*']; uploadType is a query parameter."
+    },
+    {
+     "child_id": "google-chat-api-downloading",
+     "function": "Chat API: download attachment media",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "chat.googleapis.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/media/{mediaId}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://chat.googleapis.com/$discovery/rest?version=v1",
+     "citation_page_date": "discovery revision 20261126",
+     "notes": "media.download GET v1/media/{mediaId}, supportsMediaDownload: 'Download is supported on the URI /v1/media/{+name}?alt=media.'"
+    }
+   ]
+  },
+  {
+   "service": "SharePoint Online",
+   "parent_app_id": "sharepoint-online",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The SharePoint web UI uses the same tenant host; its own request paths beyond the documented REST API are not published.",
+   "children": [
+    {
+     "child_id": "sharepoint-online-base",
+     "function": "SharePoint sites (any function)",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "*.sharepoint.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges",
+     "citation_page_date": "ms.date 2026-08-14; endpoints.office.com worldwide version 2026103000",
+     "notes": "Endpoint set ID 31 (SharePoint, Optimize): '*.sharepoint.com', TCP 80,443, UDP 443. The wildcard covers every tenant site; it does not separate functions.",
+     "citation_also": [
+      "https://endpoints.office.com/endpoints/worldwide?clientrequestid=b10c5ed1-bad1-445f-b386-b919946339a7"
+     ]
+    },
+    {
+     "child_id": "sharepoint-online-uploading",
+     "function": "SharePoint REST: add a file to a folder",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.sharepoint.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/_api/web/GetFolderByServerRelativeUrl('{folder}')/Files/add(url='{name}',overwrite={bool}) | /_api/web/GetFileByServerRelativeUrl('{path}')/$value",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/working-with-folders-and-files-with-rest",
+     "citation_page_date": "ms.date 2023-01-12",
+     "notes": "'POST https://{site_url}/_api/web/GetFolderByServerRelativeUrl('Folder Name')/Files/add(url='a.txt',overwrite=true)'; update content: 'POST https://{site_url}/_api/web/GetFileByServerRelativeUrl('/Folder Name/{file_name}')/$value'. {site_url} is under *.sharepoint.com."
+    },
+    {
+     "child_id": "sharepoint-online-downloading",
+     "function": "SharePoint REST: download a file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "*.sharepoint.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/_api/web/GetFolderByServerRelativeUrl('{folder}')/Files('{name}')/$value | /_api/web/GetFileByServerRelativeUrl('{path}')/$value",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/working-with-folders-and-files-with-rest",
+     "citation_page_date": "ms.date 2023-01-12",
+     "notes": "'GET https://{site_url}/_api/web/GetFolderByServerRelativeUrl('Folder Name')/Files('{file_name}')/$value' and 'GET https://{site_url}/_api/web/GetFileByServerRelativeUrl('/Folder Name/{file_name}')/$value'. The same GetFileByServerRelativeUrl(...)/$value path is POST for upload, GET for download."
+    },
+    {
+     "child_id": "sharepoint-online-graph-uploading",
+     "function": "Graph: upload to a site's document library",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "graph.microsoft.com"
+      ],
+      "http_method": "PUT | POST",
+      "path_pattern": "/{version}/sites/{site-id}/drive/items/{parent-id}:/{filename}:/content | /{version}/sites/{site-id}/drive/items/{item-id}/content | /{version}/sites/{site-id}/drive/items/{parent-id}:/{filename}:/createUploadSession",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/graph/api/driveitem-put-content",
+     "citation_page_date": "ms.date 2017-09-10",
+     "notes": "'PUT /sites/{site-id}/drive/items/{parent-id}:/{filename}:/content' and '.../{item-id}/content'; large files: 'POST /sites/{siteId}/drive/items/{parentItemId}:/{fileName}:/createUploadSession' (createUploadSession page, ms.date 2025-10-15), then PUT to the returned opaque uploadUrl. The page paths omit the version segment; the URL form is 'https://graph.microsoft.com/{version}/{resource}' (use-the-api), version v1.0 or beta.",
+     "citation_also": [
+      "https://learn.microsoft.com/en-us/graph/api/driveitem-createuploadsession",
+      "https://learn.microsoft.com/en-us/graph/use-the-api"
+     ]
+    },
+    {
+     "child_id": "sharepoint-online-graph-downloading",
+     "function": "Graph: download from a site's document library",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "graph.microsoft.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/{version}/sites/{site-id}/drive/items/{item-id}/content",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/graph/api/driveitem-get-content",
+     "citation_page_date": "ms.date 2024-06-12",
+     "notes": "'GET /sites/{siteId}/drive/items/{item-id}/content'; the response is a redirect to a preauthenticated download URL (@microsoft.graph.downloadUrl). graph.microsoft.com maps to ms-base (ENGINE-FIELD).",
+     "citation_also": [
+      "https://learn.microsoft.com/en-us/graph/use-the-api"
+     ]
+    }
+   ]
+  },
+  {
+   "service": "OneNote (Microsoft 365)",
+   "parent_app_id": "ms-office365",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "OneNote has no own app id in the pack; the parent is ms-office365 (Microsoft 365 web applications).",
+   "children": [
+    {
+     "child_id": "ms-onenote-base",
+     "function": "OneNote notebooks",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "*.onenote.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges",
+     "citation_page_date": "ms.date 2026-08-14; endpoints.office.com worldwide version 2026103000",
+     "notes": "Endpoint set ID 49 (Common, Default): '*.onenote.com' TCP 443, note 'OneNote notebooks (wildcards)'; ID 51: '*cdn.onenote.net'. NAME-BASED candidate: no pack entry maps onenote.com in 2026.11.9.",
+     "citation_also": [
+      "https://endpoints.office.com/endpoints/worldwide?clientrequestid=b10c5ed1-bad1-445f-b386-b919946339a7"
+     ]
+    },
+    {
+     "child_id": "ms-onenote-posting",
+     "function": "Graph: create a OneNote page (text, images, files)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "graph.microsoft.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/{version}/{me|users/{id}|groups/{id}|sites/{id}}/onenote/sections/{id}/pages",
+      "content_type": "text/html | application/xhtml+xml | multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/graph/api/section-post-pages",
+     "citation_page_date": "ms.date 2024-06-21",
+     "notes": "'POST /me/onenote/sections/{id}/pages' (also users/{id}, groups/{id}, sites/{id}); Content-Type 'text/html or application/xhtml+xml ... Multipart requests use the multipart/form-data; boundary=your-boundary content type. ... If you're sending binary data, then you must send a multipart request.' Example 'POST https://graph.microsoft.com/v1.0/me/onenote/sections/{id}/pages'.",
+     "citation_also": [
+      "https://learn.microsoft.com/en-us/graph/api/resources/onenote-api-overview"
+     ]
+    },
+    {
+     "child_id": "ms-onenote-downloading",
+     "function": "Graph: read a page's HTML content",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "graph.microsoft.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/{version}/{me|users/{id}|groups/{id}|sites/{id}}/onenote/pages/{id}/content | /{version}/.../onenote/pages/{id}/$value",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://learn.microsoft.com/en-us/graph/api/page-get",
+     "citation_page_date": "ms.date 2024-06-21",
+     "notes": "'GET /me/onenote/pages/{id}/content[?includeIDs=true]' and 'GET /me/onenote/pages/{id}/$value'.",
+     "citation_also": [
+      "https://learn.microsoft.com/en-us/graph/api/resources/onenote-api-overview"
+     ]
+    }
+   ]
+  },
+  {
+   "service": "Webex",
+   "parent_app_id": "webex",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "webex-base",
+     "function": "Webex micro-services (signalling, messaging, meetings)",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "*.webex.com",
+       "*.wbx2.com",
+       "*.ciscospark.com",
+       "*.webexapis.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://help.webex.com/en-us/article/WBX000028782/Network-Requirements-for-Webex-Services",
+     "citation_page_date": "November 17, 2026",
+     "notes": "Domains table: '*.webex.com *.cisco.com *.wbx2.com *.ciscospark.com *.webexapis.com Webex micro-services.' *.cisco.com is the vendor's corporate domain and is left out."
+    },
+    {
+     "child_id": "webex-file-transfer",
+     "function": "user-generated content storage (shared files, whiteboards, images)",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "*.webexcontent.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://help.webex.com/en-us/article/WBX000028782/Network-Requirements-for-Webex-Services",
+     "citation_page_date": "November 17, 2026",
+     "notes": "'*.webexcontent.com (1) Webex storage for user-generated content and logs, including: Shared files, Transcoded files, Images, Screenshots, Whiteboard content, Client & device logs, Profile pictures ...'. Upload and download are not split by host; logs share it."
+    },
+    {
+     "child_id": "webex-voice-video",
+     "function": "audio, video and content sharing media",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": "SRTP over UDP 5004, 9000; SRTP over TCP 5004; SRTP over TLS 443"
+     },
+     "citation_url": "https://help.webex.com/en-us/article/WBX000028782/Network-Requirements-for-Webex-Services",
+     "citation_page_date": "November 17, 2026",
+     "notes": "Ports table: 5004 and 9000 'SRTP over UDP' 'Encrypted audio, video, and content sharing on the Webex App and Cisco Video devices'; 5004 'SRTP over TCP'; 443 'SRTP over TLS'."
+    },
+    {
+     "child_id": "webex-messaging",
+     "function": "post a message or attachment through the Webex API",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.webex.com (messages API) developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.webex.com/docs/api/v1/messages/create-a-message"
+   ]
+  },
+  {
+   "service": "Skype",
+   "parent_app_id": "skype",
+   "separability": "not-separable",
+   "not_separable": "Retired service: 'As of May 5th, 2025, Skype is retired. This change will impact both free and paid Skype users, but not Skype for Business.' 'Skype users can move to Microsoft Teams Free' (support.microsoft.com, read 2026-11-27, no page date). Children of a retired service would be rules without traffic (former users are directed to Teams Free, which is ms-teams).",
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "skype-base",
+     "function": "Skype (consumer)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Skype is retired; no current network signal to attribute."
+    }
+   ],
+   "retirement_citation": "https://support.microsoft.com/en-us/skype/skype-is-retiring-in-may-2025-what-you-need-to-know-2a7d2501-427f-485e-8be0-2068a9f90472"
+  },
+  {
+   "service": "Salesforce",
+   "parent_app_id": "salesforce",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "salesforce-base",
+     "function": "Salesforce org (My Domain)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Domain list article renders empty (JavaScript-only), row 1/17."
+    },
+    {
+     "child_id": "salesforce-uploading",
+     "function": "REST API: insert a blob (ContentVersion, Attachment)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.salesforce.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "salesforce-downloading",
+     "function": "REST API: retrieve blob data (VersionData)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.salesforce.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_insert_update_blob.htm",
+    "https://help.salesforce.com/s/articleView?id=000384438&type=1"
+   ]
+  },
+  {
+   "service": "ServiceNow",
+   "parent_app_id": "servicenow",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "servicenow-base",
+     "function": "ServiceNow instance",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official page names the instance host form (row 19)."
+    },
+    {
+     "child_id": "servicenow-uploading",
+     "function": "Attachment API: upload a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.servicenow.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "servicenow-downloading",
+     "function": "Attachment API: download a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.servicenow.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.servicenow.com/dev.do#!/reference/api/latest/rest/c_AttachmentAPI"
+   ]
+  },
+  {
+   "service": "Jira",
+   "parent_app_id": "atlassian",
+   "separability": "host-only",
+   "not_separable": null,
+   "web_ui_note": "Atlassian asks for its first-party domains to be excluded from TLS inspection ('strongly consider excluding the Atlassian first-party domains from TLS interception/inspection'), so path rules may never see this traffic.",
+   "children": [
+    {
+     "child_id": "atlassian-jira-base",
+     "function": "Jira and Confluence cloud sites",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "*.atlassian.net",
+       "*.jira.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.atlassian.com/organization-administration/docs/ip-addresses-and-domains-for-atlassian-cloud-products/",
+     "citation_page_date": "dateModified 2026-11-04",
+     "notes": "Domain table: '*.atlassian.net Jira and Confluence use this', '*.jira.com Jira and Confluence use this'. The host does not separate Jira from Confluence (see the Confluence row)."
+    },
+    {
+     "child_id": "atlassian-jira-uploading",
+     "function": "REST API: add attachment to an issue",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.atlassian.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "atlassian-jira-downloading",
+     "function": "REST API: download attachment content",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.atlassian.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-attachments/"
+   ]
+  },
+  {
+   "service": "Confluence",
+   "parent_app_id": "atlassian",
+   "separability": "blocked",
+   "not_separable": "By host, Confluence is not separable from Jira: both use *.atlassian.net and *.jira.com (https://support.atlassian.com/organization-administration/docs/ip-addresses-and-domains-for-atlassian-cloud-products/). A path-based split needs the developer docs, which are blocked.",
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "atlassian-confluence-base",
+     "function": "Confluence pages",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Same hosts as Jira ('*.atlassian.net Jira and Confluence use this'); a path split is not on a page read here."
+    },
+    {
+     "child_id": "atlassian-confluence-uploading",
+     "function": "REST API: create attachment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.atlassian.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "atlassian-confluence-downloading",
+     "function": "REST API: download attachment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.atlassian.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments/"
+   ]
+  },
+  {
+   "service": "Trello",
+   "parent_app_id": "trello",
+   "separability": "host-only",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "trello-base",
+     "function": "Trello boards",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "*.trello.com",
+       "*.trello.services"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.atlassian.com/trello/docs/configuring-your-firewall-for-trello/",
+     "citation_page_date": "dateModified 2025-09-25",
+     "notes": "'configure host names to recognize any sub-domain of: *.trello.com *.trello.services *.trellostatus.com *.braintreegateway.com (paid accounts only) *.butlerfortrello.com'. Status, payment and Butler domains are left out."
+    },
+    {
+     "child_id": "trello-file-transfer",
+     "function": "attachment storage",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "trello-attachments.s3.amazonaws.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://support.atlassian.com/trello/docs/configuring-your-firewall-for-trello/",
+     "citation_page_date": "dateModified 2025-09-25",
+     "notes": "External resources list: 'https://trello-attachments.s3.amazonaws.com/'. Upload and download not split; the bucket name is in the host (virtual-hosted S3), the parent must come from the full name, not s3.amazonaws.com."
+    },
+    {
+     "child_id": "trello-uploading",
+     "function": "REST API: add attachment to a card",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.atlassian.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.atlassian.com/cloud/trello/rest/api-group-cards/"
+   ]
+  },
+  {
+   "service": "GitLab",
+   "parent_app_id": "gitlab",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "Git over HTTPS uses the generic git smart-HTTP paths, which GitLab's pages read here do not list.",
+   "children": [
+    {
+     "child_id": "gitlab-base",
+     "function": "GitLab.com",
+     "verified": true,
+     "surface": "web",
+     "signals": {
+      "host_sni": [
+       "gitlab.com",
+       "*.gitlab.com",
+       "*.gitlab-static.net",
+       "*.gitlab.net"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.gitlab.com/user/gitlab_com/",
+     "citation_page_date": "read 2026-11-27 (no page date)",
+     "notes": "'Pages on GitLab.com load content from these hostnames: gitlab.com *.gitlab.com *.gitlab-static.net *.gitlab.io *.gitlab.net'. *.gitlab.io is GitLab Pages (user-hosted sites) and is left out as shared hosting."
+    },
+    {
+     "child_id": "gitlab-uploading",
+     "function": "REST API: upload a file to a project",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "gitlab.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/v4/projects/{id}/uploads",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.gitlab.com/api/project_markdown_uploads/",
+     "citation_page_date": "read 2026-11-27",
+     "notes": "'POST /projects/:id/uploads' ... 'Content-Type: multipart/form-data'; REST root: 'The path must start with /api/v4' and the root endpoint is the GitLab host name (api/rest/).",
+     "citation_also": [
+      "https://docs.gitlab.com/api/rest/"
+     ]
+    },
+    {
+     "child_id": "gitlab-repo-file-posting",
+     "function": "REST API: create or update a repository file (commit)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "gitlab.com"
+      ],
+      "http_method": "POST | PUT",
+      "path_pattern": "/api/v4/projects/{id}/repository/files/{file_path}",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.gitlab.com/api/repository_files/",
+     "citation_page_date": "read 2026-11-27",
+     "notes": "'POST /projects/:id/repository/files/:file_path' and 'PUT /projects/:id/repository/files/:file_path' with branch, commit_message, content.",
+     "citation_also": [
+      "https://docs.gitlab.com/api/rest/"
+     ]
+    },
+    {
+     "child_id": "gitlab-downloading",
+     "function": "REST API: download a repository file or upload",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "gitlab.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/api/v4/projects/{id}/repository/files/{file_path}/raw | /api/v4/projects/{id}/uploads/{upload_id} | /api/v4/projects/{id}/uploads/{secret}/{filename}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.gitlab.com/api/repository_files/",
+     "citation_page_date": "read 2026-11-27",
+     "notes": "'GET /projects/:id/repository/files/:file_path/raw'; uploads: 'GET /projects/:id/uploads/:upload_id' and 'GET /projects/:id/uploads/:secret/:filename' (project_markdown_uploads).",
+     "citation_also": [
+      "https://docs.gitlab.com/api/project_markdown_uploads/"
+     ]
+    },
+    {
+     "child_id": "gitlab-git-ssh",
+     "function": "git over SSH on port 443",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "altssh.gitlab.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": "SSH over TCP 443"
+     },
+     "citation_url": "https://docs.gitlab.com/user/gitlab_com/",
+     "citation_page_date": "read 2026-11-27",
+     "notes": "'Alternative SSH port: GitLab.com can be reached by using a different SSH port for git+ssh. Hostname altssh.gitlab.com Port 443'. SSH content is not visible to an HTTP rule."
+    },
+    {
+     "child_id": "gitlab-container-registry",
+     "function": "container registry pulls",
+     "verified": true,
+     "surface": null,
+     "signals": {
+      "host_sni": [
+       "registry.gitlab.com",
+       "*.cdn.registry.gitlab-static.net"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.gitlab.com/user/gitlab_com/",
+     "citation_page_date": "read 2026-11-27",
+     "notes": "'Add these additional hostnames to your allow-lists if you pull images from registry.gitlab.com : *.storage.googleapis.com *.cdn.registry.gitlab-static.net'. The storage host is shared Google Cloud Storage and is left out."
+    }
+   ]
+  },
+  {
+   "service": "Notion",
+   "parent_app_id": "notion",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "notion-base",
+     "function": "Notion web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developers.notion.com and notion.com help developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "notion-api-uploading",
+     "function": "API: create and send a file upload",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.notion.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/file_uploads | /v1/file_uploads/{file_upload_id}/send | /v1/file_uploads/{file_upload_id}/complete",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/makenotion/notion-sdk-js/main/src/api-endpoints/file-uploads.ts",
+     "citation_page_date": "main branch, read 2026-11-27",
+     "notes": "Notion's official JS SDK (makenotion/notion-sdk-js): createFileUpload method post path 'file_uploads'; sendFileUpload method post path 'file_uploads/${file_upload_id}/send'; completeFileUpload post 'file_uploads/${file_upload_id}/complete'. Client.ts: prefix '${baseUrl ?? DEFAULT_BASE_URL}/v1/', send 'sends HTTP multipart/form-data'; constants.ts: DEFAULT_BASE_URL = \"https://api.notion.com\". The create call is JSON; only /send carries the bytes.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/makenotion/notion-sdk-js/main/src/Client.ts",
+      "https://raw.githubusercontent.com/makenotion/notion-sdk-js/main/src/constants.ts"
+     ]
+    },
+    {
+     "child_id": "notion-downloading",
+     "function": "download a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. File objects carry a temporary URL returned at run time; host not on a page read here."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.notion.com/reference/create-a-file-upload"
+   ]
+  },
+  {
+   "service": "monday.com",
+   "parent_app_id": "monday",
+   "separability": "host-only",
+   "not_separable": "All API functions share one GraphQL path; only the request body names the operation.",
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "monday-base",
+     "function": "monday.com web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developer.monday.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "monday-api",
+     "function": "GraphQL API (any operation)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.monday.com"
+      ],
+      "http_method": null,
+      "path_pattern": "/v2",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/mondaycom/monday-sdk-js/master/src/constants.js",
+     "citation_page_date": "master branch, read 2026-11-27",
+     "notes": "monday's official SDK (mondaycom/monday-sdk-js) constants.js: MONDAY_API_URL = `${MONDAY_PROTOCOL()}://${MONDAY_SUBDOMAIN_API()}${MONDAY_DOMAIN()}/v2` with defaults 'https', 'api.', 'monday.com' = https://api.monday.com/v2. GraphQL: the operation (query or mutation) is in the body, so functions are not separable by path."
+    },
+    {
+     "child_id": "monday-uploading",
+     "function": "file upload endpoint",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. The file-upload endpoint is on developer.monday.com (blocked)."
+    }
+   ],
+   "sources_blocked": [
+    "https://developer.monday.com/api-reference/docs/file-upload"
+   ]
+  },
+  {
+   "service": "Asana",
+   "parent_app_id": "asana",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "app.asana.com serves both the web app and the API (/api/1.0); only the path separates them.",
+   "children": [
+    {
+     "child_id": "asana-base",
+     "function": "Asana web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable Asana network page (row 14 relay covers domains only)."
+    },
+    {
+     "child_id": "asana-uploading",
+     "function": "API: upload an attachment",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "app.asana.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/1.0/attachments",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/Asana/openapi/master/defs/asana_oas.yaml",
+     "citation_page_date": "OpenAPI info.version 1.0, read 2026-11-27",
+     "notes": "Asana's official OpenAPI (Asana/openapi): servers 'https://app.asana.com/api/1.0'; POST /attachments createAttachmentForObject, requestBody 'multipart/form-data'."
+    },
+    {
+     "child_id": "asana-posting",
+     "function": "API: create a task or a comment (story)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "app.asana.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/1.0/tasks | /api/1.0/tasks/{task_gid}/stories",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/Asana/openapi/master/defs/asana_oas.yaml",
+     "citation_page_date": "OpenAPI info.version 1.0, read 2026-11-27",
+     "notes": "POST /tasks createTask 'application/json'; POST /tasks/{task_gid}/stories createStoryForTask 'application/json'."
+    },
+    {
+     "child_id": "asana-downloading",
+     "function": "download an attachment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. GET /attachments/{attachment_gid} returns metadata; the file host comes at run time."
+    }
+   ]
+  },
+  {
+   "service": "Figma",
+   "parent_app_id": "figma",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "figma-base",
+     "function": "Figma web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable Figma network page."
+    },
+    {
+     "child_id": "figma-api-reading",
+     "function": "REST API: read a file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.figma.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/files/{file_key}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/figma/rest-api-spec/main/openapi/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 0.47.0",
+     "notes": "Figma's official spec (figma/rest-api-spec): servers 'https://api.figma.com'; GET /v1/files/{file_key} getFile."
+    },
+    {
+     "child_id": "figma-api-exporting",
+     "function": "REST API: render or export images",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.figma.com"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/images/{file_key}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/figma/rest-api-spec/main/openapi/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 0.47.0",
+     "notes": "GET /v1/images/{file_key} getImages: 'will be populated with a map from node IDs to URLs of the rendered images ... The image assets will expire after 30 days.' The image bytes come from the returned URLs."
+    },
+    {
+     "child_id": "figma-api-posting",
+     "function": "REST API: post a comment",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.figma.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/files/{file_key}/comments",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/figma/rest-api-spec/main/openapi/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 0.47.0",
+     "notes": "POST /v1/files/{file_key}/comments postComment 'application/json'."
+    }
+   ]
+  },
+  {
+   "service": "Canva",
+   "parent_app_id": "canva",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "canva-base",
+     "function": "Canva web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Canva domains are in batch G (apps/canva.md); no per-function host."
+    },
+    {
+     "child_id": "canva-api-uploading",
+     "function": "Connect API: upload an asset or import a design",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.canva.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/rest/v1/asset-uploads | /rest/v1/imports",
+      "content_type": "application/octet-stream",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/canva-sdks/canva-connect-api-starter-kit/main/openapi/spec.yml",
+     "citation_page_date": "OpenAPI info.version 2024-06-18",
+     "notes": "Canva's own starter kit (canva-sdks): servers 'https://api.canva.com/rest'; POST /v1/asset-uploads CreateAssetUploadJob 'The request format for this endpoint is an application/octet-stream body of bytes' (metadata in header Asset-Upload-Metadata); POST /v1/imports 'application/octet-stream'."
+    },
+    {
+     "child_id": "canva-api-exporting",
+     "function": "Connect API: export a design",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.canva.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/rest/v1/exports",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/canva-sdks/canva-connect-api-starter-kit/main/openapi/spec.yml",
+     "citation_page_date": "OpenAPI info.version 2024-06-18",
+     "notes": "POST /v1/exports createDesignExportJob 'application/json': 'Once the exported file is generated, you can download it using the URL(s) provided. The download URLs are only valid for 24 hours.'"
+    },
+    {
+     "child_id": "canva-api-designing",
+     "function": "Connect API: create a design",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.canva.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/rest/v1/designs",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/canva-sdks/canva-connect-api-starter-kit/main/openapi/spec.yml",
+     "citation_page_date": "OpenAPI info.version 2024-06-18",
+     "notes": "POST /v1/designs createDesign 'application/json'."
+    }
+   ]
+  },
+  {
+   "service": "Miro",
+   "parent_app_id": "miro",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "miro-base",
+     "function": "Miro web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Miro domains are in batch G (apps/miro.md); no per-function host."
+    },
+    {
+     "child_id": "miro-api-uploading",
+     "function": "REST API: add an image or document from a local file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.miro.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v2/boards/{board_id}/images | /v2/boards/{board_id}/documents",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/miroapp/api-clients/main/packages/generator/spec.json",
+     "citation_page_date": "OpenAPI info.version v2.0",
+     "notes": "Miro's spec (miroapp/api-clients): servers 'https://api.miro.com/'; multipart/form-data operations create-image-item-using-local-file POST /v2/boards/{board_id}/images and create-document-item-using-file-from-device POST /v2/boards/{board_id}/documents (path parameter spelled board_id_PlatformFileUpload in the spec). The same paths with application/json take a URL instead of bytes."
+    },
+    {
+     "child_id": "miro-api-posting",
+     "function": "REST API: create a sticky note",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.miro.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v2/boards/{board_id}/sticky_notes",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/miroapp/api-clients/main/packages/generator/spec.json",
+     "citation_page_date": "OpenAPI info.version v2.0",
+     "notes": "POST /v2/boards/{board_id}/sticky_notes create-sticky-note-item 'application/json'."
+    },
+    {
+     "child_id": "miro-downloading",
+     "function": "export a board",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No export endpoint located in the spec read here."
+    }
+   ]
+  },
+  {
+   "service": "TikTok",
+   "parent_app_id": "tiktok",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "tiktok-base",
+     "function": "TikTok web and app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable official network page."
+    },
+    {
+     "child_id": "tiktok-uploading",
+     "function": "Content Posting API: upload a video",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developers.tiktok.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "tiktok-posting",
+     "function": "Content Posting API: publish",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developers.tiktok.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.tiktok.com/doc/content-posting-api-reference-upload-video"
+   ]
+  },
+  {
+   "service": "Pinterest",
+   "parent_app_id": "pinterest",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "pinterest-base",
+     "function": "Pinterest web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable Pinterest network page."
+    },
+    {
+     "child_id": "pinterest-api-posting",
+     "function": "API v5: create a Pin",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.pinterest.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v5/pins",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/pinterest/api-description/main/v5/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 5.32.0",
+     "notes": "Pinterest's official spec (pinterest/api-description): servers 'https://api.pinterest.com/v5'; POST /pins pins/create 'application/json'."
+    },
+    {
+     "child_id": "pinterest-api-upload-register",
+     "function": "API v5: register a media upload",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.pinterest.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v5/media",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/pinterest/api-description/main/v5/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 5.32.0",
+     "notes": "POST /media media/create 'Register your intent to upload media ... make an HTTP POST request ... to upload_url'. The bytes go to upload_url, a host given at run time, so direction is null here."
+    }
+   ]
+  },
+  {
+   "service": "Snapchat",
+   "parent_app_id": "snapchat",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "snapchat-base",
+     "function": "Snapchat web",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developers.snap.com and help.snapchat.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "snapchat-uploading",
+     "function": "media upload",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. developers.snap.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://developers.snap.com/",
+    "https://help.snapchat.com/"
+   ]
+  },
+  {
+   "service": "Twitch",
+   "parent_app_id": "twitch",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "twitch-base",
+     "function": "Twitch web",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. dev.twitch.tv and help.twitch.tv developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "twitch-streaming",
+     "function": "broadcast ingest (RTMP)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. dev.twitch.tv developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "twitch-messaging",
+     "function": "chat (IRC over WebSocket)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. dev.twitch.tv developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    }
+   ],
+   "sources_blocked": [
+    "https://dev.twitch.tv/docs/api/",
+    "https://dev.twitch.tv/docs/chat/irc/",
+    "https://help.twitch.tv/s/twitch-ingest-recommendation"
+   ]
+  },
+  {
+   "service": "Vimeo",
+   "parent_app_id": "vimeo",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "vimeo-base",
+     "function": "Vimeo web",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable Vimeo network page."
+    },
+    {
+     "child_id": "vimeo-api-upload-start",
+     "function": "API: begin a video upload",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.vimeo.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/me/videos",
+      "content_type": "application/vnd.vimeo.video+json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/vimeo/openapi/master/api.yaml",
+     "citation_page_date": "OpenAPI info.version 3.4",
+     "notes": "Vimeo's official spec (vimeo/openapi): servers 'https://api.vimeo.com'; POST /me/videos upload_video_alt1 'application/vnd.vimeo.video+json': 'This method begins the video upload process'. The bytes go to an upload link given at run time (spec example host 'https://123456.cloud.vimeo.com/upload?ticket_id=...'), so direction is null here."
+    },
+    {
+     "child_id": "vimeo-api-posting",
+     "function": "API: comment on a video",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.vimeo.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/videos/{video_id}/comments",
+      "content_type": "application/vnd.vimeo.comment+json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/vimeo/openapi/master/api.yaml",
+     "citation_page_date": "OpenAPI info.version 3.4",
+     "notes": "POST /videos/{video_id}/comments create_comment 'application/vnd.vimeo.comment+json'."
+    },
+    {
+     "child_id": "vimeo-downloading",
+     "function": "download a video",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Download links come at run time."
+    }
+   ]
+  },
+  {
+   "service": "Perplexity",
+   "parent_app_id": "perplexity",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "perplexity-base",
+     "function": "Perplexity web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable page names the consumer hosts."
+    },
+    {
+     "child_id": "perplexity-api-messaging",
+     "function": "API: chat and agent requests",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.perplexity.ai"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/sonar | /v1/agent | /v1/async/sonar | /orchestrator/v1/chat/completions | /orchestrator/v1/responses | /orchestrator/v1/messages",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.perplexity.ai/openapi.json",
+     "citation_page_date": "OpenAPI info.version 1.0.0",
+     "notes": "Perplexity's published OpenAPI: servers 'https://api.perplexity.ai'; POST /v1/sonar, POST /v1/agent, POST /v1/async/sonar, POST /orchestrator/v1/chat/completions, /orchestrator/v1/responses, /orchestrator/v1/messages, all 'application/json'. api.perplexity.ai is perplexity-api in the pack, not the consumer perplexity app.",
+     "citation_also": [
+      "https://docs.perplexity.ai/api-reference/chat-completions-post"
+     ]
+    },
+    {
+     "child_id": "perplexity-api-uploading",
+     "function": "API: upload a file or a skill",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.perplexity.ai"
+      ],
+      "http_method": "POST | PUT",
+      "path_pattern": "/v1/files | /v1/skills | /v1/skills/{skill_id}",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.perplexity.ai/openapi.json",
+     "citation_page_date": "OpenAPI info.version 1.0.0",
+     "notes": "POST /v1/files createFile 'multipart/form-data'; POST /v1/skills createSkill and PUT /v1/skills/{skill_id} 'multipart/form-data'."
+    },
+    {
+     "child_id": "perplexity-api-downloading",
+     "function": "API: download a file or agent output",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.perplexity.ai"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/files/{file_id}/content | /v1/agent/{id}/files/{file_id}/content | /v1/skills/{skill_id}/download",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.perplexity.ai/openapi.json",
+     "citation_page_date": "OpenAPI info.version 1.0.0",
+     "notes": "GET /v1/files/{file_id}/content getFileContent; GET /v1/agent/{id}/files/{file_id}/content downloadAgentFile; GET /v1/skills/{skill_id}/download."
+    }
+   ]
+  },
+  {
+   "service": "DeepSeek",
+   "parent_app_id": "deepseek",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "deepseek-base",
+     "function": "DeepSeek chat web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable page names chat.deepseek.com."
+    },
+    {
+     "child_id": "deepseek-api-messaging",
+     "function": "API: chat completions",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.deepseek.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/chat/completions | /beta/... | /anthropic/...",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://api-docs.deepseek.com/",
+     "citation_page_date": "read 2026-11-27 (no page date)",
+     "notes": "'base_url (OpenAI) https://api.deepseek.com base_url (Anthropic) https://api.deepseek.com/anthropic'; example 'curl https://api.deepseek.com/chat/completions -H \"Content-Type: application/json\"'. Beta features: 'base_url=\"https://api.deepseek.com/beta\"' (create-chat-completion page). api.deepseek.com is deepseek-api in the pack.",
+     "citation_also": [
+      "https://api-docs.deepseek.com/api/create-chat-completion"
+     ]
+    },
+    {
+     "child_id": "deepseek-uploading",
+     "function": "file upload in the chat app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No file-upload API is documented; the web app is unread."
+    }
+   ]
+  },
+  {
+   "service": "Mistral (Le Chat)",
+   "parent_app_id": "mistral-ai",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "mistral-le-chat-base",
+     "function": "Le Chat web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable page names the Le Chat hosts."
+    },
+    {
+     "child_id": "mistral-api-messaging",
+     "function": "API: chat, agents, conversations",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.mistral.ai"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/chat/completions | /v1/agents/completions | /v1/conversations",
+      "content_type": "application/json",
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.mistral.ai/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 1.0.0",
+     "notes": "Mistral's published OpenAPI: servers 'https://api.mistral.ai'; POST /v1/chat/completions, POST /v1/agents/completions, POST /v1/conversations, 'application/json'. api.mistral.ai is mistral-api in the pack."
+    },
+    {
+     "child_id": "mistral-api-uploading",
+     "function": "API: upload a file, a library document or audio",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.mistral.ai"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/v1/files | /v1/libraries/{library_id}/documents | /v1/audio/transcriptions",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.mistral.ai/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 1.0.0",
+     "notes": "POST /v1/files files_api_routes_upload_file, POST /v1/libraries/{library_id}/documents, POST /v1/audio/transcriptions, all 'multipart/form-data'."
+    },
+    {
+     "child_id": "mistral-api-downloading",
+     "function": "API: download a file",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.mistral.ai"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/v1/files/{file_id}/content",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://docs.mistral.ai/openapi.yaml",
+     "citation_page_date": "OpenAPI info.version 1.0.0",
+     "notes": "GET /v1/files/{file_id}/content files_api_routes_download_file."
+    },
+    {
+     "child_id": "mistral-le-chat-uploading",
+     "function": "file upload in Le Chat",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. The web app's paths are not published."
+    }
+   ]
+  },
+  {
+   "service": "Yahoo Mail",
+   "parent_app_id": "yahoo-mail",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "yahoo-mail-base",
+     "function": "Yahoo Mail web",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. help.yahoo.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "yahoo-mail-sending",
+     "function": "send mail (web or SMTP)",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. help.yahoo.com (server settings, SLN4075) developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "yahoo-mail-uploading",
+     "function": "attach a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. No reachable source."
+    }
+   ],
+   "sources_blocked": [
+    "https://help.yahoo.com/kb/SLN4075.html"
+   ]
+  },
+  {
+   "service": "Proton Mail",
+   "parent_app_id": "proton-mail",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": "The rows are the API that Proton's Go client (Bridge) calls; that the web app uses the same paths is not stated. Bridge itself serves IMAP/SMTP locally ('Bridge will initialize local IMAP/SMTP servers', proton-bridge README), which never crosses the network.",
+   "children": [
+    {
+     "child_id": "proton-mail-base",
+     "function": "Proton Mail web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. proton.me support pages developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "proton-mail-api-uploading",
+     "function": "API: upload an attachment (encrypted)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "mail.proton.me"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/api/mail/v4/attachments",
+      "content_type": "multipart/form-data",
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/ProtonMail/go-proton-api/master/attachment.go",
+     "citation_page_date": "master branch, read 2026-11-27",
+     "notes": "Proton's official Go API client (ProtonMail/go-proton-api, used by Proton Mail Bridge): SetMultipartFormData ... SetMultipartFields(KeyPacket, DataPacket, Signature) ... Post(\"/mail/v4/attachments\"); manager_builder.go: DefaultHostURL = \"https://mail.proton.me/api\". The parts are client-encrypted packets: a proxy sees that a file is uploaded, never its content.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/ProtonMail/go-proton-api/master/manager_builder.go"
+     ]
+    },
+    {
+     "child_id": "proton-mail-api-downloading",
+     "function": "API: download an attachment (encrypted)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "mail.proton.me"
+      ],
+      "http_method": "GET",
+      "path_pattern": "/api/mail/v4/attachments/{attachmentID}",
+      "content_type": null,
+      "direction": "download",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/ProtonMail/go-proton-api/master/attachment.go",
+     "citation_page_date": "master branch, read 2026-11-27",
+     "notes": "GetAttachmentInto: Get(\"/mail/v4/attachments/\" + attachmentID) under the same DefaultHostURL.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/ProtonMail/go-proton-api/master/manager_builder.go"
+     ]
+    },
+    {
+     "child_id": "proton-mail-api-sending",
+     "function": "API: create, update and send a draft",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "mail.proton.me"
+      ],
+      "http_method": "POST | PUT",
+      "path_pattern": "/api/mail/v4/messages | /api/mail/v4/messages/{draftID}",
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/ProtonMail/go-proton-api/master/message_send.go",
+     "citation_page_date": "master branch, read 2026-11-27",
+     "notes": "CreateDraft Post(\"/mail/v4/messages\"); UpdateDraft Put(\"/mail/v4/messages/\" + draftID); SendDraft Post(\"/mail/v4/messages/\" + draftID). POST to /messages creates, POST to /messages/{id} sends.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/ProtonMail/go-proton-api/master/manager_builder.go"
+     ]
+    }
+   ]
+  },
+  {
+   "service": "pCloud",
+   "parent_app_id": "pcloud",
+   "separability": "partial",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "pcloud-base",
+     "function": "pCloud web app",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. docs.pcloud.com and pcloud.com developer documentation host not reachable from this session (DNS refused by the network policy), see blocked-urls.md."
+    },
+    {
+     "child_id": "pcloud-api",
+     "function": "API (any method; the method name is the path)",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.pcloud.com",
+       "eapi.pcloud.com"
+      ],
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/pCloud/pcloud-sdk-js/master/src/api/ApiMethod.js",
+     "citation_page_date": "master branch, read 2026-11-27",
+     "notes": "pCloud's official JS SDK (pCloud/pcloud-sdk-js): defaultApiServer = \"eapi.pcloud.com\"; locations 1: \"api.pcloud.com\", 2: \"eapi.pcloud.com\"; request URL { host: locations[locationid] || apiServer, pathname: method }."
+    },
+    {
+     "child_id": "pcloud-api-uploading",
+     "function": "API: uploadfile",
+     "verified": true,
+     "surface": "api",
+     "signals": {
+      "host_sni": [
+       "api.pcloud.com",
+       "eapi.pcloud.com"
+      ],
+      "http_method": "POST",
+      "path_pattern": "/uploadfile",
+      "content_type": null,
+      "direction": "upload",
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": "https://raw.githubusercontent.com/pCloud/pcloud-sdk-js/master/src/client/methods/upload.js",
+     "citation_page_date": "master branch, read 2026-11-27",
+     "notes": ".api(\"uploadfile\", { method: \"post\", ... }) on the same hosts (ApiMethod.js pathname: method). Content type not stated in the files read.",
+     "citation_also": [
+      "https://raw.githubusercontent.com/pCloud/pcloud-sdk-js/master/src/api/ApiMethod.js"
+     ]
+    },
+    {
+     "child_id": "pcloud-downloading",
+     "function": "download a file",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Download links (getfilelink) return run-time hosts; docs blocked."
+    }
+   ],
+   "sources_blocked": [
+    "https://docs.pcloud.com/"
+   ]
+  },
+  {
+   "service": "Pastebin (retry of wave 0)",
+   "parent_app_id": "pastebin",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "pastebin-base",
+     "function": "Pastebin web",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Retry 2026-11-27: pastebin.com does not resolve under this session's network policy (curl and WebFetch); row 53 stays open."
+    },
+    {
+     "child_id": "pastebin-posting",
+     "function": "API: create a paste",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Retry 2026-11-27: https://pastebin.com/doc_api still blocked."
+    }
+   ],
+   "sources_blocked": [
+    "https://pastebin.com/doc_api"
+   ],
+   "retry_of": "wave-0"
+  },
+  {
+   "service": "Reddit (retry of wave 0)",
+   "parent_app_id": "reddit",
+   "separability": "blocked",
+   "not_separable": null,
+   "web_ui_note": null,
+   "children": [
+    {
+     "child_id": "reddit-base",
+     "function": "Reddit web",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Retry 2026-11-27: www.reddit.com refused by the fetch tool; support.reddithelp.com does not resolve."
+    },
+    {
+     "child_id": "reddit-posting",
+     "function": "API: submit a post or comment",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Retry: www.reddit.com/dev/api still blocked. Reddit's archived wiki (github.com/reddit-archive/reddit/wiki/OAuth2, last edited Jan 8, 2016, repository archived Nov 9, 2017) says 'API requests with a bearer token should be made to https://oauth.reddit.com'; too old to be a current source, so not used as a rule."
+    },
+    {
+     "child_id": "reddit-uploading",
+     "function": "media upload",
+     "verified": false,
+     "surface": null,
+     "signals": {
+      "host_sni": null,
+      "http_method": null,
+      "path_pattern": null,
+      "content_type": null,
+      "direction": null,
+      "websocket": null,
+      "transport": null
+     },
+     "citation_url": null,
+     "citation_page_date": null,
+     "notes": "UNVERIFIED. Retry: no reachable source."
+    }
+   ],
+   "sources_blocked": [
+    "https://www.reddit.com/dev/api/",
+    "https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki"
+   ],
+   "retry_of": "wave-0"
+  }
+ ],
+ "sec_child_3": [
+  {
+   "item": "gmail-multipart-resumable",
+   "verified": true,
+   "citation_url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+   "citation_page_date": "discovery revision 20261116",
+   "finding": "Every Gmail upload method has two path forms, '/upload/gmail/v1/...' (simple) and '/resumable/upload/gmail/v1/...' (resumable), both with multipart: true: users.messages.send, users.messages.insert, users.messages.import, users.drafts.create, users.drafts.send (POST) and users.drafts.update (PUT /upload/gmail/v1/users/{userId}/drafts/{id}). uploadType is a query parameter ('Legacy upload protocol for media (e.g. \"media\", \"multipart\")'), not a path segment.",
+   "engine_impact": "A rule keyed on '/upload/gmail' alone misses '/resumable/upload/gmail'; drafts.update is PUT. Wave 0 rows cover the five POST methods; drafts.update (PUT) is new here."
+  },
+  {
+   "item": "graph-beta",
+   "verified": true,
+   "citation_url": "https://learn.microsoft.com/en-us/graph/versioning-and-support",
+   "citation_page_date": "ms.date 2024-11-07",
+   "finding": "'APIs debut in the beta version and are accessible in the https://graph.microsoft.com/beta endpoint' and v1.0 'in the https://graph.microsoft.com/v1.0 endpoint'. URL form '{HTTP method} https://graph.microsoft.com/{version}/{resource}?{query-parameters}' (use-the-api).",
+   "also": [
+    "https://learn.microsoft.com/en-us/graph/use-the-api"
+   ],
+   "engine_impact": "Every graph.microsoft.com child path must accept both /v1.0/ and /beta/ as the first segment."
+  },
+  {
+   "item": "graph-case-insensitive",
+   "verified": true,
+   "citation_url": "https://learn.microsoft.com/en-us/graph/call-api",
+   "citation_page_date": "ms.date 2024-11-07, updated_at 2025-08-06",
+   "finding": "'Path URL resource names, query parameters, and action parameters and values are case insensitive. However, values you assign, entity IDs, and other base64-encoded values are case-sensitive.' traverse-the-graph: 'Assume path URL resource names, query parameters, action and function names ... are not case-sensitive.' OneDrive: path identifiers used with colons and filenames in the URL 'are not case-sensitive', but metadata path identifiers such as '/items/{item-id}/image' 'are case-sensitive'.",
+   "also": [
+    "https://learn.microsoft.com/en-us/graph/traverse-the-graph",
+    "https://learn.microsoft.com/en-us/onedrive/developer/rest-api/concepts/case-sensitivity?view=odsp-graph-online"
+   ],
+   "engine_impact": "Match Graph resource-name segments case-insensitively (/ME/DRIVE/... is /me/drive/...); keep IDs as literal wildcards. The OneDrive page's case-sensitive metadata segments are a narrower exception for that API surface."
+  },
+  {
+   "item": "graph-dollar-batch",
+   "verified": true,
+   "citation_url": "https://learn.microsoft.com/en-us/graph/json-batching",
+   "citation_page_date": "ms.date 2025-02-21",
+   "finding": "'Microsoft Graph implements the $batch OData URL path segment'; 'POST https://graph.microsoft.com/v1.0/$batch' (or beta); each inner request has a relative 'url' ('while the absolute URL is https://graph.microsoft.com/v1.0/users, this url is /users'); 'JSON batch requests are currently limited to 20 individual requests.' Also: 'On the beta endpoint, the $ prefix is optional' for query options (query-parameters page).",
+   "also": [
+    "https://learn.microsoft.com/en-us/graph/query-parameters"
+   ],
+   "engine_impact": "A $batch POST carries up to 20 operations (methods and paths) in its JSON body, so a path rule sees only '/$batch': either parse the body (bounded by the request budget) or treat $batch as 'any Graph function'."
+  },
+  {
+   "item": "google-batch",
+   "verified": true,
+   "citation_url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+   "citation_page_date": "discovery revision 20261116",
+   "finding": "Discovery 'batchPath' is 'batch' for gmail.googleapis.com (and for meet, chat, photoslibrary), and 'batch/drive/v3' and 'batch/drive/v2' on www.googleapis.com for Drive.",
+   "also": [
+    "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+    "https://www.googleapis.com/discovery/v1/apis/drive/v2/rest"
+   ],
+   "engine_impact": "POST /batch (or /batch/drive/v3) wraps several API calls in one multipart/mixed body; the inner method and path are not in the outer request line."
+  },
+  {
+   "item": "drive-v2",
+   "verified": true,
+   "citation_url": "https://www.googleapis.com/discovery/v1/apis/drive/v2/rest",
+   "citation_page_date": "discovery revision 20261117",
+   "finding": "Drive v2 is still published: rootUrl https://www.googleapis.com/, servicePath 'drive/v2/'; files.insert POST simple '/upload/drive/v2/files', resumable '/resumable/upload/drive/v2/files'; files.update PUT '/upload/drive/v2/files/{fileId}' and '/resumable/upload/drive/v2/files/{fileId}'; files.get GET 'files/{fileId}' with media download, files.export GET 'files/{fileId}/export'. v3 uses POST '/upload/drive/v3/files' and PATCH '/upload/drive/v3/files/{fileId}'.",
+   "also": [
+    "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
+   ],
+   "engine_impact": "Drive upload rules need v2 and v3 paths and both POST/PUT (v2) and POST/PATCH (v3) methods."
+  },
+  {
+   "item": "telegram-case-insensitive",
+   "verified": true,
+   "citation_url": "https://core.telegram.org/bots/api",
+   "citation_page_date": "read 2026-11-27",
+   "finding": "'All queries to the Telegram Bot API must be served over HTTPS and need to be presented in this form: https://api.telegram.org/bot<token>/METHOD_NAME'; 'All methods in the Bot API are case-insensitive.' Files: 'https://api.telegram.org/file/bot<token>/<file_path>'.",
+   "engine_impact": "sendDocument, SENDDOCUMENT and senddocument are the same method: compare the method segment case-insensitively. The path also carries the bot token, which must never be emitted."
+  },
+  {
+   "item": "discord-versions",
+   "verified": true,
+   "citation_url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx",
+   "citation_page_date": "main branch, read 2026-11-27",
+   "finding": "'You should specify which version to use by including it in the request path like https://discord.com/api/v{version_number}. Omitting the version number from the route will route requests to the current default version (marked below).' Table: v10 Available, v9 Available, v8 and v7 Deprecated, v6 Deprecated and Default, v5 to v3 Discontinued.",
+   "engine_impact": "Discord child paths must accept /api/v10/, /api/v9/ (and deprecated v8, v7, v6) and the unversioned /api/ prefix, which routes to v6. Wave 0 rows that name /api/v10 only are too narrow."
+  },
+  {
+   "item": "dropbox-arg",
+   "verified": true,
+   "citation_url": "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/dropbox_client.py",
+   "citation_page_date": "main branch, read 2026-11-27",
+   "finding": "Dropbox's official SDKs: 'Download style means that the route argument goes in a Dropbox-API-Arg header'; upload style sets Content-Type 'application/octet-stream' and the Dropbox-API-Arg header; RPC style is 'application/json'. Hosts: API_CONTENT_HOST 'content' + '.dropboxapi.com', API_HOST 'api' + '.dropboxapi.com' (session.py). The JS SDK sends method POST with headers['Dropbox-API-Arg'] for download and upload.",
+   "also": [
+    "https://raw.githubusercontent.com/dropbox/dropbox-sdk-js/main/src/dropbox.js",
+    "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/session.py"
+   ],
+   "engine_impact": "The file path and options of a Dropbox upload or download are in the Dropbox-API-Arg header (JSON), not in the URL; both directions are POST to content.dropboxapi.com."
+  },
+  {
+   "item": "dropbox-arg-url-parameter",
+   "verified": false,
+   "citation_url": null,
+   "citation_page_date": null,
+   "finding": "UNVERIFIED: whether content endpoints also accept the argument as a URL query parameter 'arg' (and 'authorization') is stated, if anywhere, in the HTTP documentation's 'Formats' section on www.dropbox.com, which is SOURCE BLOCKED (row 48). Not in the SDK files read.",
+   "engine_impact": "Until read, a rule must not assume the header is the only place the argument can appear."
+  }
+ ]
+}

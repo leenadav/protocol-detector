@@ -1,5 +1,10 @@
 """Endurance run of the Culvert lab (PRO-540, working plan phase L6; lab/culvert/ENDURANCE.md).
 
+Revision 1 (PRO-564, before its run): when the manifest has a "warmup" block, process 1 is driven with the same
+mix for warmup.load_s right after it is ready, then left idle, and the P1 baseline is sampled no earlier than
+warmup.baseline_after_ready_s after it was ready and warmup.min_idle_s after the warm-up driver exited. Without
+the block the run is the PRO-540 one (idle_s of idle, then the baseline). Thresholds are not touched.
+
 Loopback and synthetic traffic only. One lab Culvert process at a time (CONNECT bypass observed by the real
 detector, child-app classification on for the inspected *.googleapis.com tunnels), driven for the manifest's
 duration by `load/` (endurance-load drive), with one restart of the same binary and one restart onto a binary
@@ -232,6 +237,19 @@ def releases(blocks):
     return tally
 
 
+def baseline_due(t_ready, t_warm_end, warmup):
+    """The earliest time the P1 baseline may be sampled under revision 1: the later of baseline_after_ready_s after
+    the process was ready and min_idle_s after the warm-up load ended."""
+    return max(t_ready + warmup["baseline_after_ready_s"], t_warm_end + warmup["min_idle_s"])
+
+
+def drive_cmd(manifest, run_dir, duration_s, out):
+    return [TASKSET, "-c", DRIVER_CPUS, str(LAB / "bin/endurance-load"), "drive", "-proxy", "127.0.0.1:%d" % PROXY_PORT,
+            "-duration", "%ds" % duration_s, "-interval", "30s", "-ca", str(run_dir / "certs/ca.pem"),
+            "-inspect-ca", str(run_dir / "inspect-ca.pem"), "-corpus", ",".join(manifest["corpus_dirs"]),
+            "-out", str(out)]
+
+
 def run(manifest, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
     run_dir = LAB / "run-endurance"
@@ -279,19 +297,31 @@ def run(manifest, out_dir):
         # The run: process 1.
         proxy = Proxy(run_dir, manifest["binary_before"], "p1")
         event("proc_start", proc="p1", binary=proxy.binary, setup=proxy.setup_steps)
-        time.sleep(manifest["idle_s"])
+        warmup = manifest.get("warmup")
+        if warmup:
+            # Revision 1: fill Culvert's bounded rings and build the lazy child-app classifier before the baseline,
+            # then let the process go idle (keep-alive connections close) until the baseline is due.
+            event("warmup_start", load_s=warmup["load_s"])
+            wdrv = subprocess.run(  # noqa: S603
+                drive_cmd(manifest, run_dir, warmup["load_s"], out_dir / "warmup-driver.jsonl"),
+                stdout=(run_dir / "warmup-driver.log").open("wb"), stderr=subprocess.STDOUT, check=False)
+            t_warm_end = time.time()
+            event("warmup_stop", driver_rc=wdrv.returncode, t_after_ready_s=round(t_warm_end - proxy.t_ready, 1))
+            due = baseline_due(proxy.t_ready, t_warm_end, warmup)
+            while time.time() < due:
+                record(proxy, "settle", gc=True, blocks=False)
+                time.sleep(min(15, max(0.0, due - time.time())))
+        else:
+            time.sleep(manifest["idle_s"])
         base = []
         for _ in range(3):
             base.append(record(proxy, "baseline", gc=True))
             time.sleep(5)
         proxy.heap_profile(out_dir / "heap-p1-baseline.pb.gz")
-        event("baseline", goroutines=[b.get("goroutines") for b in base], heap_live=[b.get("heap_live") for b in base])
-        drv_out = out_dir / "driver.jsonl"
-        corpus = ",".join(manifest["corpus_dirs"])
+        event("baseline", goroutines=[b.get("goroutines") for b in base], heap_live=[b.get("heap_live") for b in base],
+              t_after_ready_s=[round(b["t_unix"] - proxy.t_ready, 1) for b in base])
         driver = subprocess.Popen(  # noqa: S603
-            [TASKSET, "-c", DRIVER_CPUS, str(LAB / "bin/endurance-load"), "drive", "-proxy", "127.0.0.1:%d" % PROXY_PORT,
-             "-duration", "%ds" % manifest["load_s"], "-interval", "30s", "-ca", str(run_dir / "certs/ca.pem"),
-             "-inspect-ca", str(run_dir / "inspect-ca.pem"), "-corpus", corpus, "-out", str(drv_out)],
+            drive_cmd(manifest, run_dir, manifest["load_s"], out_dir / "driver.jsonl"),
             stdout=(run_dir / "driver.log").open("wb"), stderr=subprocess.STDOUT)
         t0 = time.time()
         event("load_start")
@@ -511,6 +541,11 @@ def self_test():
         {"content=2026.11.9 child=2026.11.1": 2}
     assert [r["name"] for r in RULES] == ["lab-inspect-googleapis", "lab-bypass-rest"]
     assert RULES[0]["sslAction"] == "Inspect" and RULES[1]["sslAction"] == "Bypass"
+    w = {"load_s": 60, "baseline_after_ready_s": 120, "min_idle_s": 30}
+    assert baseline_due(1000.0, 1075.0, w) == 1120.0  # the 120 s mark governs
+    assert baseline_due(1000.0, 1100.0, w) == 1130.0  # a long warm-up pushes the baseline out
+    cmd = drive_cmd({"corpus_dirs": ["a", "b"]}, Path("/r"), 60, Path("/o/w.jsonl"))
+    assert cmd[cmd.index("-duration") + 1] == "60s" and cmd[cmd.index("-corpus") + 1] == "a,b"
     print("endurance run self-test: ok")
 
 

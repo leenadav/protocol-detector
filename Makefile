@@ -56,6 +56,7 @@ pins:
 # The ci gate lists every ci job; the drift workflow triggers on every workflow file;
 # release publishes serialize; a release tag must point at a commit on main.
 workflow-policy:
+	$(PYTHON) -B .claude/hooks/guard.py --self-test
 	$(PYTHON) -B tools/check_release_ref.py --self-test
 	$(PYTHON) -B tools/check_release_exposure.py --self-test
 	$(PYTHON) -B tools/check_release_checks.py --self-test
@@ -121,7 +122,7 @@ content:
 # PRO-492: the child-app rules are a reproducible conversion of App Research's cited wave files (docs/CHILD-APPS.md).
 child-apps:
 	$(PYTHON) -B tools/child_apps_wave.py --self-test
-	$(PYTHON) -B tools/child_apps_wave.py migration/fixtures/child-apps/wave-0.json --check
+	$(PYTHON) -B tools/child_apps_wave.py migration/fixtures/child-apps/wave-0.json --evidence migration/fixtures/child-apps/wave-1.json --check
 
 # PRO-411: the content pack is edited directly (go/internal/content/pack.json, history.json, lock.json) with
 # tools/content_pack.py; nothing is exported from the Python tables. The check, the tool's self-test, and the

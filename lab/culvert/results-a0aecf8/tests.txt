@@ -1,0 +1,36 @@
+# Culvert a0aecf8 + lab patch (local 3d3769b4), go1.27.4 linux/amd64, GOWORK = Culvert + detector go/ at cc1566d
+
+## go test -race -count=1 ./internal/protodetect ./internal/pdobs ./internal/logstore
+ok  	github.com/KidCarmi/Culvert/internal/protodetect	1.024s
+ok  	github.com/KidCarmi/Culvert/internal/pdobs	1.014s
+--- SKIP: TestChaos62_UnreadableStoreDirectoryRefusesRatherThanMinting (0.00s)
+ok  	github.com/KidCarmi/Culvert/internal/logstore	70.355s
+passed (top level): 47
+
+## go test -race -count=1 -run 'Tunnel|Idle|Relay|Bypass|CONNECT|Connect|Drain|TestLab' .   (the ef94311 filter)
+lab branch:          209 passed, 0 failed, 1 skipped; ok  	github.com/KidCarmi/Culvert	40.131s
+unmodified a0aecf8:  198 passed, 0 failed, 1 skipped; ok  	github.com/KidCarmi/Culvert	38.517s
+--- SKIP: TestUNAUTH_CONNECT_EstablishesTunnel (0.00s)
+
+## go test -race -count=1 -run 'Tunnel|Idle|Relay|Bypass|CONNECT|Connect|Drain|TestLab|ChildApp|Childapp|H2|LogEntry|Store' .   (wider)
+lab branch: 407 passed, 0 failed, 2 skipped; ok  	github.com/KidCarmi/Culvert	78.721s
+--- SKIP: TestCandidateQualification_RealDockerImageStore (0.42s)
+--- SKIP: TestUNAUTH_CONNECT_EstablishesTunnel (0.00s)
+
+## TestLab tests
+--- PASS: TestLabChildAppVerdicts
+--- PASS: TestLabChildAppTallyIsBounded
+--- PASS: TestLabChildAppOffIsByteIdenticalAndAllocationFree
+--- PASS: TestLabChildAppInspectedH1TunnelLogsAppsOnTunnelClosed
+--- PASS: TestLabChildAppTunnelClosedHonoursLogTraffic
+--- PASS: TestLabChildAppInspectedH2TunnelLogsAppsOnTunnelClosed
+--- PASS: TestLabWindowEndReleasesAdmissionWhileTunnelsStayOpen
+--- PASS: TestLabHandoffReleasesAdmissionBeforeTheWindowEnds
+--- PASS: TestLabRefusedAdmissionIsLogged
+--- PASS: TestLabHostMismatchIsComputedBeforeRedaction
+--- PASS: TestLabSignalsCompareHostsPortNormalised
+
+## go test -race -count=10 -run TestLab . ./internal/protodetect ./internal/pdobs
+ok  	github.com/KidCarmi/Culvert	17.392s
+ok  	github.com/KidCarmi/Culvert/internal/protodetect	1.026s [no tests to run]
+ok  	github.com/KidCarmi/Culvert/internal/pdobs	1.013s [no tests to run]

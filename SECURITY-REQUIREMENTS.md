@@ -1,18 +1,18 @@
 # Security requirements
 
 Each requirement names the test(s) that verify it. `tools/check_security_requirements.py`
-fails CI when a referenced test no longer exists, when a row starting with `SR` does not parse, on a
-duplicate id, and when the id set differs from `tools/security_requirements.lock.json` (a deleted or
-unpinned row); with `--run` (`make requirements-run`, the CI `security-requirements` job) it also fails
-when a referenced Go test does not PASS on the pinned Go or a referenced Python test method does not
-pass (a skip, expected failure, error or missing method fails; PRO-546). A new row is pinned with
-`python3 -B tools/check_security_requirements.py --write-lock`, committed with the row; a requirement is
-removed only with `--write-lock --retire SR-n`, and a retired id is never reused. Format of the last
-column: `go/<package dir>::TestName[, ...]` for a Go test or fuzz function, or
-`<dir>/test_<name>::test_<method>` for a unittest method of the repository's Python tooling (a bare
-module or a non-`test_` function is refused). SR-70 to SR-75 were duplicates of SR-58 to SR-63 until
-PRO-545 renumbered them; their Go tests keep the recorded names (`TestSR58RDPSecurityPosture` to
-`TestSR63ServerNameCatalog`), which key the frozen requirement cases.
+fails CI when a referenced test no longer exists, when a table line other than the header does not parse (a
+missing leading pipe or a look-alike id such as a Cyrillic `S` fails too), on a duplicate id, and when the id set
+differs from `tools/security_requirements.lock.json` (a deleted or unpinned row); with `--run`
+(`make requirements-run`, the CI `security-requirements` job) it also fails when a referenced Go test does not
+PASS on the pinned Go or a referenced Python test method does not pass (a skip, expected failure, error or missing
+method fails; PRO-546). A new row is pinned with `python3 -B tools/check_security_requirements.py --write-lock`,
+committed with the row; a requirement is removed only with `--write-lock --retire SR-n`, and a retired id is never
+reused. Format of the last column: `go/<package dir>::TestName[, ...]` for a Go test or fuzz function, or
+`<dir>/test_<name>::test_<method>` for a unittest method of the repository's Python tooling (a bare module or a
+non-`test_` function is refused). SR-70 to SR-75 were duplicates of SR-58 to SR-63 until PRO-545 renumbered them;
+their Go tests keep the recorded names (`TestSR58RDPSecurityPosture` to `TestSR63ServerNameCatalog`), which key
+the frozen requirement cases.
 
 PRO-403 removed the Python reference engine and the Python tests that verified these rows (the
 tag `python-final` keeps them). The protocol-profile rows are now verified by

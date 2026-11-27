@@ -16,9 +16,11 @@ Reference forms (comma-separated in the last column):
                                (SEC-PYRM-2, PRO-546)
 
 The gate fails (SEC-PYRM-1) on:
-- any line that starts a table row with `SR` but does not parse as `| SR-n | requirement | `refs` |` (free text,
-  "manual review", prose after the closing backtick, a missing cell, `SR-07`): such a row used to be dropped
-  silently, so its requirement lost its evidence while the gate stayed green;
+- any table line (a line holding `|`) other than the header and separators that does not parse as
+  `| SR-n | requirement | `refs` |` (free text, "manual review", prose after the closing backtick, a missing
+  cell, `SR-07`; and, SEC-PYRM-10, no leading pipe, a Cyrillic or fullwidth look-alike id, a non-ASCII space),
+  or a pipe-less line starting with an id-like token: such a row used to be dropped silently, so its
+  requirement lost its evidence while the gate stayed green;
 - an empty reference item, a missing Go package or test, a Go name that is not a top-level test or fuzz function,
   a Python reference that is not `test_*::test_*` (a bare module, a helper, a `..` path), a missing Python test
   module or a missing test method;
@@ -49,14 +51,20 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unicodedata
 from pathlib import Path
 
 TABLE = "SECURITY-REQUIREMENTS.md"
 LOCK = "tools/security_requirements.lock.json"
 
-# Any table row whose first cell starts with SR (any case, any spacing) is a requirement row and must parse.
-CANDIDATE = re.compile(r"^\s*\|\s*sr", re.IGNORECASE)
-ROW = re.compile(r"^\|\s*(SR-[1-9]\d*)\s*\|(.*)\|\s*`([^`]+)`\s*\|\s*$")
+# Fail closed (SEC-PYRM-1, SEC-PYRM-10): every line holding a `|` is a table line and must be the header, a
+# separator or a strict requirement row, whatever its first cell says; a row without its leading pipe, with a
+# look-alike id (Cyrillic or fullwidth letters) or with a non-ASCII space is reported, never skipped. A line
+# without a `|` that starts with an id-like token (two letters, a dash, a digit, after NFKC) is a broken row too.
+HEADER = re.compile(r"^\|[ \t]*ID[ \t]*\|[ \t]*Requirement[ \t]*\|[ \t]*Verified by[ \t]*\|[ \t]*$")
+SEPARATOR = re.compile(r"^\|(?:[ \t]*:?-{3,}:?[ \t]*\|)+[ \t]*$")
+ROW = re.compile(r"^\|[ \t]*(SR-[1-9][0-9]*)[ \t]*\|(.*)\|[ \t]*`([^`]+)`[ \t]*\|[ \t]*$")
+ID_LIKE = re.compile(r"^\W*[^\W\d_]{2}\s*[-\u2010-\u2015\u2212\ufe63\uff0d]\s*\d")
 ITEM = re.compile(r"^[A-Za-z0-9_./-]+(?:::[A-Za-z_]\w*)?$")
 GO_FUNC = r"^func {}\(\w+ \*testing\.[TF]\)"
 PY_MODULE = re.compile(r"^(?:[A-Za-z0-9_.-]+/)*test_\w+$")
@@ -73,7 +81,12 @@ def parse(text):
     """Return (rows, failures): rows are (line number, id, reference); failures are messages."""
     rows, failures = [], []
     for number, line in enumerate(text.splitlines(), 1):
-        if not CANDIDATE.match(line):
+        if "|" not in line:
+            if ID_LIKE.match(unicodedata.normalize("NFKC", line)):
+                failures.append("line {}: unparsable requirement row (no table cells): {}".format(
+                    number, line.strip()[:80]))
+            continue
+        if HEADER.match(line) or SEPARATOR.match(line):
             continue
         match = ROW.match(line)
         if not match:
@@ -461,6 +474,19 @@ def self_test():
         ("go package without a test name", "| SR-1 | A | `go/internal/demo` |\n", None, [], 1, "names no test"),
         ("several, one missing go", "| SR-1 | A | `go/internal/demo::TestGuard, go/internal/demo::TestNope` |\n",
          None, [], 1, "missing Go test TestNope"),
+        # SEC-PYRM-10: a row the old CANDIDATE regex never saw must fail, not vanish with rc 0.
+        ("no leading pipe", good + "SR-3 | C | manual review |\n", None, [], 1, "line 5: unparsable"),
+        ("no leading pipe, valid refs", good + "SR-3 | C | `tests/test_a::test_one` |\n", None, [], 1,
+         "line 5: unparsable"),
+        ("cyrillic S", good + "| \u0405R-3 | C | manual review |\n", None, [], 1, "line 5: unparsable"),
+        ("cyrillic S and R, valid refs", good + "| \u0405\u0420-3 | C | `tests/test_a::test_one` |\n", None, [], 1,
+         "line 5: unparsable"),
+        ("fullwidth id", good + "| \uff33\uff32-3 | C | `tests/test_a::test_one` |\n", None, [], 1, "unparsable"),
+        ("non-breaking space", good + "|\u00a0SR-3 | C | `tests/test_a::test_one` |\n", None, [], 1, "unparsable"),
+        ("id line without pipes", good + "SR-3 manual review\n", None, [], 1, "line 5: unparsable"),
+        ("indented row", good + "  | SR-3 | C | `tests/test_a::test_one` |\n", None, [], 1, "line 5: unparsable"),
+        ("stray table row", good + "| XR-3 | C | `tests/test_a::test_one` |\n", None, [], 1, "line 5: unparsable"),
+        ("prose and blank lines", "\nSome prose about SR-1 and SR-2.\n\n" + good, None, [], 0, "2 rows, 0 Go tests in 0 packages and 2 Python tests in 1 modules referenced, 0 failures"),
     ]
     failed = 0
     for name, body, ids, retired, want_rc, want_text in cases:
