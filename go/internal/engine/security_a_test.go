@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"github.com/leenadav/protocol-detector/go/internal/parsertest"
 	"io/fs"
 	"math/rand"
 	"os"
@@ -794,7 +795,7 @@ func TestSecurityCQLResponsesExactCoverage(t *testing.T) {
 		t.Fatalf("AUTHENTICATE: %+v", obs2)
 	}
 	for _, o := range []contracts.Observation{obs, obs2} {
-		if strings.Contains(fmt.Sprintf("%+v", o), "placeholder") {
+		if strings.Contains(parsertest.Rendered(o), "placeholder") {
 			t.Fatalf("an option value or authenticator class is emitted: %+v", o)
 		}
 	}
@@ -882,7 +883,7 @@ func TestSecurityDatabaseTransportProtection(t *testing.T) {
 		t.Fatalf("PostgreSQL startup: %+v risks %v", o, securityRisks(t, o, 5432))
 	}
 	for _, field := range []string{"demo", "example"} {
-		if strings.Contains(fmt.Sprintf("%+v", o), field) {
+		if strings.Contains(parsertest.Rendered(o), field) {
 			t.Fatalf("a startup parameter (%s) is emitted: %+v", field, o)
 		}
 	}
@@ -1032,7 +1033,7 @@ func TestSecurityCredentialFieldsAreNotEmitted(t *testing.T) {
 		t.Fatalf("FastCGI: %+v", fcgi)
 	}
 	for _, o := range []contracts.Observation{ldap, mqtt, fcgi} {
-		rendered := fmt.Sprintf("%+v", o)
+		rendered := parsertest.Rendered(o)
 		for _, e := range o.Evidence {
 			rendered += " " + e.Value
 		}
@@ -1111,7 +1112,7 @@ func TestSecuritySharedLinesAreContextNotIdentity(t *testing.T) {
 			o.Evidence[0].Field != "ambiguous_candidates" || o.Evidence[0].Value != want || o.Evidence[0].Strength != "context" {
 			t.Fatalf("%q: %+v", line, o)
 		}
-		if rendered := fmt.Sprintf("%+v", o); strings.Contains(rendered, "secret") || strings.Contains(rendered, "alice") {
+		if rendered := parsertest.Rendered(o); strings.Contains(rendered, "secret") || strings.Contains(rendered, "alice") {
 			t.Fatalf("%q: the line content is emitted: %s", line, rendered)
 		}
 	}
@@ -1178,7 +1179,7 @@ func TestSecuritySNMPv3BoundsAndSecrets(t *testing.T) {
 	if encrypted.Status != contracts.Identified || encrypted.ApplicationProtocol == nil || *encrypted.ApplicationProtocol != "snmp/3" {
 		t.Fatalf("encrypted SNMPv3: %+v", encrypted)
 	}
-	rendered := fmt.Sprintf("%+v", encrypted)
+	rendered := parsertest.Rendered(encrypted)
 	for _, e := range encrypted.Evidence {
 		rendered += fmt.Sprintf(" %s %x", e.Value, e.Value)
 	}
@@ -1224,7 +1225,7 @@ func TestSecurityDNSAndSNMPResponsesStayInTheirMessage(t *testing.T) {
 	if rcode, _ := securityEvidence(ok, "dns_rcode"); ok.Status != contracts.Identified || rcode.Value != "noerror" {
 		t.Fatalf("DNS response: %+v", ok)
 	}
-	if rendered := fmt.Sprintf("%+v", ok); strings.Contains(rendered, "example") || strings.Contains(rendered, "192.0.2.7") {
+	if rendered := parsertest.Rendered(ok); strings.Contains(rendered, "example") || strings.Contains(rendered, "192.0.2.7") {
 		t.Fatalf("a DNS name or address is emitted: %s", rendered)
 	}
 	for name, data := range map[string][]byte{"trailing byte": response([]byte{192, 0, 2, 7}, 1), "five-byte A record": response([]byte{192, 0, 2, 7, 1}, 0),
@@ -1239,7 +1240,7 @@ func TestSecurityDNSAndSNMPResponsesStayInTheirMessage(t *testing.T) {
 	if kind, _ := securityEvidence(snmp, "snmp_pdu"); snmp.Status != contracts.Identified || kind.Value == "" {
 		t.Fatalf("SNMPv2c response: %+v", snmp)
 	}
-	rendered := fmt.Sprintf("%+v", snmp)
+	rendered := parsertest.Rendered(snmp)
 	for _, e := range snmp.Evidence {
 		rendered += " " + e.Value
 	}
@@ -1283,7 +1284,7 @@ func TestSecurityLocalNameServiceProfiles(t *testing.T) {
 		if got != c.protocol {
 			t.Fatalf("%s: identified as %q, want %q (%s %q)", name, got, c.protocol, o.Status, o.Reason)
 		}
-		rendered := fmt.Sprintf("%+v", o)
+		rendered := parsertest.Rendered(o)
 		for _, e := range o.Evidence {
 			rendered += " " + e.Value
 		}
@@ -1369,7 +1370,7 @@ func TestSecuritySMBNegotiatePosture(t *testing.T) {
 		if got := posture(o); o.Status != contracts.Identified || fmt.Sprint(got) != fmt.Sprint(want) {
 			t.Fatalf("%s: %s %v", name, o.Status, got)
 		}
-		if rendered := fmt.Sprintf("%+v", o); strings.Contains(rendered, "secret") || strings.Contains(rendered, "s\x00e\x00c") {
+		if rendered := parsertest.Rendered(o); strings.Contains(rendered, "secret") || strings.Contains(rendered, "s\x00e\x00c") {
 			t.Fatalf("%s: the NETNAME is emitted: %s", name, rendered)
 		}
 	}

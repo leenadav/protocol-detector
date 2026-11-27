@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/leenadav/protocol-detector/go/internal/parsertest"
 	"math/rand"
 	"strings"
 	"testing"
@@ -225,7 +226,7 @@ func TestSecurityV027KerberosAndFlowExportFraming(t *testing.T) {
 		if o.Status != contracts.Identified || o.ApplicationProtocol == nil || *o.ApplicationProtocol != "kerberos" {
 			t.Fatalf("kerberos: %+v", o)
 		}
-		if text := fmt.Sprintf("%+v %v", o, *o.ApplicationProtocol); strings.Contains(text, "EXAMPLE.ORG") || strings.Contains(text, "user") {
+		if text := parsertest.Rendered(o); strings.Contains(text, "EXAMPLE.ORG") || strings.Contains(text, "user") {
 			t.Fatalf("kerberos observation names the realm or principal: %s", text)
 		}
 	}
@@ -519,7 +520,7 @@ func TestSecurityParserContextsAreRetainedOnlyWhenConfiguredAndNeverEmitted(t *t
 		if in.Observation.Hostname == nil || *in.Observation.Hostname != "example.com" {
 			t.Fatalf("retain=%v: %+v", retain, in.Observation)
 		}
-		text := fmt.Sprintf("%+v %+v", in.Observation, events)
+		text := parsertest.Rendered(in.Observation) + " " + parsertest.Rendered(events)
 		for _, leak := range []string{"secret", "/path/x", "Agent/1.0"} {
 			if strings.Contains(text, leak) {
 				t.Fatalf("retain=%v: %q reached the output: %s", retain, leak, text)
@@ -653,7 +654,7 @@ func TestSecurityHTTP2HeaderBlockBoundsAndNoValueLeakage(t *testing.T) {
 	if fields := h2Fields(in); fields["http2_method"] != "GET" || in.Observation.Hostname == nil || *in.Observation.Hostname != "www.example.com" {
 		t.Fatalf("literal request block: %+v", in.Observation)
 	}
-	text := fmt.Sprintf("%+v", in.Observation)
+	text := parsertest.Rendered(in.Observation)
 	for _, leak := range []string{"secret-path", "SecretAgent", "cookie-0001"} {
 		if strings.Contains(text, leak) {
 			t.Fatalf("%q emitted: %s", leak, text)
@@ -781,7 +782,7 @@ func checkRecorded(t *testing.T, label, cases string, leaks ...string) int {
 		if got != want {
 			t.Fatalf("%s case %d (%s %s hint %q):\n got  %s\n want %s", label, i, c.Kind, c.Data, c.Hint, got, want)
 		}
-		text := fmt.Sprintf("%+v %v", o, rows)
+		text := parsertest.Rendered(o) + " " + fmt.Sprint(rows)
 		for _, leak := range leaks {
 			if strings.Contains(text, leak) {
 				t.Fatalf("%s case %d: %q in the observation: %s", label, i, leak, text)
@@ -815,7 +816,7 @@ func mutateBounded(t *testing.T, seed int64, count int, bases [][]byte, datagram
 				}
 				o = in.Observation
 			}
-			text := fmt.Sprintf("%+v", o)
+			text := parsertest.Rendered(o)
 			if !allowed[o.Status] {
 				t.Fatalf("%x: status %s", data, o.Status)
 			}
@@ -899,7 +900,7 @@ func checkVerdicts(t *testing.T, label, cases string, leaks ...string) int {
 		if got != want {
 			t.Fatalf("%s verdict %d:\n got  %s\n want %s", label, i, got, want)
 		}
-		text := fmt.Sprintf("%+v", *v)
+		text := parsertest.Rendered(*v)
 		for _, leak := range leaks {
 			if strings.Contains(text, leak) {
 				t.Fatalf("%s verdict %d: %q in the verdict: %s", label, i, leak, text)

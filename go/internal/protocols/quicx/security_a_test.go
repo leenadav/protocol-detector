@@ -3,6 +3,7 @@ package quicx
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/leenadav/protocol-detector/go/internal/parsertest"
 	"strings"
 	"testing"
 
@@ -25,7 +26,7 @@ func TestSecurityQUICNeverEmitsConnectionIDsOrTokens(t *testing.T) {
 	if !m.HasHost || m.Hostname != "example.com" || fieldsOf(m)["initial_token"] != "present" {
 		t.Fatalf("match %+v", m)
 	}
-	rendered := fmt.Sprintf("%+v", *m)
+	rendered := parsertest.Rendered(*m)
 	for _, r := range m.Evidence {
 		rendered += fmt.Sprintf(" %x %x", r.Field, r.Value)
 	}

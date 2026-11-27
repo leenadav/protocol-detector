@@ -2,6 +2,7 @@ package textroute_test
 
 import (
 	"fmt"
+	"github.com/leenadav/protocol-detector/go/internal/parsertest"
 	"strings"
 	"testing"
 
@@ -16,7 +17,7 @@ func scIRC(line string) (string, error) {
 	if !p.Done() {
 		return "", fmt.Errorf("not done")
 	}
-	return fmt.Sprintf("%+v", *p.Result()), nil
+	return parsertest.Rendered(*p.Result()), nil
 }
 
 // SR-52 (IRC part): an IRC line identifies only within its grammar: at most 512 bytes with CRLF and at most 15
