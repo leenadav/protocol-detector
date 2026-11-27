@@ -34,7 +34,7 @@ their decisions, the policy locks, and the release controller.
   `--log-opts=HEAD` (the merge commit's history: its own commits and main's, no other branch); a push to main, the
   schedule and a dispatch keep gitleaks' default (every fetched ref); `.github/workflows/secret-scan.yml` scans every
   branch nightly (`--log-opts=--all`, 01:41 UTC, failure summary step, not a required check). Rule 15 pins both
-  (`GITLEAKS_SCOPE`, `SECRET_SCAN_STEPS`); `tools/check_gitleaks_allowlist.py` checks the scope and proves it with the
+  (`GITLEAKS_SCOPE`, `NIGHTLY_SCAN_STEPS`); `tools/check_gitleaks_allowlist.py` checks the scope and proves it with the
   real gitleaks. `.gitleaks.toml` and the allowlists are unchanged.
 - **PRO-270 (Dependabot, 2026-11-27):** security updates only. Every `dependabot.yml` entry has
   `open-pull-requests-limit: 0`, one `applies-to: security-updates` group per ecosystem and the prefix

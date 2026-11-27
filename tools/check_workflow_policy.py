@@ -139,7 +139,7 @@
    gitleaks' default (the full history of every fetched ref), chosen by the literal-only
    GITLEAKS_SCOPE expression since no tool may run first; and secret-scan.yml, the nightly
    scan of every branch (`--log-opts=--all`, full fetch, daily schedule, failure summary),
-   is pinned whole (SECRET_SCAN_STEPS).
+   is pinned whole (NIGHTLY_SCAN_STEPS).
 16. Scanner configuration: ruff's `[tool.ruff*]` sections of pyproject.toml, bandit.yaml and
    .gitleaks.toml are locked in `tools/scanner_config.lock.json` (`--write-scanner-lock`), so
    loosening a rule selection, an ignore, a skip or an allowlist means advancing a reviewed
@@ -1330,7 +1330,7 @@ MUTATION_STEPS = [
 # Rule 15 also covers the nightly secret scan of every branch (PRO-539): pinned whole, the same gitleaks build as
 # ci.yml's static-analysis, the full history of every branch (--log-opts=--all), and a failure-only summary step.
 NIGHTLY_SCAN_WORKFLOW = ".github/workflows/secret-scan.yml"
-SECRET_SCAN_STEPS = [
+NIGHTLY_SCAN_STEPS = [
     HARDEN_STEP,
     {"uses": "actions/checkout", "with": {"persist-credentials": "false", "fetch-depth": "0"}},
     SETUP_GO,
@@ -1351,13 +1351,13 @@ SECRET_SCAN_STEPS = [
 ]
 
 
-def check_secret_scan(workflows, path=NIGHTLY_SCAN_WORKFLOW, job="secret-scan"):
-    """Rule 15 (PRO-539): the nightly secret scan is exactly SECRET_SCAN_STEPS, contents: read, 20 minutes, on a schedule."""
+def check_nightly_scan(workflows, path=NIGHTLY_SCAN_WORKFLOW, job="secret-scan"):
+    """Rule 15 (PRO-539): the nightly secret scan is exactly NIGHTLY_SCAN_STEPS, contents: read, 20 minutes, on a schedule."""
     if path not in workflows:
         return ["{} is missing (the nightly scan of every branch, PRO-539)".format(path)]
     text = workflows[path]
     problems = check_pinned_job(path, text, job, SCANNER_JOB_KEYS | {"permissions"}, {"contents": "read"},
-                                "ubuntu-24.04", SECRET_SCAN_STEPS)
+                                "ubuntu-24.04", NIGHTLY_SCAN_STEPS)
     if not problems and strip_quotes(str(mapping_at(job_lines(text, job), 4, "timeout-minutes"))) != "20":
         problems.append("{}: the {} job's timeout-minutes must be 20".format(path.rsplit("/", 1)[-1], job))
     if not re.search(r'^on:\n  schedule:\n    - cron: "\d{1,2} \d{1,2} \* \* \*"\n  workflow_dispatch:\n', text, re.M):
@@ -1858,7 +1858,7 @@ def main(root, history_base=HISTORY_BASE):
         problems += check_ci_masking(texts)
         problems += check_scanner_order(texts)
         problems += check_mutation_build(texts)
-        problems += check_secret_scan(texts)
+        problems += check_nightly_scan(texts)
         scanner_lock = root / SCANNER_LOCK
         problems += check_scanner_config(root, scanner_lock.read_text(encoding="utf-8") if scanner_lock.exists() else "missing")
         if (root / ".git").exists():
@@ -2663,26 +2663,26 @@ def self_test():
         assert text != nightly, label
         assert check_mutation_build({MUTATION_WORKFLOW: text}), label
     # PRO-539: the nightly scan of every branch is pinned whole, and ci.yml's pull request scope stays HEAD
-    assert check_secret_scan(real) == [], check_secret_scan(real)
-    secret_scan = real[NIGHTLY_SCAN_WORKFLOW]
+    assert check_nightly_scan(real) == [], check_nightly_scan(real)
+    nightly_scan = real[NIGHTLY_SCAN_WORKFLOW]
     for label, text in {
-        "branch scope only": secret_scan.replace("git --log-opts=--all --ignore", "git --log-opts=HEAD --ignore", 1),
-        "inline allows honoured": secret_scan.replace(" --ignore-gitleaks-allow", "", 1),
-        "exit code dropped": secret_scan.replace(" --exit-code 1 .", " --exit-code 0 .", 1),
-        "shallow checkout": secret_scan.replace("          fetch-depth: 0\n", "          fetch-depth: 1\n", 1),
-        "failure summary dropped": secret_scan.replace("        if: failure()\n", "", 1),
-        "repository code first": secret_scan.replace("      - name: Set up Go for the pinned scanner build\n",
+        "branch scope only": nightly_scan.replace("git --log-opts=--all --ignore", "git --log-opts=HEAD --ignore", 1),
+        "inline allows honoured": nightly_scan.replace(" --ignore-gitleaks-allow", "", 1),
+        "exit code dropped": nightly_scan.replace(" --exit-code 1 .", " --exit-code 0 .", 1),
+        "shallow checkout": nightly_scan.replace("          fetch-depth: 0\n", "          fetch-depth: 1\n", 1),
+        "failure summary dropped": nightly_scan.replace("        if: failure()\n", "", 1),
+        "repository code first": nightly_scan.replace("      - name: Set up Go for the pinned scanner build\n",
                                                      "      - run: python3 tools/x.py\n      - name: Set up Go for the pinned scanner build\n", 1),
-        "extra step": secret_scan + "      - run: true\n",
-        "write permission": in_job(secret_scan, "secret-scan", "      contents: read\n", "      contents: write\n"),
-        "longer timeout": secret_scan.replace("    timeout-minutes: 20\n", "    timeout-minutes: 200\n", 1),
-        "no schedule": secret_scan.replace('  schedule:\n    - cron: "41 1 * * *"\n', "", 1),
-        "weekly": secret_scan.replace('"41 1 * * *"', '"41 1 * * 1"', 1),
-        "no job": secret_scan.replace("\n  secret-scan:\n", "\n  secret-scan-renamed:\n", 1),
+        "extra step": nightly_scan + "      - run: true\n",
+        "write permission": in_job(nightly_scan, "secret-scan", "      contents: read\n", "      contents: write\n"),
+        "longer timeout": nightly_scan.replace("    timeout-minutes: 20\n", "    timeout-minutes: 200\n", 1),
+        "no schedule": nightly_scan.replace('  schedule:\n    - cron: "41 1 * * *"\n', "", 1),
+        "weekly": nightly_scan.replace('"41 1 * * *"', '"41 1 * * 1"', 1),
+        "no job": nightly_scan.replace("\n  secret-scan:\n", "\n  secret-scan-renamed:\n", 1),
     }.items():
-        assert text != secret_scan, label
-        assert check_secret_scan({NIGHTLY_SCAN_WORKFLOW: text}), label
-    assert check_secret_scan({}), "a missing nightly scan fails"
+        assert text != nightly_scan, label
+        assert check_nightly_scan({NIGHTLY_SCAN_WORKFLOW: text}), label
+    assert check_nightly_scan({}), "a missing nightly scan fails"
     ci_scope = real[".github/workflows/ci.yml"]
     for label, text in {
         "pull request scans every branch again": ci_scope.replace("&& 'HEAD' ||", "&& '--all' ||", 1),

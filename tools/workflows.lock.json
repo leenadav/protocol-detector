@@ -2467,7 +2467,7 @@
    "# ignored and .gitleaks.toml as the only allowlist. A finding fails the run, and the step summary",
    "# names the scope, the redacted findings and the next step. It is not a required check, so a",
    "# nightly finding never blocks a pull request; the red scheduled run is the report.",
-   "# Rule 15 pins this job whole (tools/check_workflow_policy.py, SECRET_SCAN_STEPS) and",
+   "# Rule 15 pins this job whole (tools/check_workflow_policy.py, NIGHTLY_SCAN_STEPS) and",
    "# tools/check_gitleaks_allowlist.py checks the scope and proves it with the real gitleaks.",
    "# GitHub runs `schedule` only from the default branch's copy of this file, so it takes effect",
    "# nightly once it is on main; before that, run it with workflow_dispatch on the branch.",

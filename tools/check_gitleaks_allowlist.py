@@ -259,14 +259,14 @@ def run_scope(bin_dir):
             sh("add", "-A")
             sh("commit", "-qm", message)
 
-        lane_secret, pr_secret = SECRETS[2][1], SECRETS[3][1]
+        lane_leak, pr_leak = SECRETS[2][1], SECRETS[3][1]
         sh("init", "-q", "-b", "main")
         commit("README", "clean\n", "main")
         sh("checkout", "-q", "-b", "lane-a")
-        commit("lane/config.txt", "aws = {}\n".format(lane_secret), "lane leak")
+        commit("lane/config.txt", "aws = {}\n".format(lane_leak), "lane leak")
         sh("checkout", "-q", "main")
         sh("checkout", "-q", "-b", "pr-leak")
-        commit("pr/config.txt", "token = {}\n".format(pr_secret), "pull request leak")
+        commit("pr/config.txt", "token = {}\n".format(pr_leak), "pull request leak")
         commit("pr/config.txt", "token = removed\n", "delete it again: the history still holds it")
         sh("checkout", "-q", "main")
         sh("checkout", "-q", "-b", "pr-clean")
