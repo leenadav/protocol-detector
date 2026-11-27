@@ -142,6 +142,39 @@ Reason code **API**, as batches R2 and R3. Read-only; one approval for the batch
 | `developers.facebook.com`, `www.messenger.com`, `www.facebook.com` | API | Facebook Messenger | row 91 |
 | `api.stackexchange.com`, `stackoverflow.com`, `stackapps.com`, `meta.stackexchange.com` | API | Stack Overflow | row 92 |
 
+## Batch R5 (2026-11-27, PRO-569): vendor API references for child apps wave 3 (not yet requested)
+
+Reason code **API**, as batches R2 to R4. Read-only; one approval for the batch. Unblocks `blocked-urls.md` rows 93 to 116.
+
+ASK Research Lab: please read the pages of `blocked-urls.md` rows 93 to 116 (hosts below) from the Hermes server and relay the endpoint tables, or allow the hosts for this lane; they would verify or correct the 41 unverified wave-3 children.
+
+| Host | Reason | Use | Page |
+|---|---|---|---|
+| `docs.cohere.com` | API | Cohere | row 93 |
+| `console.groq.com` | API | Groq | row 94 |
+| `openrouter.ai` | API | OpenRouter | row 95 |
+| `elevenlabs.io` | API | ElevenLabs | row 96 |
+| `replicate.com` | API | Replicate | row 97 |
+| `docs.together.ai` | API | Together AI | row 98 |
+| `api.stability.ai`, `platform.stability.ai` | API | Stability AI | row 99 |
+| `docs.windsurf.com` | API | Windsurf / Codeium | row 100 |
+| `doc.rust-lang.org` | API | crates.io | row 101 |
+| `guides.rubygems.org` | API | RubyGems | row 102 |
+| `central.sonatype.com`, `central.sonatype.org`, `maven.apache.org`, `search.maven.org` | API | Maven Central | row 103 |
+| `api.imgur.com`, `apidocs.imgur.com` | API | Imgur | row 104 |
+| `developers.freshdesk.com` | API | Freshworks (Freshdesk / Freshservice) | row 105 |
+| `developers.intercom.com` | API | Intercom | row 106 |
+| `developer.pagerduty.com` | API | PagerDuty | row 107 |
+| `mailchimp.com` | API | Mailchimp | row 108 |
+| `www.twilio.com` | API | Twilio SendGrid | row 109 |
+| `developers.pandadoc.com` | API | PandaDoc | row 110 |
+| `www.backblaze.com` | API | Backblaze B2 | row 111 |
+| `gofile.io` | API | Gofile | row 112 |
+| `www.file.io` | API | file.io | row 113 |
+| `www.idrive.com` | API | IDrive / IDrive e2 | row 114 |
+| `support.gmx.com` | API | GMX Mail | row 115 |
+| `yandex.com` | API | Yandex Mail | row 116 |
+
 ## Decisions needed (not vendor-owned, so not requested): **resolved 2026-11-20**
 
 Hermes's decisions 1, 2 and 6: the live tools and dependency-mapping pass 2 run on the Hermes server (no proxy). No DoH

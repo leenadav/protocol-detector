@@ -1,6 +1,27 @@
 import json,glob,collections
+
+
+def _rd(path, **kw):
+    with open(path, **kw) as fh:
+        return fh.read()
+
+
+def _wj(obj, path, **kw):
+    with open(path, "w") as fh:
+        json.dump(obj, fh, **kw)
+
+
+def _wt(path, text):
+    with open(path, "w") as fh:
+        fh.write(text)
+
+
+def _wb(path, data):
+    with open(path, "wb") as fh:
+        fh.write(data)
+
 rows=[]
-for f in sorted(glob.glob('enterprise-300/wave1/*.json')): rows+=json.load(open(f))
+for f in sorted(glob.glob('enterprise-300/wave1/*.json')): rows+=json.loads(_rd(f))
 order=['remote-access','vpn','proxy-anonymizer','file-sharing','genai','webmail','messaging','social','code-paste','crypto','p2p']
 rows.sort(key=lambda r:(order.index(r['class']),r['name']))
 sep=collections.Counter(s['separable'] for r in rows for s in r['subfunctions'])
@@ -22,4 +43,4 @@ for r in rows:
         o.append(f"- **{s['name']}** [{s['separable']}] `{s['path_or_host']}`: {s['note']} ([doc]({s['evidence_url']}))")
     if r.get('notes'): o.append(f"\n_Note: {r['notes']}_")
     o.append("")
-open('enterprise-300.md','w').write('\n'.join(o))
+_wt('enterprise-300.md', '\n'.join(o))

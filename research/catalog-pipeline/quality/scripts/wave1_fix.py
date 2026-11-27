@@ -1,5 +1,26 @@
 """PRO-491 review fixes: move non-matchable hosts out of `domains`, add priority rank."""
 import json,glob,re
+
+
+def _rd(path, **kw):
+    with open(path, **kw) as fh:
+        return fh.read()
+
+
+def _wj(obj, path, **kw):
+    with open(path, "w") as fh:
+        json.dump(obj, fh, **kw)
+
+
+def _wt(path, text):
+    with open(path, "w") as fh:
+        fh.write(text)
+
+
+def _wb(path, data):
+    with open(path, "wb") as fh:
+        fh.write(data)
+
 EXCL={ # domain -> reason
  'software.cisco.com':'download host','ocsp.digicert.com':'CA/OCSP shared','download.pulsesecure.net':'download host',
  'binaries.twingate.com':'download host','storage.googleapis.com':'shared cloud storage','browsec.cx':'download mirror',
@@ -23,7 +44,7 @@ rank={s:i+1 for i,s in enumerate(RANK)}
 allr={}
 n=0
 for f in sorted(glob.glob('enterprise-300/wave1/*.json')):
-    d=json.load(open(f))
+    d=json.loads(_rd(f))
     for s in d:
         keep=[];out=[]
         for x in s['domains']:
@@ -33,11 +54,11 @@ for f in sorted(glob.glob('enterprise-300/wave1/*.json')):
         s['domains']=keep; s['domains_not_a_match']=out; n+=len(out)
         s['priority_rank']=rank[s['id']]
         allr[s['id']]=s
-    json.dump(d,open(f,'w'),indent=1,ensure_ascii=False)
+    _wj(d, f, indent=1,ensure_ascii=False)
 assert set(rank)==set(allr),set(rank)^set(allr)
 print('moved',n,'ranked',len(rank))
 # md
-md=open('enterprise-300.md').read().split('\n')
+md=_rd('enterprise-300.md').split('\n')
 out=[];rows={}
 for l in md:
     m=re.match(r'^\| \d+ \| .*\(`([^`]+)`\) \|',l)
@@ -52,4 +73,4 @@ it=iter(sorted(rows))
 res=[(rows[next(it)] if l is None else l) for l in out]
 t='\n'.join(res)
 t=t.replace('a numeric rank comes with wave 2.','`#` is the numeric enterprise-priority rank (1 = block/monitor first). Download hosts, OCSP/CA, docs/help pages, CDNs and shared hosts are excluded from `domains` and listed under `domains_not_a_match` in the JSON.')
-open('enterprise-300.md','w').write(t)
+_wt('enterprise-300.md', t)

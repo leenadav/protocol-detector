@@ -8,6 +8,9 @@ clone is read-only (push URL disabled); nothing was pushed to, or proposed for, 
 **Verdict: P1 (recovery) fails as defined; P2 to P5 pass.** The run is in `results-endurance/` and the
 verdict in `results-endurance/verdict.json` (`run.py --verdict`).
 
+**Re-run (PRO-564):** with candidate 1 below (a warm-up, then the baseline at least 120 s after start; the
+thresholds are unchanged), P1 to P5 all pass. See `ENDURANCE-RERUN.md`.
+
 | # | Condition | Result | Evidence |
 |---|---|---|---|
 | P1 | Goroutines and live heap within ±10% of the baseline ≤ 60 s after load | **FAIL** | goroutines 25 vs 29 (−13.8%) from 5 s on; live heap 10.30 MB vs 6.51 MB (+58.2%), flat from 5 s to 180 s |
