@@ -105,4 +105,5 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["--self-test"]:
         self_test()
     else:
-        sys.stdout.write(summarize(json.load(open(sys.argv[1]))))
+        with open(sys.argv[1]) as fh:
+            sys.stdout.write(summarize(json.load(fh)))

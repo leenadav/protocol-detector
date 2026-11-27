@@ -100,8 +100,9 @@ def wait_health(port, limit=60):
     t0 = time.time()
     while time.time() - t0 < limit:
         try:
-            urllib.request.build_opener(urllib.request.ProxyHandler({})).open(
-                "http://127.0.0.1:%d/health" % port, timeout=2).read()  # noqa: S310
+            with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(
+                    "http://127.0.0.1:%d/health" % port, timeout=2) as r:  # noqa: S310
+                r.read()
             return True
         except Exception:  # noqa: BLE001 (start-up poll)
             time.sleep(0.5)
@@ -122,9 +123,10 @@ class Proxy:
             extra["CULVERT_LAB_CHILDAPP"] = "real"
         if profile_locks:
             extra["CULVERT_LAB_PROFILE_LOCKS"] = "1"
+        self.log_fh = self.log.open("wb")
         self.proc = subprocess.Popen(  # noqa: S603
             [TASKSET, "-c", PROXY_CPUS, str(LAB / "bin/culvert-lab"), "-port", str(PROXY_PORT),
-             "-ui-port", str(UI_PORT)], env=clean_env(extra), stdout=self.log.open("wb"), stderr=subprocess.STDOUT,
+             "-ui-port", str(UI_PORT)], env=clean_env(extra), stdout=self.log_fh, stderr=subprocess.STDOUT,
             cwd=str(run_dir))  # Culvert writes categories.json and cluster.json into its working directory
         if not wait_health(PROXY_PORT):
             raise RuntimeError("proxy did not start")
@@ -151,7 +153,8 @@ class Proxy:
         login = urllib.request.Request(base + "/api/auth/login", method="POST",  # noqa: S310
                                        data=json.dumps({"user": "admin", "pass": self.secret.read_text()}).encode(),
                                        headers={"Content-Type": "application/json"})
-        op.open(login, timeout=20).read()
+        with op.open(login, timeout=20) as r:
+            r.read()
         blocks, offset = [], 0
         while True:
             with op.open(base + "/api/logs?limit=1000&offset=%d" % offset, timeout=60) as r:  # noqa: S310
@@ -169,6 +172,7 @@ class Proxy:
         except subprocess.TimeoutExpired:
             self.proc.kill()
             self.proc.wait()
+        self.log_fh.close()
 
 
 def attack(proto, rate, duration, targets, out_bin):
@@ -299,7 +303,8 @@ def main():
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args()
     if a.self_test:
-        return self_test()
+        self_test()
+        return 0
     run_dir = LAB / "run"
     run_dir.mkdir(parents=True, exist_ok=True)
     (run_dir / "targets.json").write_text(targets_jsonl())
