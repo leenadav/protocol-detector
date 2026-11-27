@@ -2,10 +2,10 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://protocol-detector/go/detector/app-verdict.schema.json",
   "title": "Application verdict of one proxied HTTP request",
-  "description": "The enterprise App-ID verdict of go/detector AppClassifier (PRO-492): the catalog application of the server name and, when a child-app rule of the content data matched, the child application per function with its container. A rule only refines the catalog's identity. limit names a work ceiling that was hit (never silent); a verdict with a limit names no child. No path, content type, body or credential is recorded; app, container and rule are content-data names.",
+  "description": "The enterprise App-ID verdict of go/detector AppClassifier (PRO-492): the catalog application of the server name and, when a child-app rule of the content data matched, the child application per function with its container. A rule only refines the catalog's identity. limit names a work ceiling that was hit (never silent); a verdict with a limit names no child, and its child_status is undetermined when a child rule could apply. No path, content type, body or credential is recorded; app, container and rule are content-data names.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "app", "container", "rule", "basis", "reasons", "limit", "rules_evaluated", "child_release", "content_release"],
+  "required": ["schema_version", "app", "container", "rule", "basis", "reasons", "limit", "child_status", "rules_evaluated", "child_release", "content_release"],
   "properties": {
     "schema_version": {"const": 1},
     "app": {"type": "string", "description": "The child application when a child rule matched, else the catalog application of the server name, else empty"},
@@ -16,9 +16,10 @@
       "type": "array",
       "minItems": 1,
       "items": {"enum": ["no_host", "host_invalid", "host_unowned", "host_web_front", "sni_host_owner_mismatch", "path_not_canonical",
-        "field_too_long", "no_child_rule_matched", "child_rule_matched", "work_limit", "panic"]}
+        "field_too_long", "no_child_rule_matched", "child_rule_matched", "work_limit", "request_ambiguous", "panic"]}
     },
     "limit": {"enum": ["", "child_rule_evaluations", "child_path_bytes", "child_field_bytes"]},
+    "child_status": {"enum": ["matched", "none", "undetermined", "not_applicable"], "description": "Whether the function was decided. undetermined is fail closed: a child rule of the host could apply but the request was refused (not canonical), capped (a field or work ceiling) or ambiguous (a repeated query parameter, a malformed content type, a trailing slash), so app is the parent and the child is unknown; a policy that denies a child denies undetermined for its container too"},
     "rules_evaluated": {"type": "integer", "minimum": 0},
     "child_release": {"type": "string"},
     "content_release": {"type": "string"}

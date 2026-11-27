@@ -34,9 +34,10 @@ var (
 	matchKeys = set("apps", "categories", "subcategories", "technologies", "characteristics", "risks", "port_usage",
 		"transports", "server_ports", "encryption", "shifted_from", "risk_min", "risk_max",
 		"identity_basis", "activity", "affiliation", "decryption", "capture_quality", "engine_status", "directions", "observation")
-	// childMatchKeys adds "containers" (Go only, PRO-492) when the policy is parsed with child applications.
+	// childMatchKeys adds "containers" (Go only, PRO-492) and "child_status" (SEC-CHILD-1) when the policy is
+	// parsed with child applications.
 	childMatchKeys = func() map[string]bool {
-		keys := set("containers")
+		keys := set("containers", "child_status")
 		for k := range matchKeys {
 			keys[k] = true
 		}
@@ -92,7 +93,7 @@ type Rule struct {
 	Name, Action       string
 	Description        string
 	ApplicationDefault bool
-	apps, containers, categories, subcategories, technologies, characteristics, risks,
+	apps, containers, childStatus, categories, subcategories, technologies, characteristics, risks,
 	portUsage, transports, encryption, shiftedFrom map[string]bool
 	serverPorts      map[string]*portTable
 	predicates       map[string]map[string]bool
@@ -353,6 +354,7 @@ func newRule(document interface{}, index int, pack *content.Pack, children Child
 	// The reference evaluates the conditions in this order; the first invalid one is reported.
 	load("apps", &r.apps, nil, resolveApp)
 	load("containers", &r.containers, nil, resolveApp)
+	load("child_status", &r.childStatus, in(appid.ChildStatuses()), nil)
 	load("categories", &r.categories, func(v string) bool { _, ok := pack.Categories[v]; return ok }, nil)
 	load("subcategories", &r.subcategories, subcategory, nil)
 	load("technologies", &r.technologies, func(v string) bool { return pack.Technologies[v] }, nil)
@@ -410,6 +412,10 @@ func (r *Rule) matches(v *appid.Verdict, portUsageValue, transport string, serve
 	}
 	// containers holds for the named application itself and for every child whose container it is.
 	if r.containers != nil && !r.containers[v.App] && (v.BaseApp == nil || !r.containers[*v.BaseApp]) {
+		return false
+	}
+	// child_status holds for a child-app verdict with one of the listed statuses; other verdicts carry none.
+	if r.childStatus != nil && !r.childStatus[v.ChildStatus] {
 		return false
 	}
 	if len(r.predicates) > 0 && !skipPredicates {
