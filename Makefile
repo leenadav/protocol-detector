@@ -1,4 +1,4 @@
-.PHONY: serve test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation golden-record golden-check property-long
+.PHONY: child-apps serve test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation golden-record golden-check property-long
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
@@ -57,7 +57,7 @@ replay-live:
 coverage-matrix:
 	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
 
-check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts ledgers manifest presentation-check inventory keylogs content sequences capabilities content-pack parity
+check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts ledgers manifest presentation-check inventory keylogs content sequences capabilities content-pack child-apps parity
 	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
 
 manifest:
@@ -146,6 +146,7 @@ workflow-policy:
 	$(PYTHON) -B tools/go_deep.py --self-test
 	$(PYTHON) -B tools/go_cover.py --self-test
 	$(PYTHON) -B tools/go_api.py --self-test
+	$(PYTHON) -B tools/go_bench.py --self-test
 	$(PYTHON) -B tools/contract_check.py --self-test
 	$(PYTHON) -B tools/osv_scan.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
@@ -179,6 +180,11 @@ keylogs:
 
 content:
 	python3 -B tools/check_content.py
+
+# PRO-492: the child-app rules are a reproducible conversion of App Research's cited wave files (docs/CHILD-APPS.md).
+child-apps:
+	$(PYTHON) -B tools/child_apps_wave.py --self-test
+	$(PYTHON) -B tools/child_apps_wave.py migration/fixtures/child-apps/wave-0.json --check
 
 # Migration M0: the per-family capability inventory must match the registry (Go statuses are kept as recorded)
 capabilities:
@@ -236,6 +242,8 @@ GO_FUZZ_SMOKE := \
 	./internal/engine:FuzzInspectorNeverPanics:10 \
 	./internal/engine:FuzzSelectNeverPanics:5 \
 	./internal/signatures:FuzzPatternNeverPanics:10 \
+	./internal/childapp:FuzzClassifyNeverPanics:10 \
+	./internal/childapp:FuzzLoadNeverPanics:10 \
 	./internal/decrypt:FuzzConnectionNeverPanics:10 \
 	./internal/capture:FuzzDecoderNeverPanics:10 \
 	./internal/keylogcap:FuzzAnalyzeNeverPanics:10 \
@@ -281,9 +289,9 @@ go-check-race:
 # go-check-386 (PRO-262, ci: go-engine): the protocol parsers' tests on a 32-bit int (GOARCH=386), where a length
 # sum such as pos+length can wrap negative and pass a bounds check (SEC-X509-1); `go test -race` on amd64 cannot see
 # that. Every package under ./internal/protocols/ runs, new ones included, except GO_386_EXCLUDE: packages that do not
-# compile for 386 yet (framed: untyped constants above 2^31 assigned to int). An excluded package that starts to
+# compile for 386 yet (empty since PRO-503 typed framed's constants above 2^31). An excluded package that starts to
 # compile fails the target, so its exclusion is removed as soon as it can be tested. Offline and vendored.
-GO_386_EXCLUDE := framed
+GO_386_EXCLUDE :=
 go-check-386:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOARCH=386 CGO_ENABLED=0 GOFLAGS=-mod=vendor sh -c '\
 	  set -e; all=$$(go list ./internal/protocols/...); run=""; \
