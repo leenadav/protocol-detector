@@ -29,6 +29,10 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-24, after PRO-262 and PRO-202 step 3)
 
+- **PRO-270 (Dependabot, 2026-11-27):** security updates only. Every `dependabot.yml` entry has
+  `open-pull-requests-limit: 0`, one `applies-to: security-updates` group per ecosystem and the prefix
+  `deps(security)`; Go covers go/, go/oracle, tools/scanners, tools/golint/* and gremlins. Nothing opens until Lee
+  enables Dependabot security updates in the settings. Review steps: SSDLC.md "Dependabot security update PRs".
 - **PRO-402 (Python removal 2/3, PR B):** #125, branch `claude/platform-PRO-402-demo-go-serve`, merged with `main`
   after PR A (#127). PR A made `protodetect serve` interpreter-free; this PR removes the Python backend selection
   that was left: `serve` has no `--python`, `presentation/launch.py` and `protodetect.py analyze|live|serve` run the
@@ -58,8 +62,15 @@ their decisions, the policy locks, and the release controller.
   go-check-parity`). `make go-check` still runs the four parts in order. `tools/go_fuzz_smoke.py --check-matrix`
   (workflow-lint, `make workflow-policy`) fails a matrix that drops a shard; a listed target that no test defines
   fails. Steps 3 (tool-decided docs-only fast path) and 4 (GOMODCACHE cache saved on `main` only) follow as their own PRs.
-- **PRO-194 finding 2** (`build_go_release.py` sets and checks `main.version`): local `5324543`, unpushed, waits on
-  Engine's PRO-195.
+- **PRO-194** (`build_go_release.py`), on branch `claude/determined-mayer-cyjpa0` from `main` `23bbc0c`. Finding 1 is
+  the cherry-pick `305f8ef` of `695bb09`: the release fails when `go/go.mod` exists and `go/cmd/protodetect` does
+  not. Finding 2 adds `-X main.version=<version>` and requires the linux/amd64 binary's `protodetect version` to
+  report exactly that version (`docs/RELEASING.md`). The local `5324543` was lost with its container and was
+  rewritten here. **Merge order:** Engine's PR #143 (PRO-195, `var version`) first, then merge `main` into this
+  branch. Until then the publish-release dry run fails, correctly, because `main` still has `const version`.
+  #143 merged; `83ad798` (PRO-478) merged `main` in. The release build then failed on two launcher tests: the
+  launchers default to the Go engine and the job never built `go/bin/protodetect`. It now runs `go_ci.py build`
+  before the gate, as `ci.yml` does; the docs test count was refreshed to 909.
 
 - `main` = `2a33183`. PRO-42, PRO-59 and PRO-31 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #37 (`0d32281`), #38 (`51b5e94`), #39 (`0ef7349`);
   #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) and #66 (gitleaks allowlist for the r5 CNAME false positive, PRO-145) are merged.
@@ -167,6 +178,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Codex review of `docs/review-packet/` (7 chunks: Tier 1 1,350 lines, Tier 2 893) | QA Reviewer (Codex), currently paused |
 | PRO-347: the nightly `ledgers` workflow is read-only (strict check, refresh patch as an artifact). Opening the docs-only refresh pull request from it needs `contents: write` + `pull-requests: write` (rule 5 forbids both outside the release controller), the repository setting that lets Actions create pull requests, and a token whose pull requests trigger ci (`GITHUB_TOKEN` ones start no workflow). Until then Deputy applies the patch | Lee's decision (SSDLC item 43) |
 | PRO-480: branch `claude/platform-PRO-480-release-dryrun-counts` refreshes the generated ledgers (895 → 909) and runs `check_docs_counts.py --strict` in `publish-release.yml` for a tag only (policy `check_release_docs_counts`); the release build job also builds the Go binary before its gate (PRO-402 made `analyze` Go-only). After it merges: merge `main` into #149 (`claude/determined-mayer-cyjpa0`, PRO-194) and refresh Dependabot #151 (PRO-478) | Hermes's review, then Lee; PRO-194 and PRO-478 owners for the refresh |
+| PRO-268: branch `claude/platform-PRO-268-benchstat` adds the `go-bench` ci job (`tools/go_bench.py`, benchstat from `tools/golint/benchstat`): hot-path Go benchmarks at the PR head against the merge base, +10 % sec/op at p < 0.05 or more allocs/op fails (SSDLC item 44). First real CI run (`f16f75a` against `765feee`): 2 min 58 s, no hot-path regression; changing `HOT` or a threshold is a reviewed change to the tool | Hermes's review, then Lee |
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
@@ -185,6 +197,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | PRO-200 skills: `.claude/skills/` holds 7 MIT skills copied from obra/superpowers 7.0.2 (`22f0b46`: systematic-debugging, test-driven-development, verification-before-completion, receiving-code-review) and samber/cc-skills-golang 2.0.1 (`d68d80a`: golang-testing 1.4.0, golang-performance 1.3.2, golang-error-handling 1.3.1); provenance in `.claude/skills/THIRD_PARTY.md`. Repo-declared plugins do not load in cloud sessions (smoke on `1542a34`); Trail of Bits (CC-BY-SA) not taken | Hermes's review, then Lee |
 | Gitleaks hex HTTP/1 allowlist scoped (PRO-183/PRO-184, the gitleaks SEC-CI-1): branch `claude/cicd-gitleaks-hex-scope`, base main. Own `[[allowlists]]` entry, AND of path `^go/.*_test\.go$` and the hex regex; `check_gitleaks_allowlist.py` proves a hex request with a cookie still flags in .py, .json and non-test .go. `claude/go-migration` keeps its own repo-wide copy until it merges main | Hermes's review, then Lee |
 | Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
+| Nightly mutation job (PRO-176): #155, branch `claude/platform-PRO-176-nightly-mutation`, the `mutation` job of `nightly-fuzz.yml` (gremlins and the module cache from one isolated networked step, then `make mutation` offline with `MUTATION_BIN`, results uploaded every run; policy `check_mutation_build`). The 5-point threshold is a placeholder in Engine's `mutation.py`. tlsx and textroute measure nothing today: their tests read `../../../../migration/fixtures/cases.json`, absent from gremlins' copy of `go/`, so every mutant counts as killed | Hermes's review, then Lee; Engine for the tlsx/textroute fixture path (asked on PRO-176) and the PRO-173 `TOLERANCE` |
+| 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 6 packages test, 2 have no tests, `framed` is excluded; an excluded package that compiles fails the target | Hermes's review, then Lee; Engine to make `framed` (5 constant overflows of `int`) build on 386, then drop it from `GO_386_EXCLUDE` |
 | Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
 | 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 7 packages test, 2 have no tests, `GO_386_EXCLUDE` is empty (PRO-503); an excluded package that compiles fails the target | Done (PR #117); `framed` on 386 is PRO-503 |
 
@@ -196,17 +210,33 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
 - **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #37 `7d04266`, #38 `7c33b1a`, #39 `37b3c84`.
 - **PRO-480 (#154):** `8e13f57a1303fca696db674da6414b833c4ad544` (strict docs counts on a tag only, ledgers refresh) and `031f23635834f4a42fa226b4adf8589c5ed2c7d8` (Go binary before the release gate).
+- **PRO-194:** `305f8ef` (finding 1, cherry-pick of `695bb09`) and the finding 2 commit on
+  `claude/determined-mayer-cyjpa0`.
+- **PRO-176 (#155):** `6df38e72bfa96111fd68510bf2e5be782e456ff3` (nightly mutation job, policy `check_mutation_build`) and `6e5292ab4d9499cd5cce43813d43c0eee2ebae34` (notes: tlsx/textroute not measured).
+- **PRO-268 (#157):** `f16f75afe8b8c056e3601a85eec9de0f2c807514` (the `go-bench` job, `tools/go_bench.py`, the benchstat module, SSDLC item 44).
+- **PRO-187 (A12 P3 hardening):** `fcdf0523e6dc56c9c61326149f6070e5bd39c35b` (CLI removal is breaking, apidiff fails
+  closed, gosec keyed by function under `internal/protocols/` and `internal/decrypt/`, baseline and scanner lock
+  re-keyed) and `c5add9e329ce474af9b5eda9109ffea129593616` (apidiff stderr summary).
+- **PRO-270:** `7863692f382c39c5da592493e8047cfb3d68963d` (Dependabot security-only).
 - **PRO-503:** `9b7e79aecdca5a40717bd35d289b42d0503ed0e6` (framed builds and tests on GOARCH=386; `GO_386_EXCLUDE` empty; RESP length wrap on 386). Fix round: `23458ef6fa27d71e6b5d67489b20f299752440f4` (gosec G115: `bits32` int64 widening instead of `uint32`).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
 
+- **Line numbers of Go sources (PRO-187):** gosec counts `\n` only; Python's `str.splitlines()` also splits on form
+  feed and U+2028, so a source with one of them shifts every later line. `go_lint.enclosing_function` uses
+  `split("\n")`. Rewriting the gosec baseline is a reviewed change and needs `--write-scanner-lock` in the same commit.
+- **apidiff exit codes (PRO-187):** `apidiff` exits 0 after its report, 1 (`die`) or 2 (usage) otherwise, and prints
+  nothing when nothing changed; `go_api.judge_report` treats everything else as a failure.
 - **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
   `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
   unconditional `check_docs_counts.py --strict` turned every PR's release build red (Dependabot #151, #149).
 - **Release gate needs the Go binary (PRO-478):** since PRO-402 `protodetect.py analyze` runs only the Go binary
   and exits 2 without it. Any job that runs `unittest discover` must first run `tools/go_ci.py build` (offline,
   vendored), as the ci test jobs do; `publish-release.yml` did not, and two launcher tests failed `2 != 0`.
+- **gremlins needs the module cache:** `gremlins unleash` always runs `go mod download` before coverage, which fails
+  under `GOPROXY=off` even with a vendored tree. Fill the cache in the isolated networked step from a RUNNER_TEMP
+  copy of go/go.mod and go.sum (PRO-176).
 - **Stale checkout:** a restarted container may check out an old branch (`claude/appid-engine`). Run
   `git fetch` and work on `claude/cicd-next` at `origin/main` first.
 - **Masked failures:** `cmd | tail` hides the exit status. Use `set -o pipefail` and check `make check`'s status
