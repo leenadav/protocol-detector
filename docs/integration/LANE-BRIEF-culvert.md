@@ -186,8 +186,9 @@ Culvert's allocation gates need `-tags benchgate`.
   `claude/culvert-land-main`; PR leenadav/protocol-detector#97. Then `60b2305` (merge of main `e5ac90f`) and the
   brief commit that records the PRO-235 decision, then the commit that fixes the 12 CodeQL alerts in
   `lab/culvert/tools/` (TLS 1.2 minimum on the lab clients, files closed, one unused assignment).
-- **Queued for Codex (PRO-504):** the commit that adds `lab/culvert/culvert-lab-ef94311-childapp.patch`,
-  `docs/integration/CHILDAPP-LAB.md` and `lab/culvert/results-childapp/` (lab and docs only, no detector code), on
+- **Queued for Codex (PRO-504):** `35f1e25` (adds `lab/culvert/culvert-lab-ef94311-childapp.patch`,
+  `docs/integration/CHILDAPP-LAB.md` and `lab/culvert/results-childapp/`; lab and docs only, no detector code) and
+  the brief commit that records it, on
   `claude/culvert-PRO-504-childapp-lab`, based on `claude/engine-PRO-492-child-apps` `dadc6bd`.
 - **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
