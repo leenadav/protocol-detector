@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sort"
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
@@ -466,14 +465,4 @@ func parsePattern(p string) ([]string, error) {
 		}
 	}
 	return segments, nil
-}
-
-// sortedNames is used by tests and the catalog listing.
-func (s *Set) sortedNames() []string {
-	out := make([]string, 0, len(s.byName))
-	for n := range s.byName {
-		out = append(out, n)
-	}
-	sort.Strings(out)
-	return out
 }

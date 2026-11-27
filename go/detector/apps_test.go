@@ -53,9 +53,9 @@ func enumOf(t *testing.T, node interface{}) []string {
 }
 
 // TestAppVerdictMatchesItsSchema keeps the record, its JSON keys and the closed vocabularies equal to
-// schemas/app-verdict.schema.json.
+// go/detector/app-verdict.schema.json.
 func TestAppVerdictMatchesItsSchema(t *testing.T) {
-	data, err := os.ReadFile("../../schemas/app-verdict.schema.json")
+	data, err := os.ReadFile("app-verdict.schema.json")
 	if err != nil {
 		t.Fatal(err)
 	}

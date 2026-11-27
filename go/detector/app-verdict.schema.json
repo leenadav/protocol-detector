@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://protocol-detector/schemas/app-verdict.schema.json",
+  "$id": "https://protocol-detector/go/detector/app-verdict.schema.json",
   "title": "Application verdict of one proxied HTTP request",
   "description": "The enterprise App-ID verdict of go/detector AppClassifier (PRO-492): the catalog application of the server name and, when a child-app rule of the content data matched, the child application per function with its container. A rule only refines the catalog's identity. limit names a work ceiling that was hit (never silent); a verdict with a limit names no child. No path, content type, body or credential is recorded; app, container and rule are content-data names.",
   "type": "object",

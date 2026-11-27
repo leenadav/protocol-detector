@@ -19,7 +19,7 @@ v := c.Classify(detector.HTTPRequest{SNI: sni, Host: host, Method: "POST", Path:
 // v.Matches("gmail") and v.Matches("gmail-uploading") are both true
 ```
 
-The record is `schemas/app-verdict.schema.json`. A request without a matching child gets the catalog application
+The record is `go/detector/app-verdict.schema.json`. A request without a matching child gets the catalog application
 (`app=gmail, container=""`, basis `server_name`); an unowned host gets none (basis `none`, reason `host_unowned`).
 Offline capture analysis (`protodetect analyze`) is unchanged: TLS hides the method and path there, and its output
 stays equal to the reference.

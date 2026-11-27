@@ -4,7 +4,7 @@ import (
 	"github.com/leenadav/protocol-detector/go/internal/childapp"
 )
 
-// AppSchemaVersion is the version of the AppVerdict record (schemas/app-verdict.schema.json).
+// AppSchemaVersion is the version of the AppVerdict record (go/detector/app-verdict.schema.json).
 const AppSchemaVersion = 1
 
 // HTTPRequest is what a decrypting proxy saw of one HTTP request: the client's TLS server name (empty for
