@@ -392,7 +392,7 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 			return fmt.Errorf("path_prefixes: %v", err)
 		}
 		for _, p := range r.pathPrefixes {
-			if c, ok := canonicalPath(p); !ok || c != p || len(p) < 2 {
+			if c, ok := normalizePath(p); !ok || c != p || len(p) < 2 {
 				return fmt.Errorf("path prefix '%s' must be a canonical path longer than '/'", p)
 			}
 		}
@@ -527,7 +527,7 @@ func parsePattern(p string) ([]segment, error) {
 				out = append(out, segment{kind: segTemplate, lits: lits})
 			}
 		default:
-			if c, ok := canonicalPath("/" + part); !ok || c != "/"+part {
+			if c, ok := normalizePath("/" + part); !ok || c != "/"+part {
 				return nil, bad
 			}
 			out = append(out, segment{kind: segLiteral, lits: []string{part}})
@@ -567,7 +567,7 @@ func templateParts(part string) ([]string, error) {
 	for _, l := range lits {
 		// A literal inside a template is never a whole segment, so only its bytes are checked (a lone "." is fine).
 		if l != "" {
-			if c, ok := canonicalPath("/a" + l + "a"); !ok || c != "/a"+l+"a" {
+			if c, ok := normalizePath("/a" + l + "a"); !ok || c != "/a"+l+"a" {
 				return nil, fmt.Errorf("bad literal")
 			}
 		}

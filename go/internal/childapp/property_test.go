@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/leenadav/protocol-detector/go/internal/appid"
 	"pgregory.net/rapid"
 )
 
@@ -161,7 +162,7 @@ func patternRegexp(p string) (*regexp.Regexp, int) {
 }
 
 // oracleRule is the spec read literally, without the matcher's index or helpers: whether it matches and its score.
-func oracleRule(r specRule, req Request) (bool, int) {
+func oracleRule(r specRule, req Request) (bool, int, bool) {
 	host := strings.ToLower(req.Host)
 	hostHit := false
 	for _, h := range r.Hosts {
@@ -171,9 +172,9 @@ func oracleRule(r specRule, req Request) (bool, int) {
 		hostHit = hostHit || host == h || strings.HasSuffix(host, "."+h)
 	}
 	if !hostHit {
-		return false, 0
+		return false, 0, false
 	}
-	conditions := 0
+	conditions, ambiguous := 0, false
 	if r.Methods != nil {
 		conditions++
 		ok := false
@@ -181,13 +182,13 @@ func oracleRule(r specRule, req Request) (bool, int) {
 			ok = ok || m == req.Method
 		}
 		if !ok {
-			return false, 0
+			return false, 0, false
 		}
 	}
 	if r.WebSocket {
 		conditions++
 		if !req.WebSocket {
-			return false, 0
+			return false, 0, false
 		}
 	}
 	path, rawQuery, _ := strings.Cut(req.Path, "?")
@@ -212,7 +213,7 @@ func oracleRule(r specRule, req Request) (bool, int) {
 			}
 		}
 		if !ok {
-			return false, 0
+			return false, 0, false
 		}
 	}
 	if r.ContentTypes != nil {
@@ -222,7 +223,7 @@ func oracleRule(r specRule, req Request) (bool, int) {
 			ok = ok || ct == req.ContentType || (ct == "multipart/*" && strings.HasPrefix(req.ContentType, "multipart/"))
 		}
 		if !ok {
-			return false, 0
+			return false, 0, false
 		}
 	}
 	if r.Query != nil {
@@ -237,11 +238,15 @@ func oracleRule(r specRule, req Request) (bool, int) {
 		for _, q := range r.Query {
 			key, want, hasValue := strings.Cut(q, "=")
 			got := params[key]
+			if len(got) > 1 { // repeated: the rule holds for some server reading only (SEC-CHILD-1)
+				ambiguous = true
+				continue
+			}
 			if len(got) != 1 || got[0] == "" {
-				return false, 0
+				return false, 0, false
 			}
 			if hasValue && !strings.HasPrefix(want, "{") && !strings.Contains("|"+want+"|", "|"+got[0]+"|") {
-				return false, 0
+				return false, 0, false
 			}
 		}
 	}
@@ -253,7 +258,7 @@ func oracleRule(r specRule, req Request) (bool, int) {
 				ok = ok || strings.EqualFold(h, have)
 			}
 			if !ok {
-				return false, 0
+				return false, 0, false
 			}
 		}
 	}
@@ -265,29 +270,32 @@ func oracleRule(r specRule, req Request) (bool, int) {
 	case "upload":
 		conditions++
 		if !(req.RequestBodyBytes >= min && (req.ResponseBodyBytes < 0 || req.RequestBodyBytes > req.ResponseBodyBytes)) {
-			return false, 0
+			return false, 0, false
 		}
 	case "download":
 		conditions++
 		if !(req.ResponseBodyBytes >= min && (req.RequestBodyBytes < 0 || req.ResponseBodyBytes > req.RequestBodyBytes)) {
-			return false, 0
+			return false, 0, false
 		}
 	}
-	return true, best*16 + conditions
+	return true, best*16 + conditions, ambiguous
 }
 
-// oracle is the most specific matching rule (highest score, the first one in file order on a tie).
-func oracle(children []specChild, req Request) (string, int) {
-	evaluated, winner, top := 0, "", -1
+// oracle is the most specific matching rule (highest score, the first one in file order on a tie), and whether
+// that rule is ambiguous (then no child is named and the status is undetermined).
+func oracle(children []specChild, req Request) (string, bool) {
+	winner, top, ambiguousWinner := "", -1, false
 	for _, c := range children {
 		for j, r := range c.Rules {
-			evaluated++
-			if ok, score := oracleRule(r, req); ok && score > top {
-				winner, top = fmt.Sprintf("%s#%d", c.Name, j), score
+			if ok, score, ambiguous := oracleRule(r, req); ok && score > top {
+				winner, top, ambiguousWinner = fmt.Sprintf("%s#%d", c.Name, j), score, ambiguous
 			}
 		}
 	}
-	return winner, evaluated
+	if ambiguousWinner {
+		return "", true
+	}
+	return winner, false
 }
 
 func TestPropertyMatcherAgreesWithOracle(t *testing.T) {
@@ -307,7 +315,7 @@ func TestPropertyMatcherAgreesWithOracle(t *testing.T) {
 		if got.App != "dropbox" && got.Container != "dropbox" {
 			rt.Fatalf("dropbox host gave app %q container %q", got.App, got.Container)
 		}
-		want, _ := oracle(children, req)
+		want, ambiguous := oracle(children, req)
 		switch {
 		case got.Limit != "":
 			// A ceiling never yields a child, and only happens when the oracle needs more evaluations of rules on
@@ -315,8 +323,29 @@ func TestPropertyMatcherAgreesWithOracle(t *testing.T) {
 			if got.Container != "" || got.Rule != "" || got.Limit != LimitRuleEvaluations {
 				rt.Fatalf("limit with a child: %+v", got)
 			}
+			if got.ChildStatus != appid.ChildUndetermined {
+				rt.Fatalf("limit not fail closed: %+v", got)
+			}
 		case got.Rule != want:
 			rt.Fatalf("matcher %q, oracle %q for %+v", got.Rule, want, req)
+		case ambiguous:
+			if got.ChildStatus != appid.ChildUndetermined || got.Reasons[0] != ReasonAmbiguous {
+				rt.Fatalf("ambiguous winner not undetermined: %+v for %+v", got, req)
+			}
+		case want != "" && got.ChildStatus != appid.ChildMatched, want == "" && got.ChildStatus != appid.ChildNone:
+			rt.Fatalf("status %q for rule %q: %+v", got.ChildStatus, want, req)
+		}
+		// An unreserved byte of the path written as a percent escape (either hex case) changes nothing.
+		if i := strings.IndexAny(req.Path, "abcdefghijklmnopqrstuvwxyz0123456789"); i >= 0 {
+			escaped := req
+			escape := fmt.Sprintf("%%%02x", req.Path[i])
+			if rapid.Bool().Draw(rt, "upper-escape") {
+				escape = strings.ToUpper(escape)
+			}
+			escaped.Path = req.Path[:i] + escape + req.Path[i+1:]
+			if again := s.Classify(escaped); fmt.Sprint(again) != fmt.Sprint(got) {
+				rt.Fatalf("escape changed the verdict: %+v vs %+v (%q)", again, got, escaped.Path)
+			}
 		}
 		// Invariances: a query string, host case, a port and a trailing dot change nothing.
 		variant := req
