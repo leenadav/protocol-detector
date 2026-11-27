@@ -1,0 +1,512 @@
+[
+ {
+  "id": "kimi-moonshot",
+  "name": "Kimi (Moonshot AI)",
+  "class": "genai",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api.moonshot.ai",
+    "role": "api",
+    "source_url": "https://platform.kimi.ai/docs/api/chat.md",
+    "quote": "The base URL host is https://api.moonshot.ai"
+   },
+   {
+    "domain": "platform.kimi.ai",
+    "role": "web",
+    "source_url": "https://platform.kimi.ai/docs/introduction",
+    "quote": "API key management: https://platform.kimi.ai/console/api-keys"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "kimi.com / www.kimi.com",
+    "how_seen": "consumer chat web app known from public use; not on a fetched official doc",
+    "sourced": false
+   },
+   {
+    "domain": "platform.moonshot.ai",
+    "how_seen": "301 redirect to platform.kimi.ai observed during fetch",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api",
+    "evidence_url": "https://platform.kimi.ai/docs/api/chat.md",
+    "path_or_host": "POST api.moonshot.ai/v1/chat/completions",
+    "separable": "sni",
+    "note": "Distinct API host separates from consumer chat"
+   },
+   {
+    "name": "platform-console",
+    "evidence_url": "https://platform.kimi.ai/docs/introduction",
+    "path_or_host": "platform.kimi.ai",
+    "separable": "sni",
+    "note": "Developer console/docs"
+   }
+  ],
+  "notes": "Platform moved moonshot.ai to kimi.ai; consumer web chat host not confirmed from official docs.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "manus",
+  "name": "Manus",
+  "class": "genai",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api.manus.ai",
+    "role": "api",
+    "source_url": "https://open.manus.im/docs",
+    "quote": "All API requests are made to: https://api.manus.ai"
+   },
+   {
+    "domain": "open.manus.ai",
+    "role": "web",
+    "source_url": "https://open.manus.im/docs",
+    "quote": "docs themselves are served from open.manus.ai"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "manus.im",
+    "how_seen": "docs fetched via open.manus.im, which redirected/hosted docs; consumer app host not on an official network doc",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api",
+    "evidence_url": "https://open.manus.im/docs",
+    "path_or_host": "api.manus.ai (Tasks, Files sections)",
+    "separable": "sni",
+    "note": "Distinct API host; paths not listed on fetched page"
+   },
+   {
+    "name": "file-upload",
+    "evidence_url": "https://open.manus.im/docs",
+    "path_or_host": "api.manus.ai Files API",
+    "separable": "http",
+    "note": "Paths not confirmed; needs HTTP inspection"
+   }
+  ],
+  "notes": "Docs list API host only; no network-requirements page found. Consumer app domains unverified.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "lovable",
+  "name": "Lovable",
+  "class": "genai",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "lovable.dev",
+    "role": "web",
+    "source_url": "https://docs.lovable.dev/features/custom-domain",
+    "quote": "https://lovable.dev/settings/workspace-domains"
+   },
+   {
+    "domain": "lovable.app",
+    "role": "other",
+    "source_url": "https://docs.lovable.dev/features/custom-domain",
+    "quote": "instead of the default your-app.lovable.app address"
+   },
+   {
+    "domain": "docs.lovable.dev",
+    "role": "web",
+    "source_url": "https://docs.lovable.dev/features/custom-domain",
+    "quote": "Fetch the complete documentation index at: https://docs.lovable.dev/llms.txt"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "lovableproject.com",
+    "how_seen": "not on fetched official page; known preview domain from public use",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://docs.lovable.dev/features/custom-domain",
+    "path_or_host": "lovable.dev",
+    "separable": "sni",
+    "note": "Editor/app"
+   },
+   {
+    "name": "published-apps",
+    "evidence_url": "https://docs.lovable.dev/features/custom-domain",
+    "path_or_host": "*.lovable.app",
+    "separable": "sni",
+    "note": "User-published sites; wildcard subdomains, not an upload channel"
+   }
+  ],
+  "notes": "Builder app plus user-hosted sites on lovable.app. No official network requirements page found.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "bolt-new",
+  "name": "Bolt.new",
+  "class": "genai",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "bolt.new",
+    "role": "web",
+    "source_url": "https://support.bolt.new/",
+    "quote": "Templates marketplace (bolt.new/resources/templates)"
+   },
+   {
+    "domain": "support.bolt.new",
+    "role": "web",
+    "source_url": "https://support.bolt.new/",
+    "quote": "help center, including the QuickStart guide"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "stackblitz.com / webcontainer.io",
+    "how_seen": "WebContainer runtime lineage; no official doc fetched naming them",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://support.bolt.new/",
+    "path_or_host": "bolt.new",
+    "separable": "sni",
+    "note": "Main app"
+   },
+   {
+    "name": "generated-app-hosting",
+    "evidence_url": "https://support.bolt.new/",
+    "path_or_host": "unverified",
+    "separable": "pattern",
+    "note": "Hosting domains not confirmed"
+   }
+  ],
+  "notes": "Support page has no allowlist guidance; WebContainer troubleshooting page returned 404. Runtime domains unverified.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "gamma",
+  "name": "Gamma",
+  "class": "genai",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "public-api.gamma.app",
+    "role": "api",
+    "source_url": "https://developers.gamma.app/docs/getting-started",
+    "quote": "https://public-api.gamma.app/v1.0/agent/generations"
+   },
+   {
+    "domain": "mcp.gamma.app",
+    "role": "api",
+    "source_url": "https://developers.gamma.app/docs/getting-started",
+    "quote": "MCP server at https://mcp.gamma.app/mcp"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "gamma.app",
+    "how_seen": "main web app, implied by api host and gamma links; not a named allowlist entry",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api-generate",
+    "evidence_url": "https://developers.gamma.app/docs/getting-started",
+    "path_or_host": "POST public-api.gamma.app/v1.0/generations",
+    "separable": "sni",
+    "note": "Distinct API host"
+   },
+   {
+    "name": "upload",
+    "evidence_url": "https://developers.gamma.app/docs/getting-started",
+    "path_or_host": "POST /v1.0/uploads",
+    "separable": "http",
+    "note": "Same host as API; path needs HTTP"
+   },
+   {
+    "name": "export",
+    "evidence_url": "https://developers.gamma.app/docs/getting-started",
+    "path_or_host": "POST /v1.0/gammas/{id}/export",
+    "separable": "http",
+    "note": "Needs HTTP path"
+   },
+   {
+    "name": "mcp",
+    "evidence_url": "https://developers.gamma.app/docs/getting-started",
+    "path_or_host": "mcp.gamma.app/mcp",
+    "separable": "sni",
+    "note": "Separate MCP host"
+   }
+  ],
+  "notes": "API and MCP hosts documented; web app host gamma.app unsourced by network doc.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "otter-ai",
+  "name": "Otter.ai",
+  "class": "genai",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "otter.ai",
+    "how_seen": "vendor main domain; help center returned 403, no official allowlist found; third-party IT pages list otter.ai as a bot domain",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://otter.ai",
+    "path_or_host": "otter.ai",
+    "separable": "sni",
+    "note": "Web app and notetaker; unverified"
+   },
+   {
+    "name": "meeting-bot",
+    "evidence_url": "https://otter.ai",
+    "path_or_host": "cloud-joined bot",
+    "separable": "pattern",
+    "note": "Bot joins from vendor cloud; not visible on client network"
+   }
+  ],
+  "notes": "help.otter.ai blocked fetch (403); no official domain list located. All domains unsourced.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "deepl",
+  "name": "DeepL",
+  "class": "genai",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api.deepl.com",
+    "role": "api",
+    "source_url": "https://developers.deepl.com/docs/api-reference/translate",
+    "quote": "https://api.deepl.com ... DeepL API Pro"
+   },
+   {
+    "domain": "api-free.deepl.com",
+    "role": "api",
+    "source_url": "https://developers.deepl.com/docs/api-reference/translate",
+    "quote": "https://api-free.deepl.com ... DeepL API Free"
+   },
+   {
+    "domain": "developers.deepl.com",
+    "role": "web",
+    "source_url": "https://developers.deepl.com/docs/api-reference/translate",
+    "quote": "developer documentation site"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "www.deepl.com",
+    "how_seen": "consumer translator web app; not on fetched official network doc",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api-text",
+    "evidence_url": "https://developers.deepl.com/docs/api-reference/translate",
+    "path_or_host": "POST api.deepl.com/v2/translate",
+    "separable": "sni",
+    "note": "Pro vs Free hosts separable by SNI"
+   },
+   {
+    "name": "document-upload",
+    "evidence_url": "https://developers.deepl.com/docs/api-reference/document",
+    "path_or_host": "POST /v2/document",
+    "separable": "http",
+    "note": "Same host as text API; needs HTTP path"
+   },
+   {
+    "name": "voice",
+    "evidence_url": "https://developers.deepl.com/docs/api-reference/translate",
+    "path_or_host": "REST then WebSocket streaming URL",
+    "separable": "pattern",
+    "note": "Streaming URL path not documented on page"
+   }
+  ],
+  "notes": "API hosts well documented; consumer web translator host not sourced.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "mail-ru",
+  "name": "Mail.ru webmail",
+  "class": "webmail",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "imap.mail.ru",
+    "role": "other",
+    "source_url": "https://help.mail.ru/mail/mailer/popsmtp",
+    "quote": "server imap.mail.ru, port 993, SSL/TLS"
+   },
+   {
+    "domain": "smtp.mail.ru",
+    "role": "other",
+    "source_url": "https://help.mail.ru/mail/mailer/popsmtp",
+    "quote": "SMTP server smtp.mail.ru, port 465, SSL/TLS"
+   },
+   {
+    "domain": "pop.mail.ru",
+    "role": "other",
+    "source_url": "https://help.mail.ru/mail/mailer/popsmtp",
+    "quote": "POP3 server pop.mail.ru, port 995, SSL/TLS"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "mail.ru / e.mail.ru / account.mail.ru",
+    "how_seen": "webmail and auth hosts from public use; not on fetched doc",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "imap",
+    "evidence_url": "https://help.mail.ru/mail/mailer/popsmtp",
+    "path_or_host": "imap.mail.ru:993",
+    "separable": "sni",
+    "note": "Mail client access"
+   },
+   {
+    "name": "smtp-send",
+    "evidence_url": "https://help.mail.ru/mail/mailer/popsmtp",
+    "path_or_host": "smtp.mail.ru:465",
+    "separable": "sni",
+    "note": "Outbound send via client"
+   },
+   {
+    "name": "webmail",
+    "evidence_url": "https://help.mail.ru/",
+    "path_or_host": "e.mail.ru",
+    "separable": "sni",
+    "note": "Unsourced host; web UI"
+   }
+  ],
+  "notes": "Mail protocol hosts sourced from official help; webmail UI and CDN hosts not sourced.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "temp-mail",
+  "name": "Temp-Mail (temp-mail.io disposable email)",
+  "class": "webmail",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api.temp-mail.io",
+    "role": "api",
+    "source_url": "https://docs.temp-mail.io/docs/getting-started",
+    "quote": "Base URL: https://api.temp-mail.io"
+   },
+   {
+    "domain": "docs.temp-mail.io",
+    "role": "web",
+    "source_url": "https://docs.temp-mail.io/docs/getting-started",
+    "quote": "official API documentation site"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "temp-mail.io",
+    "how_seen": "consumer site referenced in search results (temp-mail.io/api); temp-mail.org is a separate service",
+    "sourced": false
+   },
+   {
+    "domain": "temp-mail.org",
+    "how_seen": "different, similarly named service; not researched",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "create-address",
+    "evidence_url": "https://docs.temp-mail.io/docs/getting-started",
+    "path_or_host": "POST /v1/emails",
+    "separable": "http",
+    "note": "Paid API; same host as other calls"
+   },
+   {
+    "name": "read-messages",
+    "evidence_url": "https://docs.temp-mail.io/docs/getting-started",
+    "path_or_host": "GET /v1/emails/{email}/messages",
+    "separable": "http",
+    "note": "Needs HTTP path"
+   },
+   {
+    "name": "api-host",
+    "evidence_url": "https://docs.temp-mail.io/docs/getting-started",
+    "path_or_host": "api.temp-mail.io",
+    "separable": "sni",
+    "note": "Distinct API host"
+   }
+  ],
+  "notes": "Disposable-email category has many unrelated look-alike domains; only temp-mail.io API sourced. Disposable inbox domains are not enumerable.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "hey-com",
+  "name": "Hey.com",
+  "class": "webmail",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "app.hey.com",
+    "role": "web",
+    "source_url": "https://www.hey.com/faqs/",
+    "quote": "sign-in and sign-up site, password reset page"
+   },
+   {
+    "domain": "help.hey.com",
+    "role": "other",
+    "source_url": "https://www.hey.com/faqs/",
+    "quote": "help center"
+   },
+   {
+    "domain": "hey.com",
+    "role": "web",
+    "source_url": "https://www.hey.com/faqs/",
+    "quote": "support@hey.com"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "webmail",
+    "evidence_url": "https://www.hey.com/faqs/",
+    "path_or_host": "app.hey.com",
+    "separable": "sni",
+    "note": "Web and native apps use same host"
+   },
+   {
+    "name": "imap-smtp",
+    "evidence_url": "https://www.hey.com/faqs/",
+    "path_or_host": "none",
+    "separable": "no",
+    "note": "HEY doesn't support IMAP or POP"
+   }
+  ],
+  "notes": "No IMAP/POP/SMTP; hosts derived from FAQ page, not a network-requirements page. Firewall guidance absent.",
+  "confidence": "medium",
+  "status": "active"
+ }
+]

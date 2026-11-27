@@ -1,0 +1,655 @@
+[
+ {
+  "id": "okx",
+  "name": "OKX",
+  "class": "crypto",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "openapi.okx.com",
+    "role": "api",
+    "source_url": "https://www.okx.com/docs-v5/en/",
+    "quote": "REST: https://openapi.okx.com"
+   },
+   {
+    "domain": "ws.okx.com",
+    "role": "api",
+    "source_url": "https://www.okx.com/docs-v5/en/",
+    "quote": "wss://ws.okx.com/ws/v5/public"
+   },
+   {
+    "domain": "wspap.okx.com",
+    "role": "api",
+    "source_url": "https://www.okx.com/docs-v5/en/",
+    "quote": "wss://wspap.okx.com/ws/v5/public (demo trading)"
+   },
+   {
+    "domain": "us.okx.com",
+    "role": "api",
+    "source_url": "https://www.okx.com/docs-v5/en/",
+    "quote": "US & AU users: us.okx.com"
+   },
+   {
+    "domain": "eea.okx.com",
+    "role": "api",
+    "source_url": "https://www.okx.com/docs-v5/en/",
+    "quote": "EU users: eea.okx.com"
+   },
+   {
+    "domain": "www.okx.com",
+    "role": "web",
+    "source_url": "https://www.okx.com/docs-v5/en/",
+    "quote": "documentation and account pages, such as www.okx.com"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "app.okx.com / my.okx.com",
+    "how_seen": "named on docs page only as account/doc links; no network-requirements doc found",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base-web",
+    "evidence_url": "https://www.okx.com/docs-v5/en/",
+    "path_or_host": "www.okx.com",
+    "separable": "sni",
+    "note": "Web trading UI host"
+   },
+   {
+    "name": "api-rest",
+    "evidence_url": "https://www.okx.com/docs-v5/en/",
+    "path_or_host": "openapi.okx.com /api/v5/*",
+    "separable": "sni",
+    "note": "Distinct API hostname; regional variants us/eea"
+   },
+   {
+    "name": "api-websocket",
+    "evidence_url": "https://www.okx.com/docs-v5/en/",
+    "path_or_host": "ws.okx.com /ws/v5/{public,private,business}",
+    "separable": "sni",
+    "note": "Distinct WS host; channel split only by path (http)"
+   },
+   {
+    "name": "trading-orders",
+    "evidence_url": "https://www.okx.com/docs-v5/en/",
+    "path_or_host": "POST /api/v5/trade/order",
+    "separable": "http",
+    "note": "Order placement vs market data needs path visibility"
+   }
+  ],
+  "notes": "API hosts well documented; consumer web/app hosts and wallet/DEX hosts not listed in official docs fetched.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "bybit",
+  "name": "Bybit",
+  "class": "crypto",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api.bybit.com",
+    "role": "api",
+    "source_url": "https://bybit-exchange.github.io/docs/v5/guide",
+    "quote": "Mainnet: https://api.bybit.com"
+   },
+   {
+    "domain": "api.bytick.com",
+    "role": "api",
+    "source_url": "https://bybit-exchange.github.io/docs/v5/guide",
+    "quote": "https://api.bytick.com (both available)"
+   },
+   {
+    "domain": "stream.bybit.com",
+    "role": "api",
+    "source_url": "https://bybit-exchange.github.io/docs/v5/ws/connect",
+    "quote": "stream.bybit.com default mainnet host"
+   },
+   {
+    "domain": "api-testnet.bybit.com",
+    "role": "api",
+    "source_url": "https://bybit-exchange.github.io/docs/v5/guide",
+    "quote": "Testnet: https://api-testnet.bybit.com"
+   },
+   {
+    "domain": "stream-testnet.bybit.com",
+    "role": "api",
+    "source_url": "https://bybit-exchange.github.io/docs/v5/ws/connect",
+    "quote": "stream-testnet.bybit.com the only testnet host"
+   },
+   {
+    "domain": "api.bybit.eu",
+    "role": "api",
+    "source_url": "https://bybit-exchange.github.io/docs/v5/guide",
+    "quote": "EEA (api.bybit.eu)"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "www.bybit.com",
+    "how_seen": "implied as registration site; regional www.* mentioned on WS page, no network doc",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api-rest",
+    "evidence_url": "https://bybit-exchange.github.io/docs/v5/guide",
+    "path_or_host": "api.bybit.com /v5/*",
+    "separable": "sni",
+    "note": "Distinct hostname"
+   },
+   {
+    "name": "api-websocket",
+    "evidence_url": "https://bybit-exchange.github.io/docs/v5/ws/connect",
+    "path_or_host": "stream.bybit.com",
+    "separable": "sni",
+    "note": "Distinct hostname"
+   },
+   {
+    "name": "order-create",
+    "evidence_url": "https://bybit-exchange.github.io/docs/v5/guide",
+    "path_or_host": "POST /v5/order/create",
+    "separable": "http",
+    "note": "Needs TLS inspection to separate from market data"
+   },
+   {
+    "name": "regional-variants",
+    "evidence_url": "https://bybit-exchange.github.io/docs/v5/guide",
+    "path_or_host": "api.bybit.{tr,kz,eu,id,ae}, api.manepa.jp",
+    "separable": "sni",
+    "note": "Many regional TLDs; list requires maintenance"
+   }
+  ],
+  "notes": "Official docs list many regional API/stream hosts; consumer web domains not verified from official docs.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "kucoin",
+  "name": "KuCoin",
+  "class": "crypto",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api.kucoin.com",
+    "role": "api",
+    "source_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "quote": "Spot & Margin REST: https://api.kucoin.com"
+   },
+   {
+    "domain": "api-futures.kucoin.com",
+    "role": "api",
+    "source_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "quote": "Futures REST: https://api-futures.kucoin.com"
+   },
+   {
+    "domain": "api-broker.kucoin.com",
+    "role": "api",
+    "source_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "quote": "Broker REST: https://api-broker.kucoin.com"
+   },
+   {
+    "domain": "ws-api-spot.kucoin.com",
+    "role": "api",
+    "source_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "quote": "wss://ws-api-spot.kucoin.com"
+   },
+   {
+    "domain": "ws-api-futures.kucoin.com",
+    "role": "api",
+    "source_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "quote": "wss://ws-api-futures.kucoin.com"
+   },
+   {
+    "domain": "wsapi.kucoin.com",
+    "role": "api",
+    "source_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "quote": "wss://wsapi.kucoin.com Websocket Add/Cancel Order"
+   },
+   {
+    "domain": "x-push-spot.kucoin.com",
+    "role": "api",
+    "source_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "quote": "wss://x-push-spot.kucoin.com"
+   },
+   {
+    "domain": "wsapi-push.kucoin.com",
+    "role": "api",
+    "source_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "quote": "wss://wsapi-push.kucoin.com Private Websocket Push"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "www.kucoin.com",
+    "how_seen": "docs host itself; no official allowlist page",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api-spot-rest",
+    "evidence_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "path_or_host": "api.kucoin.com",
+    "separable": "sni",
+    "note": "Distinct hostname"
+   },
+   {
+    "name": "api-futures-rest",
+    "evidence_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "path_or_host": "api-futures.kucoin.com",
+    "separable": "sni",
+    "note": "Futures separable by host (classic accounts)"
+   },
+   {
+    "name": "ws-order-entry",
+    "evidence_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "path_or_host": "wsapi.kucoin.com",
+    "separable": "sni",
+    "note": "Order add/cancel host separate from push feeds"
+   },
+   {
+    "name": "broker-api",
+    "evidence_url": "https://www.kucoin.com/docs/basic-info/connection-method/request/api-domain",
+    "path_or_host": "api-broker.kucoin.com",
+    "separable": "sni",
+    "note": "Broker/partner API"
+   }
+  ],
+  "notes": "API hosts clearly sourced; web UI and CDN hosts not verified. Classic vs unified account use different WS hosts.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "bitget",
+  "name": "Bitget",
+  "class": "crypto",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api.bitget.com",
+    "role": "api",
+    "source_url": "https://bitgetlimited.github.io/apidoc/en/spot/",
+    "quote": "Main Domain: https://api.bitget.com"
+   },
+   {
+    "domain": "capi.bitget.com",
+    "role": "api",
+    "source_url": "https://bitgetlimited.github.io/apidoc/en/spot/",
+    "quote": "Old domain: https://capi.bitget.com"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "ws.bitget.com",
+    "how_seen": "commonly cited for WS; not confirmed on fetched official pages (page truncated)",
+    "unsourced": true
+   },
+   {
+    "domain": "www.bitget.com",
+    "how_seen": "seen as docs/support host on official api-doc pages",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api-rest",
+    "evidence_url": "https://bitgetlimited.github.io/apidoc/en/spot/",
+    "path_or_host": "api.bitget.com",
+    "separable": "sni",
+    "note": "Distinct hostname"
+   },
+   {
+    "name": "api-websocket",
+    "evidence_url": "https://bitgetlimited.github.io/apidoc/en/spot/",
+    "path_or_host": "WS host (unconfirmed)",
+    "separable": "sni",
+    "note": "Hostname not verified from official page"
+   },
+   {
+    "name": "trade-orders",
+    "evidence_url": "https://bitgetlimited.github.io/apidoc/en/spot/",
+    "path_or_host": "POST /api/v2/spot/trade/place-order",
+    "separable": "http",
+    "note": "Path unverified here; needs HTTP visibility"
+   }
+  ],
+  "notes": "New UTA docs list no hostnames; legacy docs give api.bitget.com. WS and web hosts unconfirmed.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "uniswap",
+  "name": "Uniswap",
+  "class": "crypto",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "gateway.thegraph.com",
+    "role": "api",
+    "source_url": "https://developers.uniswap.org/llms.mdx/docs/ecosystem/subgraphs/overview",
+    "quote": "gateway.thegraph.com serves each GraphQL endpoint (v1-v4 subgraphs)"
+   },
+   {
+    "domain": "developers.uniswap.org",
+    "role": "web",
+    "source_url": "https://developers.uniswap.org/api/subgraph/overview",
+    "quote": "docs.uniswap.org redirects (301) to developers.uniswap.org"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "app.uniswap.org",
+    "how_seen": "known web app; not named on fetched official pages",
+    "unsourced": true
+   },
+   {
+    "domain": "interface.gateway.uniswap.org / trade-api.gateway.uniswap.org",
+    "how_seen": "from general knowledge of app traffic; not verified",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "web-app",
+    "evidence_url": "(unverified)",
+    "path_or_host": "app.uniswap.org",
+    "separable": "sni",
+    "note": "Frontend; wallet signing happens locally, chain RPC is separate"
+   },
+   {
+    "name": "subgraph-query",
+    "evidence_url": "https://developers.uniswap.org/llms.mdx/docs/ecosystem/subgraphs/overview",
+    "path_or_host": "gateway.thegraph.com/api/<key>/subgraphs/id/<id>",
+    "separable": "http",
+    "note": "Shared The Graph host, not Uniswap-specific; id in path"
+   },
+   {
+    "name": "onchain-swap",
+    "evidence_url": "n/a",
+    "path_or_host": "JSON-RPC to third-party node providers",
+    "separable": "no",
+    "note": "Swap tx goes to arbitrary RPC hosts; not Uniswap-separable"
+   }
+  ],
+  "notes": "Decentralized protocol; official docs name only The Graph gateway. Web app hosts not confirmed on docs pages.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "trust-wallet",
+  "name": "Trust Wallet",
+  "class": "crypto",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "mcp.trustwallet.com",
+    "role": "api",
+    "source_url": "https://developer.trustwallet.com/developer/mcp/api-gateway",
+    "quote": "MCP endpoint mcp.trustwallet.com/tws (per search summary of page)"
+   },
+   {
+    "domain": "tws.trustwallet.com",
+    "role": "api",
+    "source_url": "https://portal.trustwallet.com/terms-of-service",
+    "quote": "Agent Skills APIs at tws.trustwallet.com"
+   },
+   {
+    "domain": "portal.trustwallet.com",
+    "role": "auth",
+    "source_url": "https://portal.trustwallet.com/terms-of-service",
+    "quote": "Access ID and HMAC secret from portal.trustwallet.com"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "assets-cdn.trustwallet.com",
+    "how_seen": "third-party skills.sh page icon URLs; no official doc",
+    "unsourced": true
+   },
+   {
+    "domain": "trustwallet.com",
+    "how_seen": "vendor site; developer.trustwallet.com fetches redirected to it",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "swap-quote",
+    "evidence_url": "https://developer.trustwallet.com/developer/mcp/api-gateway",
+    "path_or_host": "get_swap_quote via mcp.trustwallet.com/tws",
+    "separable": "sni",
+    "note": "Developer API host, not wallet-app traffic"
+   },
+   {
+    "name": "asset-metadata",
+    "evidence_url": "https://developer.trustwallet.com/llms.txt",
+    "path_or_host": "GET /v1/assets (tws host)",
+    "separable": "http",
+    "note": "Secondary-source path"
+   },
+   {
+    "name": "wallet-app-rpc",
+    "evidence_url": "n/a",
+    "path_or_host": "chain RPC / backend hosts",
+    "separable": "no",
+    "note": "Consumer app backends not documented"
+   }
+  ],
+  "notes": "Only developer-platform hosts documented; mobile wallet app/extension backend hosts not found in official docs.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "ledger-live",
+  "name": "Ledger Live",
+  "class": "crypto",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "support.ledger.com",
+    "how_seen": "official help center; no network-requirements page found (fetch returned empty)",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "n/a",
+    "path_or_host": "unknown",
+    "separable": "no",
+    "note": "No official host list found; third-party says TLS1.2+ and cert pinning (unverified)"
+   }
+  ],
+  "notes": "No official allowlist located; searches returned only third-party pages. Needs dedicated follow-up.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "qbittorrent",
+  "name": "qBittorrent",
+  "class": "p2p",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "qbittorrent.org",
+    "how_seen": "project site; no official hosts for network requirements",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "bittorrent-peer",
+    "evidence_url": "https://github.com/qbittorrent/qBittorrent/wiki/Explanation-of-Options-in-qBittorrent",
+    "path_or_host": "single configurable incoming TCP/UDP port",
+    "separable": "pattern",
+    "note": "Peer-to-peer; no fixed hostnames"
+   },
+   {
+    "name": "dht",
+    "evidence_url": "https://github.com/qbittorrent/qBittorrent/wiki/Explanation-of-Options-in-qBittorrent",
+    "path_or_host": "UDP on listen port",
+    "separable": "pattern",
+    "note": "DHT tracker-independent peer discovery"
+   },
+   {
+    "name": "tracker-announce",
+    "evidence_url": "https://www.github.com/qbittorrent/qBittorrent/wiki/How-to-use-qBittorrent-as-a-tracker",
+    "path_or_host": "HTTP GET /announce to arbitrary trackers",
+    "separable": "http",
+    "note": "Needs HTTP visibility; hosts vary per torrent"
+   }
+  ],
+  "notes": "Protocol-level detection; no vendor-fixed domains. Embedded tracker default port 9000 (disabled by default).",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "utorrent",
+  "name": "uTorrent",
+  "class": "p2p",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "utorrent.com / bittorrent.com",
+    "how_seen": "vendor sites; search found only forum posts, no official network doc",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "bittorrent-peer",
+    "evidence_url": "https://blog.utorrent.com/?p=237",
+    "path_or_host": "incoming TCP/UDP port (default 6881-range per community)",
+    "separable": "pattern",
+    "note": "Port default only from community sources"
+   },
+   {
+    "name": "dht",
+    "evidence_url": "https://forum.utorrent.com/topic/85487-what-incoming-outgoing-tcp-udp-ports-must-be-opened/",
+    "path_or_host": "UDP on main port",
+    "separable": "pattern",
+    "note": "Community forum, not official doc"
+   }
+  ],
+  "notes": "No official domain list found; detection via BitTorrent protocol. Ad/update hosts unverified.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "soulseek",
+  "name": "Soulseek",
+  "class": "p2p",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "server.slsknet.org",
+    "how_seen": "default host in Nicotine+ config and slsk-client; community protocol docs, not vendor",
+    "unsourced": true
+   },
+   {
+    "domain": "slsknet.org",
+    "how_seen": "vendor site",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "server-login",
+    "evidence_url": "https://nicotine-plus.org/doc/SLSKPROTOCOL.html",
+    "path_or_host": "server.slsknet.org:2242",
+    "separable": "sni",
+    "note": "Hostname/port from community docs; protocol is custom non-TLS so SNI absent; DNS/port match"
+   },
+   {
+    "name": "peer-transfer",
+    "evidence_url": "https://nicotine-plus.org/doc/SLSKPROTOCOL.html",
+    "path_or_host": "client listen port default 2234",
+    "separable": "pattern",
+    "note": "Direct peer connections"
+   }
+  ],
+  "notes": "Proprietary, undocumented by vendor; only community reverse-engineered docs. Not TLS, so SNI inapplicable.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "resilio-sync",
+  "name": "Resilio Sync",
+  "class": "p2p",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "config.resilio.com",
+    "role": "other",
+    "source_url": "https://help.resilio.com/hc/en-us/articles/204754759",
+    "quote": "https://config.resilio.com/sync.conf, port 80/HTTPS (per search summary)"
+   },
+   {
+    "domain": "connect-license.resilio.com",
+    "role": "other",
+    "source_url": "https://docs.resilio.com/content/getting-started/ports-protocols-port-forwarding/",
+    "quote": "https://connect-license.resilio.com/check_connect.php on port 443"
+   },
+   {
+    "domain": "upload.resilio.com",
+    "role": "other",
+    "source_url": "https://docs.resilio.com/content/getting-started/ports-protocols-port-forwarding/",
+    "quote": "support case creation with automated log upload"
+   },
+   {
+    "domain": "feedback.resilio.com",
+    "role": "other",
+    "source_url": "https://docs.resilio.com/content/getting-started/ports-protocols-port-forwarding/",
+    "quote": "manual log uploads; leads to upload.resilio.com"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "tracker/relay hostnames",
+    "how_seen": "obtained dynamically from sync.conf; community gists list IPs; not stated by vendor",
+    "unsourced": true
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "config-fetch",
+    "evidence_url": "https://help.resilio.com/hc/en-us/articles/204754759",
+    "path_or_host": "config.resilio.com/sync.conf",
+    "separable": "sni",
+    "note": "Distinct hostname, Sync client bootstrap"
+   },
+   {
+    "name": "tracker",
+    "evidence_url": "https://docs.resilio.com/content/getting-started/ports-protocols-port-forwarding/",
+    "path_or_host": "port 3000 TCP/UDP (Connect agent); Sync tracker 4000 per community",
+    "separable": "pattern",
+    "note": "Tracker host dynamic"
+   },
+   {
+    "name": "relay",
+    "evidence_url": "https://help.resilio.com/hc/en-us/articles/204754759",
+    "path_or_host": "TCP relay fallback, dynamic hosts",
+    "separable": "pattern",
+    "note": "Used when direct connect fails"
+   },
+   {
+    "name": "p2p-transfer",
+    "evidence_url": "https://docs.resilio.com/content/getting-started/ports-protocols-port-forwarding/",
+    "path_or_host": "3839 TCP/UDP between Agents (Connect)",
+    "separable": "pattern",
+    "note": "Sync desktop port is user-configurable"
+   }
+  ],
+  "notes": "Docs fetched were for Connect/Agent; Sync consumer hosts (tracker/relay) dynamic. help.resilio.com 403'd on direct fetch.",
+  "confidence": "low",
+  "status": "active"
+ }
+]

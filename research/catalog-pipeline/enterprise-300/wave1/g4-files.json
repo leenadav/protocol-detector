@@ -1,0 +1,503 @@
+[
+ {
+  "id": "citrix-sharefile",
+  "name": "Citrix ShareFile",
+  "class": "file-sharing",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "sharefile.com",
+    "role": "web",
+    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "quote": "ShareFile recommends including the following domains on your whitelist when possible."
+   },
+   {
+    "domain": "sf-api.com",
+    "role": "api",
+    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "quote": "*.sf-api.com"
+   },
+   {
+    "domain": "sharefile.eu",
+    "role": "web",
+    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "quote": "*.sharefile.eu"
+   },
+   {
+    "domain": "sf-api.eu",
+    "role": "api",
+    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "quote": "*.sf-api.eu"
+   },
+   {
+    "domain": "sharefileftp.com",
+    "role": "other",
+    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "quote": "ftp-hipaa.sharefileftp.com is the dedicated FTP endpoint for HIPAA customer traffic."
+   },
+   {
+    "domain": "sf-cdn.net",
+    "role": "cdn",
+    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "quote": "*.sf-cdn.net"
+   },
+   {
+    "domain": "securevdr.com",
+    "role": "web",
+    "source_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "quote": "*.securevdr.com"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "path_or_host": "*.sharefile.com",
+    "separable": "sni",
+    "note": "Web app tenants are subdomains of sharefile.com"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "path_or_host": "*.sf-api.com",
+    "separable": "sni",
+    "note": "Distinct API/storage hostnames"
+   },
+   {
+    "name": "ftp",
+    "evidence_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "path_or_host": "ftp-*.sharefileftp.com",
+    "separable": "sni",
+    "note": "Separate FTP endpoints, regional"
+   },
+   {
+    "name": "upload",
+    "evidence_url": "https://docs.sharefile.com/en-us/sharefile/configure/firewall-ip.html",
+    "path_or_host": "unspecified path on sharefile/sf-api hosts",
+    "separable": "http",
+    "note": "Upload vs download needs method/path; not documented in firewall page"
+   }
+  ],
+  "notes": "Vendor firewall page lists wildcard domains; tenant subdomains vary. Wildcards give clean SNI-level blocking of the whole service.",
+  "confidence": "high",
+  "status": "active"
+ },
+ {
+  "id": "tresorit",
+  "name": "Tresorit",
+  "class": "file-sharing",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "tresorit.com",
+    "how_seen": "Vendor support site host (support.tresorit.com); app host list is in a CSV I could not retrieve (403)",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://support.tresorit.com/hc/en-us/articles/216114237-Network-troubleshooter-guide",
+    "path_or_host": "tresorit hostnames per vendor CSV (not retrieved)",
+    "separable": "sni",
+    "note": "Vendor publishes hostname and IP lists; 443 for all app traffic"
+   },
+   {
+    "name": "tls-inspection",
+    "evidence_url": "https://support.tresorit.com/hc/en-us/articles/216114237-Network-troubleshooter-guide",
+    "path_or_host": "n/a",
+    "separable": "no",
+    "note": "Vendor states not compatible with TLS interception, so http-level separation unlikely"
+   }
+  ],
+  "notes": "Official guide fetch returned 403; hostname list unverified. Search summary: Azure-hosted, 443 plus port 80 for CRLs, no TLS interception support.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "smash",
+  "name": "Smash (fromsmash.com)",
+  "class": "file-sharing",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api.fromsmash.com",
+    "role": "api",
+    "source_url": "https://api.fromsmash.com/docs/api-reference",
+    "quote": "Smash API & SDK"
+   },
+   {
+    "domain": "developer.fromsmash.com",
+    "role": "auth",
+    "source_url": "https://api.fromsmash.com/docs/api-reference",
+    "quote": "Sign In"
+   },
+   {
+    "domain": "fromsmash.com",
+    "role": "web",
+    "source_url": "https://api.fromsmash.com/docs/api-reference",
+    "quote": "Smash Free, Smash Premium"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "regional Smash API hosts used by SDK",
+    "how_seen": "SDK README mentions region per API key; hosts not verified",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://api.fromsmash.com/docs/api-reference",
+    "path_or_host": "fromsmash.com",
+    "separable": "sni",
+    "note": "Consumer site"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://api.fromsmash.com/docs/api-reference",
+    "path_or_host": "api.fromsmash.com (docs) / regional API hosts unverified",
+    "separable": "sni",
+    "note": "API reference marked incomplete"
+   },
+   {
+    "name": "upload",
+    "evidence_url": "https://api.fromsmash.com/docs/api-reference",
+    "path_or_host": "signed upload URL, third-party description only",
+    "separable": "http",
+    "note": "Unconfirmed"
+   }
+  ],
+  "notes": "Official API reference is incomplete ('docs will be available soon'). Upload/storage hosts not confirmed from official sources.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "filemail",
+  "name": "Filemail",
+  "class": "file-sharing",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "api-public.filemail.com",
+    "role": "api",
+    "source_url": "https://docs.filemail.com/api/sending-files/initialize",
+    "quote": "production server: https://api-public.filemail.com"
+   },
+   {
+    "domain": "filemail.com",
+    "role": "web",
+    "source_url": "https://docs.filemail.com/api/sending-files/upload-files",
+    "quote": "https://8888.filemail.com/savefile.ashx"
+   },
+   {
+    "domain": "docs.filemail.com",
+    "role": "other",
+    "source_url": "https://docs.filemail.com/api/sending-files/initialize",
+    "quote": "Filemail API Docs"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "initialize",
+    "evidence_url": "https://docs.filemail.com/api/sending-files/initialize",
+    "path_or_host": "POST api-public.filemail.com/transfer/initialize",
+    "separable": "sni",
+    "note": "Distinct API host"
+   },
+   {
+    "name": "upload",
+    "evidence_url": "https://docs.filemail.com/api/sending-files/upload-files",
+    "path_or_host": "POST <n>.filemail.com/savefile.ashx",
+    "separable": "sni",
+    "note": "Upload server hostname is numbered subdomain of filemail.com; path savefile.ashx needs http"
+   },
+   {
+    "name": "complete",
+    "evidence_url": "https://docs.filemail.com/api/sending-files/complete",
+    "path_or_host": "PUT /transfer/complete",
+    "separable": "http",
+    "note": "Same API host as initialize"
+   }
+  ],
+  "notes": "API host and numbered upload server subdomains documented. Download hosts not covered.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "swisstransfer",
+  "name": "SwissTransfer (Infomaniak)",
+  "class": "file-sharing",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "swisstransfer.com",
+    "role": "web",
+    "source_url": "https://www.infomaniak.com/en/support/faq/1751/discover-the-official-domains-used-by-infomaniak",
+    "quote": "Large file transfer service (SwissTransfer)"
+   },
+   {
+    "domain": "infomaniakusercontent.com",
+    "role": "download",
+    "source_url": "https://www.infomaniak.com/en/support/faq/1751/discover-the-official-domains-used-by-infomaniak",
+    "quote": "Primarily used for file storage and downloading."
+   },
+   {
+    "domain": "ksharelink.com",
+    "role": "other",
+    "source_url": "https://www.infomaniak.com/en/support/faq/1751/discover-the-official-domains-used-by-infomaniak",
+    "quote": "public sharing links created from kDrive and Mail Infomaniak."
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "api.swisstransfer.com",
+    "how_seen": "not found on official docs; assumed API host, unverified",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://www.infomaniak.com/en/support/faq/1751/discover-the-official-domains-used-by-infomaniak",
+    "path_or_host": "swisstransfer.com",
+    "separable": "sni",
+    "note": "Web app and upload entry"
+   },
+   {
+    "name": "storage",
+    "evidence_url": "https://www.infomaniak.com/en/support/faq/1751/discover-the-official-domains-used-by-infomaniak",
+    "path_or_host": "infomaniakusercontent.com",
+    "separable": "sni",
+    "note": "Shared with kDrive, so blocking affects other Infomaniak products"
+   },
+   {
+    "name": "upload",
+    "evidence_url": "https://www.infomaniak.com/en/swisstransfer",
+    "path_or_host": "swisstransfer.com upload",
+    "separable": "http",
+    "note": "API path not documented officially"
+   }
+  ],
+  "notes": "Infomaniak domain FAQ names swisstransfer.com; no official SwissTransfer API/upload host list found. Storage domain shared with kDrive.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "terabox",
+  "name": "Terabox",
+  "class": "file-sharing",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "terabox.com",
+    "how_seen": "third-party Firefox add-on / urlscan listing, no official vendor doc",
+    "sourced": false
+   },
+   {
+    "domain": "1024tera.com",
+    "how_seen": "third-party Firefox add-on / urlscan listing, no official vendor doc",
+    "sourced": false
+   },
+   {
+    "domain": "terabox.app",
+    "how_seen": "third-party Firefox add-on / urlscan listing, no official vendor doc",
+    "sourced": false
+   },
+   {
+    "domain": "1024terabox.com",
+    "how_seen": "third-party Firefox add-on / urlscan listing, no official vendor doc",
+    "sourced": false
+   },
+   {
+    "domain": "mirrobox.com",
+    "how_seen": "third-party Firefox add-on / urlscan listing, no official vendor doc",
+    "sourced": false
+   },
+   {
+    "domain": "nephobox.com",
+    "how_seen": "third-party Firefox add-on / urlscan listing, no official vendor doc",
+    "sourced": false
+   },
+   {
+    "domain": "4funbox.com",
+    "how_seen": "third-party Firefox add-on / urlscan listing, no official vendor doc",
+    "sourced": false
+   },
+   {
+    "domain": "terafileshare.com",
+    "how_seen": "third-party Firefox add-on / urlscan listing, no official vendor doc",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "upload",
+    "evidence_url": "https://herobenhero.github.io/1024TeraBox-REST-API/api/upload.html",
+    "path_or_host": "xpan/file precreate, superfile2 (unofficial)",
+    "separable": "http",
+    "note": "Unofficial community docs; three-phase precreate/upload/create"
+   },
+   {
+    "name": "base",
+    "evidence_url": "https://herobenhero.github.io/1024TeraBox-REST-API/api/upload.html",
+    "path_or_host": "terabox.com family",
+    "separable": "sni",
+    "note": "Many mirror domains; unofficial"
+   }
+  ],
+  "notes": "No official vendor domain/network doc found; all domains from third-party sources. Multiple mirror domains complicate matching.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "baidu-netdisk",
+  "name": "Baidu Netdisk",
+  "class": "file-sharing",
+  "pack_overlap": "partial: baidu.com already under an app (domain only)",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "pan.baidu.com",
+    "how_seen": "host of official open platform doc URL pan.baidu.com/union/doc; no doc page text naming hosts retrieved",
+    "sourced": false
+   },
+   {
+    "domain": "d.pcs.baidu.com",
+    "how_seen": "third-party SDKs for upload node; unverified",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "upload",
+    "evidence_url": "https://pan.baidu.com/union/doc/3ksg0s9ye",
+    "path_or_host": "precreate / chunk upload / create (/rest/2.0/xpan/file method=precreate|create)",
+    "separable": "http",
+    "note": "Official nav lists precreate, chunked upload, create, get upload domain; paths from third-party SDK"
+   },
+   {
+    "name": "base",
+    "evidence_url": "https://pan.baidu.com/union/doc/3ksg0s9ye",
+    "path_or_host": "pan.baidu.com",
+    "separable": "sni",
+    "note": "Under baidu.com, already shipped in pack"
+   }
+  ],
+  "notes": "Official doc page lists upload steps but no hosts. baidu.com subdomains already in pack, so overlap likely covers it.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "yandex-disk",
+  "name": "Yandex Disk",
+  "class": "file-sharing",
+  "pack_overlap": "partial: yandex.net, yandex.ru, yandex.com already under an app (domain only)",
+  "domains": [
+   {
+    "domain": "cloud-api.yandex.net",
+    "role": "api",
+    "source_url": "https://yandex.ru/dev/yandex-360/disk/rest/en/reference/upload",
+    "quote": "https://cloud-api.yandex.net/v1/disk/resources/upload"
+   },
+   {
+    "domain": "dst.yandex.net",
+    "role": "download",
+    "source_url": "https://yandex.ru/dev/yandex-360/disk/rest/en/reference/upload",
+    "quote": "https://uploader1d.dst.yandex.net:443/upload-target/"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "disk.yandex.com / disk.yandex.ru",
+    "how_seen": "consumer web app, not named in fetched API docs",
+    "sourced": false
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "api",
+    "evidence_url": "https://yandex.ru/dev/yandex-360/disk/rest/en/reference/upload",
+    "path_or_host": "GET cloud-api.yandex.net/v1/disk/resources/upload",
+    "separable": "sni",
+    "note": "Distinct API hostname, yandex.net already in pack"
+   },
+   {
+    "name": "upload",
+    "evidence_url": "https://yandex.ru/dev/yandex-360/disk/rest/en/reference/upload",
+    "path_or_host": "PUT uploader*.dst.yandex.net/upload-target/",
+    "separable": "sni",
+    "note": "Upload hostname returned in href; no OAuth token needed"
+   },
+   {
+    "name": "web",
+    "evidence_url": "https://yandex.com/dev/disk-api/doc/en/index.md",
+    "path_or_host": "disk.yandex.*",
+    "separable": "http",
+    "note": "Shares parent domain with Yandex mail/search"
+   }
+  ],
+  "notes": "API and upload hosts documented; parent domains already in pack under other Yandex apps, so product-level separation needs hostname rules.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "pixeldrain",
+  "name": "Pixeldrain",
+  "class": "file-sharing",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "pixeldrain.com",
+    "role": "api",
+    "source_url": "https://pixeldrain.com/api",
+    "quote": "https://pixeldrain.com/api/file/"
+   },
+   {
+    "domain": "docs.pixeldrain.com",
+    "role": "other",
+    "source_url": "https://pixeldrain.com/api",
+    "quote": "https://docs.pixeldrain.com/filesystem/"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "upload",
+    "evidence_url": "https://pixeldrain.com/api",
+    "path_or_host": "POST /api/file; PUT /api/file/{name}",
+    "separable": "http",
+    "note": "Same host as web; needs method/path"
+   },
+   {
+    "name": "download",
+    "evidence_url": "https://pixeldrain.com/api",
+    "path_or_host": "GET /api/file/{id}",
+    "separable": "http",
+    "note": "Same host"
+   },
+   {
+    "name": "login",
+    "evidence_url": "https://pixeldrain.com/api",
+    "path_or_host": "POST /api/user/login",
+    "separable": "http",
+    "note": "Same host"
+   },
+   {
+    "name": "base",
+    "evidence_url": "https://pixeldrain.com/api",
+    "path_or_host": "pixeldrain.com",
+    "separable": "sni",
+    "note": "Single host for web and API"
+   }
+  ],
+  "notes": "Single hostname serves web and API; subfunctions separable only via HTTP inspection.",
+  "confidence": "high",
+  "status": "active"
+ }
+]

@@ -1,0 +1,394 @@
+[
+ {
+  "id": "cisco-secure-client",
+  "name": "Cisco Secure Client (AnyConnect)",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "software.cisco.com",
+    "role": "download",
+    "source_url": "https://www.cisco.com/c/en/us/support/docs/security/umbrella/224780-download-cisco-secure-client.pdf",
+    "quote": "download Cisco Secure Client"
+   },
+   {
+    "domain": "ocsp.digicert.com",
+    "role": "other",
+    "source_url": "https://docs.umbrella.com/umbrella-user-guide/docs/prerequisites-5",
+    "quote": "crl3.digicert.com crl4.digicert.com ocsp.digicert.com"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "headend gateway (customer-hosted ASA/FTD hostname)",
+    "how_seen": "unsourced: per-customer, no fixed vendor domain"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base-tunnel",
+    "evidence_url": "https://docs.umbrella.com/umbrella-user-guide/docs/prerequisites-5",
+    "path_or_host": "customer gateway hostname TCP/UDP 443 (TLS/DTLS)",
+    "separable": "sni",
+    "note": "Per-customer gateway hostnames, no vendor-wide domain"
+   },
+   {
+    "name": "swg-module",
+    "evidence_url": "https://docs.umbrella.com/umbrella-user-guide/docs/prerequisites-5",
+    "path_or_host": "Umbrella SWG CIDRs TCP 80/443",
+    "separable": "pattern",
+    "note": "Doc lists IP CIDRs, not hostnames"
+   }
+  ],
+  "notes": "Enterprise headend is customer-hosted; only download and CRL/OCSP hosts sourced. Prerequisites page fetch via securitydocs failed; relied on search snippets.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "paloalto-globalprotect",
+  "name": "Palo Alto GlobalProtect",
+  "class": "vpn",
+  "pack_overlap": "partial: googleapis.com already under (unknown app) - storage.googleapis.com is a shared bypass host",
+  "domains": [
+   {
+    "domain": "epm.gpcloudservice.com",
+    "role": "auth",
+    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "quote": "manages enrollment, authentication, and communication for Prisma Agent endpoints"
+   },
+   {
+    "domain": "apps.paloaltonetworks.com",
+    "role": "auth",
+    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "quote": "*.apps.paloaltonetworks.com"
+   },
+   {
+    "domain": "storage.googleapis.com",
+    "role": "download",
+    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "quote": "download Prisma Agent software images and OPSWAT binary updates"
+   },
+   {
+    "domain": "filter.paloaltonetworks.com",
+    "role": "other",
+    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "quote": "Network extension server address"
+   },
+   {
+    "domain": "docs.paloaltonetworks.com",
+    "role": "web",
+    "source_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "quote": "Support documentation"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "portal-prelogin",
+    "evidence_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "path_or_host": "<portal-fqdn>/global-protect/prelogin.esp",
+    "separable": "http",
+    "note": "Same host as portal; path needs TLS inspection"
+   },
+   {
+    "name": "portal-getconfig",
+    "evidence_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "path_or_host": "<portal-fqdn>/global-protect/getconfig.esp",
+    "separable": "http",
+    "note": "Path-level"
+   },
+   {
+    "name": "gateway-tunnel",
+    "evidence_url": "https://docs.paloaltonetworks.com/prisma-agent/administration/prerequisites/prisma-agent-fqdns-and-ports",
+    "path_or_host": "<gateway-fqdn> TCP 443 SSL / ESP UDP",
+    "separable": "sni",
+    "note": "Customer-hosted gateway hostname"
+   }
+  ],
+  "notes": "Sourced page is Prisma Agent, not classic GlobalProtect app; portal/gateway are customer or Prisma Access hosted.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "fortinet-forticlient-vpn",
+  "name": "Fortinet FortiClient VPN",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "forticlient.forticloud.com",
+    "role": "api",
+    "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "quote": "Endpoint management through FortiClient Cloud"
+   },
+   {
+    "domain": "fctguard.fortinet.net",
+    "role": "api",
+    "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "quote": "Web Filter URL ratings (Anycast, global)"
+   },
+   {
+    "domain": "fctupdate.fortinet.net",
+    "role": "update",
+    "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "quote": "AV and vulnerability signature updates (Anycast, global)"
+   },
+   {
+    "domain": "forticlient.fortinet.net",
+    "role": "update",
+    "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "quote": "AV and vulnerability signature updates"
+   },
+   {
+    "domain": "myforticlient.fortinet.net",
+    "role": "update",
+    "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "quote": "AV and vulnerability signature updates"
+   },
+   {
+    "domain": "aptctrl1.fortinet.com",
+    "role": "api",
+    "source_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "quote": "list of FortiClient Cloud Sandbox server addresses"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "vpn-tunnel",
+    "evidence_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "path_or_host": "FortiGate SSL VPN TCP 443; IPsec UDP 500/4500, ESP",
+    "separable": "sni",
+    "note": "Customer FortiGate hostname; IPsec not SNI-visible"
+   },
+   {
+    "name": "ems-cloud",
+    "evidence_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "path_or_host": "forticlient.forticloud.com:443",
+    "separable": "sni",
+    "note": "Management channel"
+   },
+   {
+    "name": "updates",
+    "evidence_url": "https://docs.fortinet.com/document/forticlient/7.2.4/administration-guide/539869/required-services-and-ports",
+    "path_or_host": "fctupdate.fortinet.net:443",
+    "separable": "sni",
+    "note": "Signature updates"
+   }
+  ],
+  "notes": "VPN endpoint is customer-hosted FortiGate; vendor domains are for management, updates, web filter.",
+  "confidence": "medium",
+  "status": "active"
+ },
+ {
+  "id": "ivanti-connect-secure",
+  "name": "Ivanti Connect Secure",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "download.pulsesecure.net",
+    "role": "download",
+    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
+    "quote": "Host Checker signatures"
+   },
+   {
+    "domain": "pcls.pulseone.net",
+    "role": "other",
+    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
+    "quote": "PCLS"
+   },
+   {
+    "domain": "service.pulsesecure.net",
+    "role": "api",
+    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
+    "quote": "Telemetry"
+   },
+   {
+    "domain": "help.ivanti.com",
+    "role": "web",
+    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
+    "quote": "Online Help Pages"
+   },
+   {
+    "domain": "forums.ivanti.com",
+    "role": "web",
+    "source_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
+    "quote": "KB links"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "vpn-tunnel",
+    "evidence_url": "https://help.ivanti.com/ps/help/en_US/ICS/22.x/22.7R2.8/spg/client_env_contents.htm",
+    "path_or_host": "customer ICS gateway TCP 443 (ESP/SSL)",
+    "separable": "sni",
+    "note": "Customer-hosted gateway"
+   },
+   {
+    "name": "hostchecker-updates",
+    "evidence_url": "https://help.ivanti.com/ps/help/en_US/IPS/22.x/ag/ips_enforcement_modes.htm",
+    "path_or_host": "download.pulsesecure.net",
+    "separable": "sni",
+    "note": "Signature download"
+   }
+  ],
+  "notes": "Allow-list page is Ivanti Policy Secure docs (same client family); applicability to Connect Secure inferred.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "twingate",
+  "name": "Twingate",
+  "class": "remote-access",
+  "pack_overlap": "none",
+  "domains": [
+   {
+    "domain": "twingate.com",
+    "role": "web",
+    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "quote": "*.twingate.com would suffice"
+   },
+   {
+    "domain": "api.twingate.com",
+    "role": "api",
+    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "quote": "api.twingate.com"
+   },
+   {
+    "domain": "relays.twingate.com",
+    "role": "relay",
+    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "quote": "relays.twingate.com"
+   },
+   {
+    "domain": "saml.twingate.com",
+    "role": "auth",
+    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "quote": "saml.twingate.com"
+   },
+   {
+    "domain": "binaries.twingate.com",
+    "role": "download",
+    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "quote": "binaries.twingate.com"
+   },
+   {
+    "domain": "pubnub.com",
+    "role": "other",
+    "source_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "quote": "pubsub.pubnub.com"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "tenant-login",
+    "evidence_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "path_or_host": "<network>.twingate.com / <network>.<region>.twingate.com",
+    "separable": "sni",
+    "note": "Per-tenant hostname"
+   },
+   {
+    "name": "relay",
+    "evidence_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "path_or_host": "relays*.twingate.com TCP 443, 30000-31000",
+    "separable": "sni",
+    "note": "Relay fallback"
+   },
+   {
+    "name": "p2p-stun",
+    "evidence_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "path_or_host": "stun.<region>.twingate.com UDP",
+    "separable": "pattern",
+    "note": "Peer-to-peer UDP"
+   },
+   {
+    "name": "api",
+    "evidence_url": "https://help.twingate.com/hc/en-us/articles/14142225907485",
+    "path_or_host": "api.twingate.com",
+    "separable": "sni",
+    "note": "Control API"
+   }
+  ],
+  "notes": "Official allowlist article lists FQDNs, relay and STUN hosts; tenant subdomain identifies customer.",
+  "confidence": "high",
+  "status": "active"
+ },
+ {
+  "id": "astrill-vpn",
+  "name": "Astrill VPN",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "astrill.com",
+    "how_seen": "unsourced: vendor homepage seen in search results; no official firewall doc found"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://www.astrill.com",
+    "path_or_host": "astrill.com",
+    "separable": "no",
+    "note": "No official endpoint documentation found"
+   }
+  ],
+  "notes": "No official network-requirements page found. Consumer VPN with obfuscation (StealthVPN); likely traffic-pattern detection only.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "purevpn",
+  "name": "PureVPN",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "purevpn.com",
+    "how_seen": "unsourced: official support articles discuss ports only, no domain allowlist"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "tunnel",
+    "evidence_url": "https://purevpn2.helpjuice.com/en_US/general-articles/on-what-ports-purevpn-work-and-should-i-allow-them-on-my-anti-virus-programfirewall",
+    "path_or_host": "OpenVPN UDP 53, TCP 80; SSTP 443; IKEv2/IPsec",
+    "separable": "pattern",
+    "note": "Port based; server hostnames not documented"
+   }
+  ],
+  "notes": "Official support lists protocol ports; no official domain list found.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "vyprvpn",
+  "name": "VyprVPN",
+  "class": "vpn",
+  "pack_overlap": "none",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "vyprvpn.com",
+    "how_seen": "unsourced: support.vyprvpn.com seen in search; no firewall domain list"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "tunnel",
+    "evidence_url": "https://support.vyprvpn.com/hc/en-us/articles/360038096291",
+    "path_or_host": "app auto-selects open port (Chameleon)",
+    "separable": "pattern",
+    "note": "Chameleon obfuscation; no hostname doc"
+   }
+  ],
+  "notes": "Support pages cover NAT firewall and port selection only; no official domain allowlist found.",
+  "confidence": "low",
+  "status": "active"
+ }
+]

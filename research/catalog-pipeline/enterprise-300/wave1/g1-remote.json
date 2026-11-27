@@ -1,0 +1,511 @@
+[
+ {
+  "id": "citrix-workspace-daas",
+  "name": "Citrix Workspace / Virtual Apps and Desktops (Citrix DaaS)",
+  "class": "remote-access",
+  "pack_overlap": "partial: windows.net/servicebus-type Azure hosts and digicert.com are generic; no Citrix domain (citrix.com, cloud.com, citrixworkspacesapi.net, nssvc.net) in pack",
+  "domains": [
+   {
+    "domain": "*.cloud.com",
+    "role": "auth",
+    "source_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "quote": "provides access to the Citrix Cloud sign-in interface"
+   },
+   {
+    "domain": "*.citrixworkspacesapi.net",
+    "role": "api",
+    "source_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "quote": "provides access to Citrix Cloud APIs that the services use"
+   },
+   {
+    "domain": "*.nssvc.net",
+    "role": "relay",
+    "source_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "quote": "SSL interception cannot be performed on Citrix Gateway addresses"
+   },
+   {
+    "domain": "*.netscalergateway.net",
+    "role": "relay",
+    "source_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "quote": "Client access to Secure Private Access"
+   },
+   {
+    "domain": "[customerid].xendesktop.net",
+    "role": "api",
+    "source_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "quote": "is the customer ID parameter displayed on the Service principals tab"
+   },
+   {
+    "domain": "*.wsp.cloud.com",
+    "role": "web",
+    "source_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "quote": "When using Citrix Workspace app, but not a web browser"
+   },
+   {
+    "domain": "trust.citrixnetworkapi.net",
+    "role": "api",
+    "source_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "quote": "registers the Cloud Connector with a registration code"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "base-login",
+    "evidence_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "path_or_host": "accounts.cloud.com / login.cloud.com / saml.cloud.com",
+    "separable": "sni",
+    "note": "Distinct auth hostnames"
+   },
+   {
+    "name": "gateway-service-session",
+    "evidence_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "path_or_host": "*.nssvc.net (ICA proxy via Gateway Service)",
+    "separable": "sni",
+    "note": "Official page says no SSL interception; SNI only"
+   },
+   {
+    "name": "cloud-connector-control",
+    "evidence_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "path_or_host": "*.citrixworkspacesapi.net, *.servicebus.windows.net",
+    "separable": "sni",
+    "note": "Admin/connector plane; servicebus shared with other Azure apps"
+   },
+   {
+    "name": "workspace-app-config",
+    "evidence_url": "https://docs.citrix.com/en-us/citrix-cloud/overview/requirements/internet-connectivity-requirements",
+    "path_or_host": "*.wsp.cloud.com",
+    "separable": "sni",
+    "note": "Store and personalization for Workspace app"
+   },
+   {
+    "name": "on-prem-storefront-gateway",
+    "evidence_url": "https://docs.citrix.com/en-us/citrix-daas/overview/technical-security-overview",
+    "path_or_host": "customer-hosted Gateway/StoreFront FQDN",
+    "separable": "no",
+    "note": "Self-hosted; no vendor domain"
+   }
+  ],
+  "notes": "Cloud-side domains well documented; on-prem Virtual Apps and Desktops uses customer-owned hostnames, not catalog-matchable. Allowlist API provides per-customer FQDNs.",
+  "confidence": "high",
+  "status": "active"
+ },
+ {
+  "id": "omnissa-horizon",
+  "name": "Omnissa Horizon (ex VMware Horizon)",
+  "class": "remote-access",
+  "pack_overlap": "none (no omnissa.com, vmware.com or horizon domains found in pack)",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "omnissa.com / cloud.omnissa.com (Cloud Service Portal)",
+    "how_seen": "Named only as 'Omnissa Cloud Service Portal' in Microsoft docs; Omnissa docs and Tech Zone returned HTTP 403 to fetch",
+    "status": "unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "client-to-gateway",
+    "evidence_url": "https://learn.microsoft.com/en-us/windows-365/enterprise/requirements-omnissa-horizon",
+    "path_or_host": "tcp 443, 8443 client-facing; 8444 agent-facing",
+    "separable": "pattern",
+    "note": "Ports only; hostnames are customer-owned UAG/Connection Server"
+   }
+  ],
+  "notes": "Horizon is mostly customer-hosted (UAG, Connection Server); only the cloud control plane has vendor domains, which I could not verify from official docs.",
+  "confidence": "low",
+  "status": "rebranded:Omnissa Horizon (from VMware Horizon, 2024)"
+ },
+ {
+  "id": "amazon-workspaces",
+  "name": "Amazon WorkSpaces",
+  "class": "remote-access",
+  "pack_overlap": "none (amazonaws.com S3 entries in pack are specific unrelated buckets; no amazonworkspaces.com or awsapps.com)",
+  "domains": [
+   {
+    "domain": "clients.amazonworkspaces.com",
+    "role": "web",
+    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "quote": "initial connections to https://clients.amazonworkspaces.com"
+   },
+   {
+    "domain": "connectivity.amazonworkspaces.com",
+    "role": "other",
+    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "quote": "Connectivity Check https://connectivity.amazonworkspaces.com/"
+   },
+   {
+    "domain": "ws-broker-service.<region>.amazonaws.com",
+    "role": "api",
+    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "quote": "WS Broker https://ws-broker-service.us-east-1.amazonaws.com"
+   },
+   {
+    "domain": "skylight-cm.<region>.amazonaws.com",
+    "role": "api",
+    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "quote": "Session Broker (PCM) https://skylight-cm.us-east-1.amazonaws.com"
+   },
+   {
+    "domain": "drp-<airport>.amazonworkspaces.com",
+    "role": "other",
+    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "quote": "drp-iad.amazonworkspaces.com"
+   },
+   {
+    "domain": "<dirid>.awsapps.com",
+    "role": "auth",
+    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "quote": "https://{{directory_id}}.awsapps.com"
+   },
+   {
+    "domain": "*.<region>.rdn.amazonaws.com",
+    "role": "relay",
+    "source_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "quote": "Web Access TURN Servers for PCoIP turn:*.us-east-1.rdn.amazonaws.com"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "client-registration-update",
+    "evidence_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "path_or_host": "clients.amazonworkspaces.com",
+    "separable": "sni",
+    "note": "Distinct vendor hostname"
+   },
+   {
+    "name": "broker-api",
+    "evidence_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "path_or_host": "ws-broker-service.<region>.amazonaws.com",
+    "separable": "sni",
+    "note": "Regional AWS hostnames; shared parent amazonaws.com"
+   },
+   {
+    "name": "login",
+    "evidence_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "path_or_host": "<region>.signin.aws, <dirid>.awsapps.com",
+    "separable": "sni",
+    "note": "Shared with other AWS sign-in"
+   },
+   {
+    "name": "streaming-pcoip-wsp-dcv",
+    "evidence_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "path_or_host": "TCP/UDP 4172, 4195 to AWS IP ranges",
+    "separable": "pattern",
+    "note": "Streaming goes to IPs, no hostname"
+   },
+   {
+    "name": "web-access-turn",
+    "evidence_url": "https://docs.aws.amazon.com/workspaces/latest/adminguide/workspaces-port-requirements.html",
+    "path_or_host": "*.rdn.amazonaws.com",
+    "separable": "sni",
+    "note": ""
+   }
+  ],
+  "notes": "Client-facing hostnames are clear; streaming runs on ports to AWS IP ranges. DCV proxy not recommended, TLS inspection unsupported.",
+  "confidence": "high",
+  "status": "active"
+ },
+ {
+  "id": "windows-365-avd",
+  "name": "Windows 365 / Azure Virtual Desktop",
+  "class": "remote-access",
+  "pack_overlap": "partial: microsoft.com, microsoftonline.com, office.com, office.net, events.data.microsoft.com, digicert.com, windowsupdate.com already in pack (app unknown); AVD-specific hosts not present",
+  "domains": [
+   {
+    "domain": "*.wvd.microsoft.com",
+    "role": "web",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Service traffic including TCP based DS connectivity"
+   },
+   {
+    "domain": "*.service.windows.cloud.microsoft",
+    "role": "web",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Service Traffic"
+   },
+   {
+    "domain": "*.windows.cloud.microsoft",
+    "role": "web",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Service Traffic"
+   },
+   {
+    "domain": "windows.cloud.microsoft",
+    "role": "web",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Connection center"
+   },
+   {
+    "domain": "*.windows.static.microsoft",
+    "role": "cdn",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Service Traffic"
+   },
+   {
+    "domain": "windows365.microsoft.com",
+    "role": "web",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Service traffic"
+   },
+   {
+    "domain": "login.microsoftonline.com",
+    "role": "auth",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Authentication to Microsoft Online Services"
+   },
+   {
+    "domain": "*.cdn.office.net",
+    "role": "update",
+    "source_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "quote": "Automatic updates"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "service-gateway",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "path_or_host": "*.wvd.microsoft.com, *.windows.cloud.microsoft",
+    "separable": "sni",
+    "note": "Distinct hostnames; AVD and Windows 365 share them"
+   },
+   {
+    "name": "login",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "path_or_host": "login.microsoftonline.com",
+    "separable": "no",
+    "note": "Shared Entra ID auth"
+   },
+   {
+    "name": "rdp-shortpath-relay",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "path_or_host": "UDP 3478 to 51.5.0.0/16",
+    "separable": "pattern",
+    "note": "IP/port only"
+   },
+   {
+    "name": "windows-365-web-client",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "path_or_host": "windows365.microsoft.com",
+    "separable": "sni",
+    "note": "Windows 365 specific host"
+   },
+   {
+    "name": "session-rdp-gateway",
+    "evidence_url": "https://learn.microsoft.com/en-us/azure/virtual-desktop/required-fqdn-endpoint",
+    "path_or_host": "TCP 443 via *.wvd.microsoft.com",
+    "separable": "http",
+    "note": "Cannot distinguish AVD vs W365 at SNI"
+   }
+  ],
+  "notes": "AVD and Windows 365 share endpoints, so they can't be split. Microsoft says blocking these is unsupported. Overlaps with shipped Microsoft domains.",
+  "confidence": "high",
+  "status": "active"
+ },
+ {
+  "id": "todesk",
+  "name": "ToDesk",
+  "class": "remote-access",
+  "pack_overlap": "none (no todesk domains in pack)",
+  "domains": [],
+  "domains_unsourced": [
+   {
+    "domain": "todesk.com",
+    "how_seen": "Vendor homepage name; no official firewall/allowlist page found via search",
+    "status": "unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base",
+    "evidence_url": "https://www.todesk.com/",
+    "path_or_host": "todesk.com (not verified)",
+    "separable": "no",
+    "note": "No official endpoint documentation found"
+   }
+  ],
+  "notes": "Searches in English and Chinese returned no official ToDesk network-requirements page. Chinese vendor; service domains unverified.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "sunlogin-awesun",
+  "name": "Sunlogin (Oray AweSun)",
+  "class": "remote-access",
+  "pack_overlap": "none (no oray domains in pack)",
+  "domains": [
+   {
+    "domain": "client.oray.net",
+    "role": "api",
+    "source_url": "https://service.oray.com/question/1082.html",
+    "quote": "client.oray.net 443 TCP (per search summary of FAQ, 2021)"
+   },
+   {
+    "domain": "*.oray.com",
+    "role": "relay",
+    "source_url": "https://service.oray.com/question/1082.html",
+    "quote": "*.oray.com 443 TCP and 3008 UDP (per FAQ summary)"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "rc01.oray.com, rc02.oray.com",
+    "how_seen": "Cited in the Oray FAQ per search summary; my fetch of the page did not display the list",
+    "status": "unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "base-control",
+    "evidence_url": "https://service.oray.com/question/1082.html",
+    "path_or_host": "*.oray.com TCP 443",
+    "separable": "sni",
+    "note": "Wildcard oray.com also covers Oray's other products"
+   },
+   {
+    "name": "p2p-udp",
+    "evidence_url": "https://service.oray.com/question/1082.html",
+    "path_or_host": "UDP 3008",
+    "separable": "pattern",
+    "note": "Port-based only"
+   },
+   {
+    "name": "login",
+    "evidence_url": "https://service.oray.com/question/1082.html",
+    "path_or_host": "passport.oray.com",
+    "separable": "sni",
+    "note": "Oray shared account host"
+   }
+  ],
+  "notes": "Official Oray FAQ is dated Dec 2021; ports/domains came via search summary, and a direct fetch did not confirm them. The ports article is a separate page.",
+  "confidence": "low",
+  "status": "active"
+ },
+ {
+  "id": "hoptodesk",
+  "name": "HopToDesk",
+  "class": "remote-access",
+  "pack_overlap": "none (no hoptodesk domains in pack)",
+  "domains": [
+   {
+    "domain": "api.hoptodesk.com",
+    "role": "api",
+    "source_url": "https://help.hoptodesk.com/",
+    "quote": "Domains to allow: api.hoptodesk.com"
+   },
+   {
+    "domain": "signal.hoptodesk.com",
+    "role": "relay",
+    "source_url": "https://help.hoptodesk.com/",
+    "quote": "signal.hoptodesk.com, signal2.hoptodesk.com"
+   },
+   {
+    "domain": "turn.hoptodesk.com",
+    "role": "relay",
+    "source_url": "https://help.hoptodesk.com/",
+    "quote": "turn.hoptodesk.com"
+   },
+   {
+    "domain": "turn-eu.hoptodesk.com",
+    "role": "relay",
+    "source_url": "https://help.hoptodesk.com/",
+    "quote": "Relay servers: turn-eu.hoptodesk.com"
+   },
+   {
+    "domain": "dashboard.hoptodesk.com",
+    "role": "web",
+    "source_url": "https://help.hoptodesk.com/",
+    "quote": "dashboard.hoptodesk.com for dashboard-linked devices"
+   },
+   {
+    "domain": "dl.hoptodesk.com",
+    "role": "update",
+    "source_url": "https://help.hoptodesk.com/",
+    "quote": "App updates: dl.hoptodesk.com"
+   }
+  ],
+  "domains_unsourced": [],
+  "subfunctions": [
+   {
+    "name": "signal",
+    "evidence_url": "https://help.hoptodesk.com/",
+    "path_or_host": "signal.hoptodesk.com TCP 80/443",
+    "separable": "sni",
+    "note": "Distinct hostname"
+   },
+   {
+    "name": "relay",
+    "evidence_url": "https://help.hoptodesk.com/",
+    "path_or_host": "turn*.hoptodesk.com, ports 1001-65535 or 443",
+    "separable": "sni",
+    "note": "Port-443 fallback on relays"
+   },
+   {
+    "name": "api-dashboard",
+    "evidence_url": "https://help.hoptodesk.com/",
+    "path_or_host": "api.hoptodesk.com, dashboard.hoptodesk.com",
+    "separable": "sni",
+    "note": ""
+   },
+   {
+    "name": "update",
+    "evidence_url": "https://help.hoptodesk.com/",
+    "path_or_host": "dl.hoptodesk.com",
+    "separable": "sni",
+    "note": ""
+   },
+   {
+    "name": "direct-p2p",
+    "evidence_url": "https://help.hoptodesk.com/",
+    "path_or_host": "random TCP/UDP; inbound 21118",
+    "separable": "pattern",
+    "note": "No hostname"
+   }
+  ],
+  "notes": "Help center lists allowlist domains and ports explicitly. Direct connections use IP only. Relay is also sourced from the page, other turn-* regions omitted.",
+  "confidence": "high",
+  "status": "active"
+ },
+ {
+  "id": "radmin",
+  "name": "Radmin",
+  "class": "remote-access",
+  "pack_overlap": "none (no radmin or famatech domains in pack)",
+  "domains": [
+   {
+    "domain": "helpdesk.radmin.com",
+    "role": "web",
+    "source_url": "https://helpdesk.radmin.com/kb/faq.php?id=327",
+    "quote": "Changing the Radmin port (support site, not service traffic)"
+   }
+  ],
+  "domains_unsourced": [
+   {
+    "domain": "radmin.com, famatech.com",
+    "how_seen": "Vendor site names; no official page listing service or licensing hosts found",
+    "status": "unsourced"
+   }
+  ],
+  "subfunctions": [
+   {
+    "name": "viewer-server-session",
+    "evidence_url": "https://helpdesk.radmin.com/kb/faq.php?id=328",
+    "path_or_host": "TCP 4899 direct to Radmin Server (default)",
+    "separable": "pattern",
+    "note": "Direct IP:port, no hostname; port is configurable 1-65535"
+   },
+   {
+    "name": "radmin-vpn",
+    "evidence_url": "https://www.radmin-vpn.com/help/",
+    "path_or_host": "radmin-vpn.com (unverified)",
+    "separable": "no",
+    "note": "Separate product; endpoints not confirmed"
+   }
+  ],
+  "notes": "Radmin is mainly direct viewer to server on TCP 4899 with no vendor-hosted relay, so there is little domain-level signal. Detect by port or protocol only.",
+  "confidence": "medium",
+  "status": "active"
+ }
+]
