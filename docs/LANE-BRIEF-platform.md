@@ -30,12 +30,23 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-24, after PRO-262 and PRO-202 step 3)
 
+- **PRO-270 (Dependabot, 2026-11-27):** security updates only. Every `dependabot.yml` entry has
+  `open-pull-requests-limit: 0`, one `applies-to: security-updates` group per ecosystem and the prefix
+  `deps(security)`; Go covers go/, go/oracle, tools/scanners, tools/golint/* and gremlins. Nothing opens until Lee
+  enables Dependabot security updates in the settings. Review steps: SSDLC.md "Dependabot security update PRs".
 - **PRO-402 (Python removal 2/3, PR B):** #125, branch `claude/platform-PRO-402-demo-go-serve`, merged with `main`
   after PR A (#127). PR A made `protodetect serve` interpreter-free; this PR removes the Python backend selection
   that was left: `serve` has no `--python`, `presentation/launch.py` and `protodetect.py analyze|live|serve` run the
   Go binary only (no `--backend`, no fallback), `main.py` starts the page, and `make serve` does the same.
   `test_ui.GoServiceBrowserTests` runs the Playwright dashboard suite against the Go service with no Python engine
   reachable. PR C (PRO-403) deletes `presentation/server.py` and the Python engine.
+- **PRO-503 (framed on 386):** branch `claude/platform-PRO-503-framed-386`. `framed` builds and tests on
+  `GOARCH=386`, so `GO_386_EXCLUDE` is empty (the guard stays). The five overflowing constants are compared on
+  `bits32(v) = int64(v) & 0xFFFFFFFF` (RPC last-fragment bit, SMB `STATUS_MORE_PROCESSING_REQUIRED`; a widening, so
+  gosec G115 stays clean, where a `uint32` conversion failed the go-lint job) and `respHuge` is `math.MaxInt>>1 + 1`
+  (1<<62 on amd64, as before). The 386 run then showed a real wrap: `strconv.Atoi` clamps a RESP bulk length of
+  10 to 18 digits to MaxInt32, and `total+n+2` went negative past the byte budget; `respNumber` now maps it to
+  `respHuge`. `framed/int32_test.go` covers all three; amd64 behaviour and parity are unchanged.
 - **PRO-262 (32-bit protocol tests):** `make go-check-386` and the `go-engine` step "32-bit protocol tests" (offline, vendored, `CGO_ENABLED=0`, no `-race` on 386). Proven on the old SEC-X509-1 check (`pos+size > limit`): the 386 run fails `x509x`, amd64 passes. The job name is unchanged, so required checks keep matching.
 - **PRO-202 (CI speed), step 3:** branch `claude/platform-PRO-202-ci-speed` adds the docs-only fast path:
   `tools/ci_scope.py` (fail-closed: only `pull_request`, only a two-parent merge HEAD, only `*.md` and
@@ -168,6 +179,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Codex review of `docs/review-packet/` (7 chunks: Tier 1 1,350 lines, Tier 2 893) | QA Reviewer (Codex), currently paused |
 | PRO-347: the nightly `ledgers` workflow is read-only (strict check, refresh patch as an artifact). Opening the docs-only refresh pull request from it needs `contents: write` + `pull-requests: write` (rule 5 forbids both outside the release controller), the repository setting that lets Actions create pull requests, and a token whose pull requests trigger ci (`GITHUB_TOKEN` ones start no workflow). Until then Deputy applies the patch | Lee's decision (SSDLC item 43) |
 | PRO-480: branch `claude/platform-PRO-480-release-dryrun-counts` refreshes the generated ledgers (895 → 909) and runs `check_docs_counts.py --strict` in `publish-release.yml` for a tag only (policy `check_release_docs_counts`); the release build job also builds the Go binary before its gate (PRO-402 made `analyze` Go-only). After it merges: merge `main` into #149 (`claude/determined-mayer-cyjpa0`, PRO-194) and refresh Dependabot #151 (PRO-478) | Hermes's review, then Lee; PRO-194 and PRO-478 owners for the refresh |
+| PRO-268: branch `claude/platform-PRO-268-benchstat` adds the `go-bench` ci job (`tools/go_bench.py`, benchstat from `tools/golint/benchstat`): hot-path Go benchmarks at the PR head against the merge base, +10 % sec/op at p < 0.05 or more allocs/op fails (SSDLC item 44). First real CI run (`f16f75a` against `765feee`): 2 min 58 s, no hot-path regression; changing `HOT` or a threshold is a reviewed change to the tool | Hermes's review, then Lee |
 | PRO-545 (SEC-PYRM-1): #178, branch `claude/platform-PRO-545-sr-gate`. The requirements gate fails on any `SR` row that does not parse, on duplicate ids and on an id set that differs from `tools/security_requirements.lock.json` (`--write-lock`, `--retire SR-n`); SR-58..SR-63 were duplicated on `main` and the newer six are now SR-70..SR-75. SEC-PYRM-2 (references grepped, not run) and SEC-PYRM-4 (`go test -json` outcome) are separate tasks | Hermes's review, then Lee |
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
@@ -189,6 +201,8 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
 | Nightly mutation job (PRO-176): #155, branch `claude/platform-PRO-176-nightly-mutation`, the `mutation` job of `nightly-fuzz.yml` (gremlins and the module cache from one isolated networked step, then `make mutation` offline with `MUTATION_BIN`, results uploaded every run; policy `check_mutation_build`). The 5-point threshold is a placeholder in Engine's `mutation.py`. tlsx and textroute measure nothing today: their tests read `../../../../migration/fixtures/cases.json`, absent from gremlins' copy of `go/`, so every mutant counts as killed | Hermes's review, then Lee; Engine for the tlsx/textroute fixture path (asked on PRO-176) and the PRO-173 `TOLERANCE` |
 | 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 6 packages test, 2 have no tests, `framed` is excluded; an excluded package that compiles fails the target | Hermes's review, then Lee; Engine to make `framed` (5 constant overflows of `int`) build on 386, then drop it from `GO_386_EXCLUDE` |
+| Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
+| 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 7 packages test, 2 have no tests, `GO_386_EXCLUDE` is empty (PRO-503); an excluded package that compiles fails the target | Done (PR #117); `framed` on 386 is PRO-503 |
 
 ## 6. Frozen SHAs awaiting Codex
 
@@ -201,11 +215,22 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **PRO-194:** `305f8ef` (finding 1, cherry-pick of `695bb09`) and the finding 2 commit on
   `claude/determined-mayer-cyjpa0`.
 - **PRO-176 (#155):** `6df38e72bfa96111fd68510bf2e5be782e456ff3` (nightly mutation job, policy `check_mutation_build`) and `6e5292ab4d9499cd5cce43813d43c0eee2ebae34` (notes: tlsx/textroute not measured).
+- **PRO-268 (#157):** `f16f75afe8b8c056e3601a85eec9de0f2c807514` (the `go-bench` job, `tools/go_bench.py`, the benchstat module, SSDLC item 44).
+- **PRO-187 (A12 P3 hardening):** `fcdf0523e6dc56c9c61326149f6070e5bd39c35b` (CLI removal is breaking, apidiff fails
+  closed, gosec keyed by function under `internal/protocols/` and `internal/decrypt/`, baseline and scanner lock
+  re-keyed) and `c5add9e329ce474af9b5eda9109ffea129593616` (apidiff stderr summary).
+- **PRO-270:** `7863692f382c39c5da592493e8047cfb3d68963d` (Dependabot security-only).
+- **PRO-503:** `9b7e79aecdca5a40717bd35d289b42d0503ed0e6` (framed builds and tests on GOARCH=386; `GO_386_EXCLUDE` empty; RESP length wrap on 386). Fix round: `23458ef6fa27d71e6b5d67489b20f299752440f4` (gosec G115: `bits32` int64 widening instead of `uint32`).
 - **PRO-545 (#178):** `81ec7b37071711d59aa1a869dd1dbc1a86a68544` (SR gate: unparsable rows, duplicates, pinned id set; SR-70..SR-75 renumbered).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
 
+- **Line numbers of Go sources (PRO-187):** gosec counts `\n` only; Python's `str.splitlines()` also splits on form
+  feed and U+2028, so a source with one of them shifts every later line. `go_lint.enclosing_function` uses
+  `split("\n")`. Rewriting the gosec baseline is a reviewed change and needs `--write-scanner-lock` in the same commit.
+- **apidiff exit codes (PRO-187):** `apidiff` exits 0 after its report, 1 (`die`) or 2 (usage) otherwise, and prints
+  nothing when nothing changed; `go_api.judge_report` treats everything else as a failure.
 - **A gate that filters by regex drops what it cannot match (PRO-545):** the requirements gate kept only rows
   matching ROW, so free text, prose after the backtick or a duplicate id passed silently, and six ids were already
   duplicated on `main`. Select candidate rows loosely, parse them strictly, and fail on every candidate that does
