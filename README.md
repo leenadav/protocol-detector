@@ -1,15 +1,21 @@
 # Protocol detector v0.66.0
 
-A bounded protocol-classification project with a Python 3.9+ reference engine,
-standalone CLI and passive-observation tool, plus an in-progress Go migration
-for an embeddable detector. The Python engine remains the behavioral reference
-and supported standalone tool; it has no runtime dependencies. Live capture
-uses an installed `tcpdump`; ordinary demos and tests need no capture
-privileges.
+A bounded, passive, IPv4-only protocol classifier. **The engine is the Go module in [`go/`](go/)**: the
+`protodetect` command (offline PCAP/pcapng analysis, passive live capture, the local demo page) and an
+embeddable detector package. It has no runtime dependencies beyond the Go standard library in the detection
+path. Live capture uses an installed `tcpdump`; ordinary tests need no capture privileges.
+
+**The Python reference engine is removed (PRO-403, Lee's decision of 2026-11-25).** It was the starting
+stage: Go was ported against it and judged by its answers. Its last state, with every Python test, script and
+benchmark, is the tag [`python-final`](https://github.com/leenadav/protocol-detector/tree/python-final)
+(`5cb35d2`). The answers it gave are kept as frozen fixtures (`migration/fixtures/cases.json`,
+`migration/fixtures/golden/`), so every parity gate still compares Go with them. What Python remains here is
+repository tooling (`tools/`, `migration/`), the root launchers (`protodetect.py`, `main.py`) and the demo
+page's launcher (`presentation/launch.py`).
 
 Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 
-## Python reference capabilities (v0.66.0)
+## Capabilities (v0.66.0)
 
 | Area | What exists | Where to read |
 |---|---|---|
@@ -19,111 +25,56 @@ Start with [START-HERE.md](START-HERE.md) for Hebrew instructions.
 | Custom signatures | JSON rules over bounded parser contexts (host, SNI, ALPN, banner, query name, payload prefix) with a safe regex subset | [SIGNATURES.md](SIGNATURES.md) |
 | Fingerprints | JA3/JA4/JA3S/JA4S/HASSH/HTTP2 SETTINGS, opt-in, derived evidence only | [FINGERPRINTS.md](FINGERPRINTS.md) |
 | QUIC | v1/v2 client Initial recognition with protection removal (public keys) and ClientHello recovery; HTTP/3 ALPN as an offer | PROTOCOLS.md (v0.25) |
-| Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; ten documented flow risks on every verdict | [RISKS.md](RISKS.md) |
-| Policy | Ordered allow/deny/alert rules over verdicts with application-default and dependency lint; labels only, no enforcement | [POLICY.md](POLICY.md) |
-| Tools | `protodetect.py` (analyze, live, protocols, apps, risks, demo, policy, signatures, schema, version); `analyze_pcap.py`, `live_capture.py`; JSON output schemas | this file, [OUTPUT.md](OUTPUT.md) |
-| Engineering | Zero runtime dependencies, Python 3.9+, byte/count/depth budgets everywhere, <!-- BEGIN GENERATED: test-count -->909<!-- END GENERATED: test-count --> tests, seeded fuzzing, per-commit behaviour diff, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, pip-audit, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Heuristics and risks | Opt-in entropy/printable profile of unknown payload and DNS name shape; documented flow risks on every verdict | [RISKS.md](RISKS.md) |
+| Policy | Ordered allow/deny/alert rules over verdicts with application-default; labels only, no enforcement | [POLICY.md](POLICY.md) |
+| Tools | `protodetect` (Go: `analyze`, `live`, `serve`, `version`); `protodetect.py` forwards `analyze`, `live` and `serve` to it and prints `version` and the published JSON schemas (`schema`) | this file, [OUTPUT.md](OUTPUT.md) |
+| Engineering | Zero runtime dependencies, Go standard library in the detection path, byte/count/depth budgets everywhere, <!-- BEGIN GENERATED: test-count -->909<!-- END GENERATED: test-count --> tests, Go fuzz targets and rapid properties, frozen-answer parity gates, SSDLC CI (ruff, bandit, CodeQL, gitleaks, actionlint, golangci-lint, staticcheck, gosec, govulncheck, osv-scanner, SBOM, pinned actions, documentation-number gate), threat model and security requirements mapped to Go tests | [SSDLC.md](SSDLC.md), [CONTRIBUTING.md](CONTRIBUTING.md), [THREAT-MODEL.md](THREAT-MODEL.md), [SECURITY-REQUIREMENTS.md](SECURITY-REQUIREMENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) |
 
-## Go migration and Culvert integration
+The package map, data flow and boundaries of the Go engine are in [`docs/GO-ARCHITECTURE.md`](docs/GO-ARCHITECTURE.md);
+per-family status is in [`migration/CAPABILITIES.json`](migration/CAPABILITIES.json). 79 of the 88 family profiles are
+`parity-verified` against the frozen cases (`make parity-go`); ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh stay
+`experimental`, because their committed stream cases have no foreign-bytes input. Fixture parity covers only the
+committed cases: it does not establish external-traffic accuracy or production readiness.
 
-The Go implementation lives in [`go/`](go/) and is being ported against shared
-fixtures from the Python reference. Per-family status is tracked in
-[`migration/CAPABILITIES.json`](migration/CAPABILITIES.json); acceptance work
-and fixture comparisons are documented under [`migration/`](migration/).
-The package map, data flow and boundaries of the Go engine are in [`docs/GO-ARCHITECTURE.md`](docs/GO-ARCHITECTURE.md).
+The intended Culvert integration is in-process and observation-only: the host owns sockets, TLS, policy, timeouts
+and forwarding; the detector analyzes bytes already read and does not forward, block or authorize traffic.
 
-79 of the 88 family profiles are `parity-verified` against the committed cases
-(7,430 of 7,430 agree; `make parity-go`), and the parity-gap manifest has no
-entries. ftp, http, imap, nats, pop3, rtsp, sip, smtp and ssh stay
-`experimental`: their committed stream cases have no foreign-bytes input (the
-bytewise and 7-byte replays once counted as foreign are their own positive
-message).
-Fixture parity covers only the committed cases—it does not establish full
-feature parity, external-traffic accuracy, or production readiness. The Go port
-remains experimental, and the Python reference stays the fallback.
-
-The intended Culvert integration is in-process and observation-only: the host
-owns sockets, TLS, policy, timeouts and forwarding; the detector analyzes bytes
-already read and does not forward, block or authorize traffic. The embedding
-integration is still preparation work, not a production SWG plugin.
-
-To run the Go migration gate (formatting, vet, race tests, fuzz targets and
-fixture parity; toolchain selected from `go/go.mod`):
-
-```bash
-make go-check
-```
-
-What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or
-non-TCP/UDP classifier, a certificate validator, a signature corpus for named
-web applications, or a product-identity oracle. Every verdict is as strong as
-the structural evidence beneath it and says so in its `reasons`.
+What it is not: a TLS-terminating proxy, a full TCP stack, an IPv6 or non-TCP/UDP classifier, a certificate
+validator, a signature corpus for named web applications, or a product-identity oracle. Every verdict is as strong
+as the structural evidence beneath it and says so in its `reasons`.
 
 ## Run
 
 ```bash
-cd ~/protocol-detector
-make test
-make demo
-make protocols
-make interfaces
-make live INTERFACE=en0 DURATION=60
-# Python CLI; subcommands forward to the scripts below:
-python3 -B protodetect.py analyze sample-expanded.pcap --sessions --policy policy-example.json
-python3 -B protodetect.py live --interface en0 --duration 60 --json --heuristics
-python3 -B protodetect.py policy lint policy-example.json --strict
-python3 -B protodetect.py protocols      # also: apps, risks, demo, version
+make go-build                                   # go/bin/protodetect (Go toolchain pinned in go/go.mod)
+go/bin/protodetect analyze sample-expanded.pcap --json --sessions --policy policy-example.json
+go/bin/protodetect live --interface en0 --duration 60 --json --heuristics
+make serve                                      # the demo page on 127.0.0.1 (protodetect serve)
+python3 -B protodetect.py analyze sample.pcap --json --sessions   # the same binary through the launcher
+python3 -B protodetect.py schema offline-row --validate rows.jsonl
 ```
 
-Live output is one short line per identification, plus periodic/final counters.
-No payloads, request paths, communities or credentials are printed or saved.
-The default capture is non-promiscuous. It observes copies and does not forward,
-block or decrypt traffic. Use an explicit interface; Linux commonly uses `eth0`
-or another configured name. Create new connections after capture starts.
+The gates:
 
 ```bash
-# Real local socket traffic, narrowly filtered loopback capture (IPv4 only):
-make live-smoke
-# Exercise the same live parser with deterministic synthetic PCAP, no privileges:
-make replay-live
-# Machine-readable live results with a narrower capture filter:
-python3 -B live_capture.py -i en0 --filter 'tcp port 443' --duration 30 --json
+make check          # repository tooling, docs numbers, manifest, content, security requirements, launcher tests
+make go-check       # gofmt, vet, race tests, 32-bit parser tests, fuzz smoke, every frozen-answer parity gate
+make requirements-run   # every security requirement's Go tests, run and required to pass
 ```
 
-`live_smoke.py` deliberately creates only local test traffic and verifies HTTP,
-TLS client/server hellos and retry, BGP, SMB2/3, DNS, SNMP, TFTP, STOMP, NATS, IMAP, RDP, FastCGI, rsync, Git, GIOP DCE/RPC, DTLS and IKEv2 detections,
-including server-direction handshakes. Separate modes also check MySQL, MongoDB
-and RADIUS with explicit candidates. It is opt-in, outside
-`make test`. `sample-expanded.pcap` is generated synthetic data with reordered
-TCP segments and UDP messages on arbitrary ports.
+Live output is one short line per identification, plus periodic/final counters. No payloads, request paths,
+communities or credentials are printed or saved. The default capture is non-promiscuous. It observes copies and
+does not forward, block or decrypt traffic. Use an explicit interface; Linux commonly uses `eth0` or another
+configured name. `sample-expanded.pcap` is generated synthetic data with reordered TCP segments and UDP messages on
+arbitrary ports. If capture permission is denied, grant permission to the capture helper according to your OS
+setup; the engine never asks for elevated privileges.
 
-If capture permission is denied, grant permission to the capture helper according
-to your OS setup. The `--stdin` mode accepts a classic PCAP pipe from a separately
-privileged tcpdump; keep Python unprivileged. See START-HERE for a Mac command.
+## History: the Python reference releases (until PRO-403)
 
-## Go engine: the default backend of `analyze` (migration M8)
-
-`protodetect analyze` (and `analyze_pcap.py`) runs the Go engine when its binary is installed and prints the
-same rows, byte for byte, with the same exit status and error text as the Python reference:
-
-```sh
-make go-build                                   # builds go/bin/protodetect (Go toolchain pinned in go/go.mod)
-python3 -B protodetect.py analyze sample.pcap --json --sessions
-python3 -B protodetect.py analyze sample.pcap --backend python     # the reference, on request
-PROTODETECT_BACKEND=python python3 -B protodetect.py analyze sample.pcap
-```
-
-The binary is looked up in `PROTODETECT_GO_BINARY`, then `go/bin/protodetect` of a source checkout, then
-`protodetect-go` on `PATH`. The Python reference runs when asked for, when no binary is installed, and for
-what the Go binary declines (exit status 64): `--content-version` rollback and signature patterns its
-regular-expression engine cannot express (possessive and atomic groups, inline flags, repeats above 1000, a
-`$` before the end). `--backend go` never falls back: it reports why instead. `make parity-analyze` compares
-both backends on generated captures and is part of `make go-check`. The presentation service's capture
-analysis (`analyze_bytes`, through `protodetect present`) and its key-log decryption analysis
-(`analyze_capture`, through `protodetect decrypt-capture`; `make parity-decrypt`) select their backend the
-same way. Live capture (`protodetect live`, and with it the presentation service's live view) hands the
-capture to the Go binary after validating the options (`make parity-live` compares both on replayed streams),
-and the live key-log decryption worker does the same (`make parity-live-decrypt`).
+The sections below are the release notes of the Python reference engine, v0.04 to v0.66, kept as history. The
+scripts, Make targets and test counts they name existed at the time and are in the tag `python-final`; the
+`BENCHMARK-V*.md` files they cite moved to [`docs/history/`](docs/history/). Go implements the same profiles,
+judged against the reference's frozen answers.
 
 ## New in v0.66 — Smart-home framing and DNS improvements
 

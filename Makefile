@@ -1,85 +1,32 @@
-.PHONY: child-apps serve test presentation-test presentation-check content capabilities evaluate sequences sequences-extended perf-profile manifest demo protocols apps risks sessions proxy-demo benchmark live live-smoke interfaces replay-live check lint fuzz sbom pins requirements policy-lint coverage-matrix docs-counts ledgers workflow-lint ci-local package pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random parity-random-long pcap-oracle mutation-tool mutation golden-record golden-check property-long
+.PHONY: child-apps serve test presentation-test presentation-check content manifest check lint sbom pins requirements requirements-run docs-counts ledgers workflow-lint ci-local pin-drift go-drift workflow-policy go-check go-check-static go-check-race go-check-386 go-check-fuzz go-check-parity go-check-minimum parity-go go-build parity-analyze parity-decrypt parity-live parity-live-decrypt schema-go bench-gate parity-control parity-server adversarial bench-load go-vendor-check parity-random pcap-oracle mutation-tool mutation golden-check property-long keylogs content-pack
 PYTHON ?= python3
 INTERFACE ?= en0
 DURATION ?= 60
 
-# PRO-402: `protodetect.py analyze|live|serve` runs the Go binary, and the suite calls it; build it first.
+# PRO-403: the Python reference engine is removed (its last state is the tag python-final); what Python remains is
+# repository tooling (tools/, migration/), the root launchers and the presentation launcher. The launcher tests run
+# the Go binary, so it is built first.
 test: go-build
 	$(PYTHON) -B -m unittest discover -v
 
-# The presentation application (frontend, server, live bridge, TLS POC) needs the optional decryption extra:
-# $(PYTHON) -m pip install -r presentation/requirements-decryption.txt. The core engine stays dependency-free.
-# The interpreter is resolved before the directory change, so `PYTHON=.venv/bin/python` (a path relative to the
-# repository root) works as documented; a bare command name is left to PATH.
+# The presentation suite: the Go service's dashboard in a real browser and the launcher. It needs no Python
+# package; the browser tests need Node and Playwright (tools/ui-test-deps) and skip without them, which the
+# presentation-ui CI job does not allow. The interpreter is resolved before the directory change, so
+# `PYTHON=.venv/bin/python` (a path relative to the repository root) works as documented.
 presentation-test:
 	@PY="$(PYTHON)"; case "$$PY" in /*) ;; */*) PY="$$PWD/$$PY";; esac; \
 	cd presentation && "$$PY" -B -m unittest discover -s tests -v
 
-demo:
-	$(PYTHON) -B protocol_demo.py
-
-protocols:
-	$(PYTHON) -B protocol_demo.py --list
-
-apps:
-	$(PYTHON) -B appid_catalog.py
-
-risks:
-	$(PYTHON) -B protodetect.py risks
-
-policy-lint:
-	$(PYTHON) -B protodetect.py policy lint policy-example.json --strict
-
-sessions:
-	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions
-
-proxy-demo:
-	$(PYTHON) -B proxy_demo.py
-
-benchmark:
-	$(PYTHON) -B benchmark_capture_v022.py --iterations 300 --rounds 5
-
-live:
-	$(PYTHON) -B live_capture.py --interface $(INTERFACE) --duration $(DURATION)
-
-interfaces:
-	$(PYTHON) -B live_capture.py --interfaces
-
-live-smoke:
-	$(PYTHON) -B live_smoke.py
-	$(PYTHON) -B live_smoke.py --database mysql
-	$(PYTHON) -B live_smoke.py --database mongodb
-	$(PYTHON) -B live_smoke.py --radius
-
-replay-live:
-	cat sample-expanded.pcap | $(PYTHON) -B live_capture.py --stdin --duration 0
-
-coverage-matrix:
-	$(PYTHON) -B tools/coverage_matrix.py --check PROTOCOLS.md
-
-check: lint test pins workflow-policy requirements policy-lint coverage-matrix docs-counts ledgers manifest presentation-check inventory keylogs content sequences capabilities content-pack child-apps parity
-	$(PYTHON) -B -m compileall -q protocol_engine tools *.py
+check: lint test pins workflow-policy requirements docs-counts ledgers manifest presentation-check keylogs content content-pack child-apps
+	$(PYTHON) -B -m compileall -q tools migration presentation *.py
 
 manifest:
 	$(PYTHON) -B tools/build_manifest.py --check presentation/SOURCE.json
 
-# Runs the presentation suite when the optional decryption extra is importable, and says so when it is not,
-# instead of silently passing: the canonical CI job installs the extra and always runs it.
-# Explicit dependency detection: the suite's own exit status is the target's exit status (a failing suite can
-# never read as "skipped"); only a missing `cryptography` skips, and says so.
-# The presentation suite runs the Go backend when go/bin/protodetect exists, so a binary built before the latest
-# engine or content change would be compared instead of the tree (2026-11-18): rebuild it first when Go is here.
-presentation-check:
-	@if [ -x go/bin/protodetect ] && command -v go >/dev/null 2>&1; then \
-	  $(MAKE) --no-print-directory go-build; \
-	elif [ -x go/bin/protodetect ]; then \
-	  echo "presentation-check: go/bin/protodetect exists but no Go toolchain is on PATH to rebuild it; it may be stale"; \
-	fi
-	@if $(PYTHON) -c "import cryptography" 2>/dev/null; then \
-	  $(MAKE) --no-print-directory presentation-test PYTHON=$(PYTHON); \
-	else \
-	  echo "presentation-check: skipped here (install .[decryption] to run it); CI runs it unconditionally"; \
-	fi
+# The Go binary the browser and launcher tests serve is rebuilt first, so a stale one is never tested. The suite's
+# own exit status is the target's exit status (a failing suite never reads as skipped).
+presentation-check: go-build
+	$(MAKE) --no-print-directory presentation-test PYTHON=$(PYTHON)
 
 docs-counts:
 	$(PYTHON) -B tools/check_docs_counts.py
@@ -89,19 +36,8 @@ docs-counts:
 ledgers:
 	$(PYTHON) -B tools/build_ledgers.py --check
 
-# Same checks the CI workflow runs, in one command, plus the extended fuzz pass.
-ci-local: check fuzz sequences-extended go-vendor-check
-	$(PYTHON) -B analyze_pcap.py sample-expanded.pcap --events-only --sessions > /dev/null
-	$(PYTHON) -B protodetect.py analyze sample-expanded.pcap --json --sessions | $(PYTHON) -B protodetect.py schema offline-row --validate /dev/stdin
-
-# Build the sdist and wheel (dev tools installed), check the wheel carries only the engine package,
-# then install it into an empty environment and classify fixtures from there (never from the tree).
-package:
-	$(PYTHON) -m build --sdist --wheel --outdir dist
-	$(PYTHON) -B tools/check_wheel.py "dist/*.whl"
-	rm -rf dist/wheel-env && $(PYTHON) -m venv dist/wheel-env
-	dist/wheel-env/bin/python -m pip install --quiet --no-deps --no-index dist/*.whl
-	cd dist && wheel-env/bin/python ../tools/wheel_smoke.py
+# The local gates CI runs, in one command: the repository gate, the Go engine's gate and the vendor check.
+ci-local: check go-check go-vendor-check
 
 # Workflow lint with a locally installed actionlint (CI fetches a checksum-verified release) and the
 # zizmor security audit from the dev toolchain (pedantic persona, offline audits, any finding fails).
@@ -153,12 +89,15 @@ workflow-policy:
 	$(PYTHON) -B tools/check_workflow_policy.py --self-test
 	$(PYTHON) -B tools/check_workflow_policy.py
 
+# Every security requirement names tests that exist (requirements) and pass when run (requirements-run, which
+# needs the pinned Go and go/bin/protodetect for the Python tests: make go-build): SECURITY-REQUIREMENTS.md,
+# PRO-403, PRO-546.
 requirements:
 	$(PYTHON) -B tools/check_security_requirements.py --self-test
 	$(PYTHON) -B tools/check_security_requirements.py
 
-fuzz:
-	$(PYTHON) -B tools/fuzz_fixtures.py --iterations 2000
+requirements-run: go-build
+	$(PYTHON) -B tools/check_security_requirements.py --run
 
 sbom:
 	cyclonedx-py environment --output-format json --output-file sbom.cdx.json
@@ -174,9 +113,6 @@ go-drift:
 	$(PYTHON) -B tools/check_go_drift.py --self-test
 	$(PYTHON) -B tools/check_go_drift.py
 
-inventory:
-	python3 -B tools/check_inventory.py
-
 keylogs:
 	python3 -B tools/check_no_keylogs.py
 
@@ -188,10 +124,6 @@ child-apps:
 	$(PYTHON) -B tools/child_apps_wave.py --self-test
 	$(PYTHON) -B tools/child_apps_wave.py migration/fixtures/child-apps/wave-0.json --evidence migration/fixtures/child-apps/wave-1.json --check
 
-# Migration M0: the per-family capability inventory must match the registry (Go statuses are kept as recorded)
-capabilities:
-	python3 -B tools/capabilities.py --check migration/CAPABILITIES.json
-
 # PRO-411: the content pack is edited directly (go/internal/content/pack.json, history.json, lock.json) with
 # tools/content_pack.py; nothing is exported from the Python tables. The check, the tool's self-test, and the
 # example batch added in a copy of the tree without protocol_engine/ and protocol_adapters/ (Go content tests
@@ -200,10 +132,6 @@ capabilities:
 content-pack:
 	python3 -B tools/content_pack.py check
 	python3 -B tools/content_pack.py --self-test --e2e
-
-# Migration M1: the Python reference must match the committed differential cases exactly (migration/CONTRACTS.md)
-parity:
-	python3 -B migration/parity/compare.py --backend python
 
 # Migration M2: the Go module's own gate. go/go.mod's `go` line is the minimum Go the module needs, its
 # `toolchain` line the compiler it is built with, implicitly the `go` line when absent (go.dev/doc/toolchain).
@@ -389,30 +317,9 @@ CHECKS ?= 50000
 property-long:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go test -count=1 -run 'Opening|Openings|Hints|TightBudgets' -v ./internal/engine/ -rapid.checks=$(CHECKS) -rapid.seed=$(PROPERTY_SEED)
 
-# The randomized differential with the reference as the oracle, any SEED and COUNT, while the reference exists
-# (manual; the nightly job runs property-long).
-SEED ?= 1
-COUNT ?= 50000
-parity-random-long: go-build
-	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed $(SEED) --count $(COUNT) --report build/random-diff-$(SEED).json
-
-# Re-record every golden file with the Python reference as the oracle (PRO-401). Each recording run is the original
-# differential (the reference and Go must agree, approved divergences modelled) and writes nothing when anything
-# differs; the boundary tests and their lock are regenerated too. Needs the reference and the cryptography extra;
-# review the diff of migration/fixtures/golden/ like any fixture change. golden-check replays them all.
-golden-record: go-build
-	$(PYTHON) -B migration/parity/analyze_diff.py --binary go/bin/protodetect --count 300 --seed 1 --record $(GOLDEN)/analyze.json.gz
-	$(PYTHON) -B migration/parity/decrypt_diff.py --binary go/bin/protodetect --count 300 --seed 1 --record $(GOLDEN)/decrypt.json.gz
-	$(PYTHON) -B migration/parity/live_diff.py --binary go/bin/protodetect --count 300 --seed 1 --record $(GOLDEN)/live.json.gz
-	$(PYTHON) -B migration/parity/live_decrypt_diff.py --binary go/bin/protodetect --count 300 --seed 1 --record $(GOLDEN)/live-decrypt.json.gz
-	$(PYTHON) -B migration/parity/control_diff.py --binary go/bin/protodetect --count 120 --seed 1 --record $(GOLDEN)/control.json.gz
-	$(PYTHON) -B migration/parity/server_diff.py --binary go/bin/protodetect --count 12 --seed 1 --record $(GOLDEN)/server.json.gz
-	$(PYTHON) -B migration/parity/schema_go.py --binary go/bin/protodetect --count 200 --seed 1 --record $(GOLDEN)/schema.json.gz
-	$(PYTHON) -B migration/parity/adversarial.py --binary go/bin/protodetect --record $(GOLDEN)/adversarial.json.gz
-	$(PYTHON) -B migration/parity/random_diff.py --binary go/bin/protodetect --seed 1 --count 2000 --record $(GOLDEN)/random.json.gz
-	$(PYTHON) -B migration/mutation/boundaries.py
-	$(MAKE) golden-check PYTHON=$(PYTHON)
-
+# PRO-403: the golden files can no longer be re-recorded here, because the reference that answered them is gone.
+# Re-recording (each differential's --record mode, migration/parity/golden.py) needs a checkout of the tag
+# python-final with the cryptography extra; golden-check replays them all.
 golden-check: parity-analyze parity-decrypt parity-live parity-live-decrypt parity-control parity-server schema-go adversarial parity-random
 	$(PYTHON) -B migration/parity/golden.py --self-test
 	$(PYTHON) -B migration/mutation/boundaries.py --check
@@ -458,42 +365,3 @@ parity-go:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOFLAGS=-mod=vendor go run ./cmd/protodetect replay --cases ../migration/fixtures/cases.json --out ../migration/parity/go-results.json
 	python3 -B migration/parity/compare.py --results migration/parity/go-results.json --families $(GO_FAMILIES) --report migration/parity/go-report.json
 	python3 -B migration/parity/verify_families.py --check migration/CAPABILITIES.json
-
-# Migration M4/M9: Python vs Go engine feed loop on identical bytes, alternating rounds (not part of `check`)
-bench-compare:
-	BENCH_SCRATCH=$${TMPDIR:-/tmp} python3 -B migration/benchmarks/bench_compare.py --iterations 300 --rounds 5
-
-# D11: separated performance measurements (CPU by layer, bytes to identification, queue wait, memory); local numbers only
-perf-profile:
-	$(PYTHON) -B tools/perf_profile.py --write docs/PERF-PROFILE-V066.md --json docs/PERF-PROFILE-V066.json
-
-# D10: metamorphic sequence relations over the Analyzer (segmentation, reordering, conflicts, interleaving, FIN order, reuse, expiry)
-sequences:
-	$(PYTHON) -B tools/sequence_check.py --iterations 1
-
-sequences-extended:
-	$(PYTHON) -B tools/sequence_check.py --iterations 8 --seed 1
-	$(PYTHON) -B tools/sequence_check.py --iterations 8 --seed 2
-
-# D09: evaluate an independently labelled capture corpus (docs/CORPUS-EVALUATION.md); CORPUS=dir
-evaluate:
-	$(PYTHON) -B tools/evaluate_corpus.py $(CORPUS) --write $(CORPUS)/REPORT.md --json $(CORPUS)/report.json
-
-# Stage 8: synthetic soak (overload, sparse gaps, late keys, slow consumer, worker crashes); needs the decryption extra.
-soak:
-	$(PYTHON) -B tools/soak.py --write docs/SOAK-V065.json
-
-# Stage 8: build the wheel, install it with the decryption extra into an empty environment, run the presentation suite from it.
-installed-check:
-	$(PYTHON) -B tools/installed_check.py
-
-# Stage 8: the corpus report must show no intact false negatives.
-corpus:
-	$(PYTHON) -B tools/corpus_report.py --write docs/CORPUS-REPORT-V065.md
-
-# Stage 8 release gate: everything a tag must pass locally, in one target (docs/RELEASE-GATE-V065.md).
-release-gate: check presentation-test fuzz-smoke corpus soak dist installed-check
-	@echo "release gate passed"
-
-fuzz-smoke:
-	$(PYTHON) -B tools/fuzz_fixtures.py --iterations 200 --seed 80

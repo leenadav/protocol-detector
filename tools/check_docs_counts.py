@@ -3,7 +3,9 @@
 README.md and REVIEW-SCOPE.md state how many protocol families, automatic
 families, catalog applications and tests the project has, and which version
 the review scope describes. Each milestone updates them by hand, so this gate
-recomputes every number from the engine, the test suite and pyproject.toml and
+recomputes every number from the Go engine's data (migration/CAPABILITIES.json for the families,
+go/internal/content/pack.json for the applications; PRO-403, the Python reference is removed), the test
+suites (Go test functions plus the remaining Python tooling tests) and pyproject.toml and
 reports each line that disagrees. Run from the repository root; `--strict` also fails on a test count that lags
 (the release gate and the nightly ledgers job).
 """
@@ -15,23 +17,38 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from protocol_engine import supported_protocols  # noqa: E402
+import json  # noqa: E402
 
 # The two test counts are generated sections (PRO-347): tools/build_ledgers.py writes them after merge, so a pull
 # request that adds tests leaves them alone and they may lag behind it. Only --strict (the release gate and the
 # nightly ledgers job) fails on a lagging test count; the other numbers fail on drift everywhere, as before.
 GENERATED = "<!-- BEGIN GENERATED: test-count -->{}<!-- END GENERATED: test-count -->"
 LAGGING = {"tests"}
-from protocol_engine.applications import APPLICATIONS  # noqa: E402
+GO_TEST = re.compile(r"^func (?:Test|Fuzz)[A-Z0-9_]\w*\(\w+ \*testing\.[TF]\)", re.M)
+
+
+def go_test_count(root=ROOT):
+    """Top-level Go test and fuzz functions in the module (go/, vendor excluded)."""
+    total = 0
+    for folder, directories, files in os.walk(os.path.join(root, "go")):
+        directories[:] = sorted(name for name in directories if name not in ("vendor", "testdata", "bin"))
+        for name in sorted(files):
+            if name.endswith("_test.go"):
+                with open(os.path.join(folder, name), encoding="utf-8") as handle:
+                    total += len(GO_TEST.findall(handle.read()))
+    return total
 
 
 def actual():
-    rows = list(supported_protocols())
+    with open(os.path.join(ROOT, "migration", "CAPABILITIES.json"), encoding="utf-8") as handle:
+        families = json.load(handle)["families"]
+    with open(os.path.join(ROOT, "go", "internal", "content", "pack.json"), encoding="utf-8") as handle:
+        applications = json.load(handle)["applications"]
     suite = unittest.defaultTestLoader.discover(ROOT, pattern="test*.py")
     with open(os.path.join(ROOT, "pyproject.toml"), encoding="utf-8") as handle:
         version = re.search(r'^version = "([^"]+)"', handle.read(), re.M).group(1)
-    return {"families": len(rows), "automatic": sum(1 for row in rows if not row.requires_hint),
-            "applications": len(APPLICATIONS), "tests": suite.countTestCases(), "version": version}
+    return {"families": len(families), "automatic": sum(1 for row in families.values() if not row["requires_hint"]),
+            "applications": len(applications), "tests": suite.countTestCases() + go_test_count(), "version": version}
 
 
 def expectations(readme, scope):

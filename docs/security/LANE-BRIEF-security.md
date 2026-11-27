@@ -1,7 +1,7 @@
 # Lane brief: Security Reviewer (AppSec)
 
-This lane finds, proves and verifies; the owning lanes fix (Engine: `go/`, `protocol_engine/`,
-`protocol_adapters/`; Platform & CI: `.github/`, `tools/`). "Read-only" means no fixes to another lane's code
+This lane finds, proves and verifies; the owning lanes fix (Engine: `go/` and `migration/`;
+the Python reference engine is gone since PRO-403; Platform & CI: `.github/`, `tools/`). "Read-only" means no fixes to another lane's code
 (CTO answer PRO-499). Audit documents next to this file and skip-marked reproducers are this lane's own output.
 
 ## Open audits

@@ -228,12 +228,15 @@ def shape(value):
 # The build identity of presentation/SOURCE.json (PRO-431): /api/health carries it at the top level and /api/catalog
 # under "source". It changes on every SOURCE.json refresh (PR #123 refreshed it after the server golden was recorded),
 # so a golden replay compares both answers with these fields masked on each side, and build_identity_problems holds
-# Go's values to the SOURCE.json of the tree under test instead. Every other field (version, repository, components,
-# the catalog itself) and the status line and headers are compared in full. These answers carry no ETag, and
+# Go's values to the SOURCE.json of the tree under test instead. "components" is SOURCE.json's file inventory: PRO-403
+# removed the Python engine and adapters from it (the golden still lists them), so it is identity too, held equal to
+# the tree's SOURCE.json object. Every other field (version, repository, the catalog itself) and the status line and
+# headers are compared in full. These answers carry no ETag, and
 # Content-Length is never compared for a JSON body (observed), so nothing else derives from the identity.
-BUILD_IDENTITY = ("commit", "branch", "build_digest")
-BUILD_IDENTITY_AT = {"GET '/api/health'": ((), ("commit", "build_digest")),
-                     "GET '/api/catalog'": (("source",), ("commit", "branch", "build_digest"))}
+BUILD_IDENTITY = ("commit", "branch", "build_digest", "components")
+BUILD_IDENTITY_TYPES = {"components": dict}  # every other identity field is a string
+BUILD_IDENTITY_AT = {"GET '/api/health'": ((), ("commit", "build_digest", "components")),
+                     "GET '/api/catalog'": (("source",), ("commit", "branch", "build_digest", "components"))}
 BUILD_IDENTITY_MARK = "<build identity>"
 
 
@@ -262,7 +265,7 @@ def mask_build_identity(label, answer):
     if holder is None:
         return answer
     for key in BUILD_IDENTITY:
-        if isinstance(holder.get(key), str):
+        if isinstance(holder.get(key), BUILD_IDENTITY_TYPES.get(key, str)):
             holder[key] = BUILD_IDENTITY_MARK
     return head + "\n" + json.dumps(document)
 
@@ -279,7 +282,7 @@ def build_identity_problems(label, answer, source):
     problems = []
     for key in keys:
         want = source.get(key) if isinstance(source, dict) else None
-        if not isinstance(want, str) or not want:
+        if not isinstance(want, BUILD_IDENTITY_TYPES.get(key, str)) or not want:
             problems.append("{}: SOURCE.json has no {} (got {!r})".format(label, key, want))
         elif holder.get(key, None) != want:
             problems.append("{}: {} is {!r}, SOURCE.json has {!r}".format(label, key, holder.get(key), want))

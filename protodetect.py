@@ -4,18 +4,16 @@
   protodetect analyze capture.pcap [analyze options]   offline PCAP inspection (the Go engine)
   protodetect live --interface eth0 [live options]      passive live capture (the Go engine)
   protodetect serve [--port N]                          the local demo page (the Go engine; make serve)
-  protodetect protocols | apps | risks                  inventories (families, catalog, flow risks)
-  protodetect demo                                      offline fixture walk-through
-  protodetect policy lint FILE [--strict]               validate a policy and report warnings
-  protodetect policy test FILE --app ssl [--port 443 ...]  evaluate a synthetic verdict
-  protodetect signatures lint FILE                      validate a custom signature file
   protodetect schema [NAME] [--validate FILE]           print a published output schema or validate JSON Lines
   protodetect version
 
 analyze, live and serve run the Go engine's binary with the arguments unchanged (PRO-402: Go is the product;
 there is no Python backend to select and no fallback). The binary is PROTODETECT_GO_BINARY, then
-go/bin/protodetect of this checkout (`make go-build`), then `protodetect-go` on PATH. The other subcommands
-delegate to the existing scripts without changing their options.
+go/bin/protodetect of this checkout (`make go-build`), then `protodetect-go` on PATH.
+
+PRO-403: the Python reference engine is removed (its last state is the tag python-final), and with it the
+subcommands that ran it (protocols, apps, risks, demo, content, explain, policy, signatures). schema stays: it
+reads only the published schemas/ files.
 """
 import argparse
 import json
@@ -52,107 +50,7 @@ def _go(argv):
         return 130
 
 
-def _delegate(module_name, argv):
-    module = __import__(module_name)
-    sys.argv = [module_name + ".py"] + list(argv)
-    try:
-        result = module.main()
-    except BrokenPipeError:  # output piped into a reader that stopped early (head)
-        return 0
-    return 0 if result is None else int(result)
-
-
-def _risks_table(as_json):
-    from protocol_engine.risks import RISKS
-    if as_json:
-        for name, (severity, description) in RISKS.items():
-            print(json.dumps({"risk": name, "severity": severity, "description": description}))
-        return 0
-    width = max(len(name) for name in RISKS)
-    for name, (severity, description) in RISKS.items():
-        print("{:<{}} {:<7} {}".format(name, width, severity, description))
-    return 0
-
-
-def _policy_lint(path, strict):
-    from protocol_engine.policy import Policy, PolicyError
-    try:
-        policy = Policy.from_path(path)
-    except (OSError, PolicyError, UnicodeDecodeError) as error:
-        print("policy error: {}".format(error))
-        return 1
-    warnings = policy.lint()
-    print("policy ok: {} rules, default {}".format(len(policy), policy.default))
-    for warning in warnings:
-        print("warning: " + warning)
-    return 1 if (warnings and strict) else 0
-
-
-def _policy_test(args):
-    from protocol_engine.applications import APPLICATIONS, OUTCOMES, lookup
-    from protocol_engine.appid import Verdict
-    from protocol_engine.policy import Policy, PolicyError
-    try:
-        policy = Policy.from_path(args.file)
-    except (OSError, PolicyError, UnicodeDecodeError) as error:
-        print("policy error: {}".format(error))
-        return 1
-    name = args.app
-    if name in OUTCOMES:
-        entry = APPLICATIONS[name]
-        port_usage = "unknown"
-    else:
-        entry = lookup(name)
-        if entry is None:
-            print("unknown application: " + name)
-            return 1
-        port_usage = ("standard" if entry.uses_port(args.transport, args.port) else "nonstandard") if args.port and entry.has_ports else "unknown"
-    verdict = Verdict(entry.name, entry.category, entry.subcategory, entry.technology, entry.risk, entry.characteristics, None,
-                      entry.implicitly_uses, port_usage, "identified" if name not in OUTCOMES else "unknown", None, None,
-                      args.encryption, (), args.shifted_from, tuple(sorted(set(args.risk or ()))))
-    decision = policy.evaluate(verdict, args.transport, args.port)
-    print(json.dumps({"app": verdict.app, "transport": args.transport, "server_port": args.port, "port_usage": port_usage,
-                      "risks": list(verdict.risks), "decision": decision.fields()}))
-    return 0
-
-
-def _signatures_lint(path):
-    from protocol_engine.signatures import SignatureError, SignatureSet
-    try:
-        signatures = SignatureSet.from_path(path)
-    except (OSError, SignatureError, UnicodeDecodeError) as error:
-        print("signature error: {}".format(error))
-        return 1
-    print("signatures ok: {} signatures, families {}".format(len(signatures), ", ".join(sorted(signatures.families))))
-    return 0
-
-
-def _content(as_json):
-    from protocol_engine import content
-    import json as _json
-    current = content.description()
-    problems = content.check()
-    report = {"current": current, "selected": content.selected(),
-              "releases": [item._asdict() for item in content.releases()],
-              "host_provenance": {name: dict(value) for name, value in content.host_provenance().items()},
-              "lock": "ok" if not problems else problems}
-    if as_json:
-        print(_json.dumps(report, indent=2, sort_keys=True))
-        return 0 if not problems else 1
-    print("content release {} (released {}, reviewed {}) digest {}".format(current["version"], current["released"], current["reviewed"], current["digest"]))
-    print("review: " + current["review"])
-    print("components: " + ", ".join("{}={}".format(name, value[:12]) for name, value in sorted(current["components"].items())))
-    print("releases:")
-    for item in content.releases():
-        print("  {} released {} reviewed {}: {}".format(item.version, item.released, item.reviewed, item.note))
-    print("host entries: {} ({}; {})".format(current["host_entries"], content.HOST_BASIS, content.HOST_SOURCE))
-    since = {}
-    for name, value in content.host_provenance().items():
-        since.setdefault(value["since"], []).append(name)
-    for version in sorted(since):
-        print("  since {}: {}".format(version, ", ".join(since[version])))
-    print("lock: " + ("ok" if not problems else "; ".join(problems)))
-    return 0 if not problems else 1
+REMOVED = ("protocols", "apps", "risks", "demo", "content", "explain", "policy", "signatures")
 
 
 def main(argv=None):
@@ -162,6 +60,10 @@ def main(argv=None):
         # option as the first remaining argument ("live --stdin", "live --interface eth0"), so they are
         # handed over before the parser sees them.
         return _go(arguments)
+    if arguments and arguments[0] in REMOVED:
+        sys.stderr.write("protodetect: '{}' ran the Python reference engine, which was removed (PRO-403); "
+                         "its last state is the tag python-final\n".format(arguments[0]))
+        return 2
     parser = argparse.ArgumentParser(prog="protodetect", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
     for name, help_text in (("analyze", "Offline PCAP inspection; remaining options go to the Go engine"),
@@ -169,68 +71,19 @@ def main(argv=None):
                             ("serve", "The local demo page on 127.0.0.1; remaining options go to the Go engine")):
         sub = commands.add_parser(name, help=help_text, add_help=False)
         sub.add_argument("rest", nargs=argparse.REMAINDER)
-    commands.add_parser("protocols", help="List supported protocol families")
-    commands.add_parser("apps", help="Print the application catalog").add_argument("--json", action="store_true")
-    commands.add_parser("risks", help="Print the flow risk table").add_argument("--json", action="store_true")
-    commands.add_parser("demo", help="Offline fixture walk-through").add_argument("--json", action="store_true")
-    commands.add_parser("version", help="Print the engine version")
-    commands.add_parser("content", help="Print the detection content releases, provenance and lock state (D08)").add_argument("--json", action="store_true")
-    explain = commands.add_parser("explain", help="Structured reason for one payload's outcome; --minimize shrinks it (D12, docs/UNKNOWN-REASONS.md)")
-    explain_source = explain.add_mutually_exclusive_group(required=True)
-    explain_source.add_argument("--hex")
-    explain_source.add_argument("--file")
-    explain.add_argument("--udp", action="store_true")
-    explain.add_argument("--hint")
-    explain.add_argument("--minimize", action="store_true")
-    explain.add_argument("--loose", action="store_true")
-    explain.add_argument("--json", action="store_true")
-    policy = commands.add_parser("policy", help="Validate or evaluate a policy file (POLICY.md)")
-    policy_commands = policy.add_subparsers(dest="policy_command", required=True)
-    lint = policy_commands.add_parser("lint")
-    lint.add_argument("file")
-    lint.add_argument("--strict", action="store_true", help="Exit 1 when warnings exist")
-    test = policy_commands.add_parser("test")
-    test.add_argument("file")
-    test.add_argument("--app", required=True, help="Catalog application, alias or session outcome")
-    test.add_argument("--transport", choices=("tcp", "udp"), default="tcp")
-    test.add_argument("--port", type=int, help="Server port")
-    test.add_argument("--encryption", choices=("tls", "dtls", "quic", "wireguard", "openvpn"))
-    test.add_argument("--shifted-from", dest="shifted_from", help="Carrier application after a structural shift")
-    test.add_argument("--risk", action="append", help="Flow risk name (repeatable)")
+    commands.add_parser("version", help="Print the version")
     schema = commands.add_parser("schema", help="Print an output schema (OUTPUT.md) or validate JSON Lines against one")
     schema.add_argument("name", nargs="?", help="session, live-event or offline-row; omitted lists the schemas")
     schema.add_argument("--validate", metavar="FILE", help="JSON Lines file (or - for stdin) to validate against NAME")
-    signatures = commands.add_parser("signatures", help="Validate a custom signature file (SIGNATURES.md)")
-    signature_commands = signatures.add_subparsers(dest="signature_command", required=True)
-    signature_commands.add_parser("lint").add_argument("file")
     args = parser.parse_args(argv)
     if args.command in GO_COMMANDS:
         return _go([args.command] + args.rest)
-    if args.command == "protocols":
-        return _delegate("protocol_demo", ["--list"])
-    if args.command == "apps":
-        return _delegate("appid_catalog", ["--json"] if args.json else [])
-    if args.command == "demo":
-        return _delegate("protocol_demo", ["--json"] if args.json else [])
-    if args.command == "risks":
-        return _risks_table(args.json)
     if args.command == "version":
         import re
         from pathlib import Path
         match = re.search(r'^version = "([^"]+)"', Path(__file__).with_name("pyproject.toml").read_text(), re.M)
         print("protocol-detector {}".format(match.group(1) if match else "unknown"))
         return 0
-    if args.command == "content":
-        return _content(args.json)
-    if args.command == "explain":
-        from tools.minimize_example import main as explain_main
-        forwarded = (["--hex", args.hex] if args.hex else ["--file", args.file]) + (["--udp"] if args.udp else []) \
-            + (["--hint", args.hint] if args.hint else []) + (["--minimize"] if args.minimize else []) + (["--loose"] if args.loose else []) + (["--json"] if args.json else [])
-        return explain_main(forwarded)
-    if args.command == "policy":
-        return _policy_lint(args.file, args.strict) if args.policy_command == "lint" else _policy_test(args)
-    if args.command == "signatures":
-        return _signatures_lint(args.file)
     if args.command == "schema":
         sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent / "tools"))
         import schema_check

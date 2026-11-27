@@ -41,7 +41,7 @@ func TestRepeatedConnectDoesNotNestWithoutBound(t *testing.T) {
 	}
 	// Two tunnels are followed, as a CONNECT carrying TLS or an Upgrade inside the tunnel needs; the third
 	// CONNECT identifies its phase, names the limit, and nothing below it is inspected.
-	if shifts != maxShiftDepth {
+	if shifts != 2 { // the documented limit, written out so a changed constant fails here
 		t.Fatalf("%d shift markers, want %d: %v", shifts, maxShiftDepth, in.Observation.Evidence)
 	}
 	if !strings.Contains(in.Observation.Reason, "http-connect boundary was not followed (shift nesting limit)") {

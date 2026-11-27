@@ -3,8 +3,10 @@
 The corpus is a directory with `manifest.json` and the capture files it names. Labels come from
 outside this engine (the generating client, the test-bed configuration, a human analyst); the
 manifest must say who labelled the flows and on what basis, and the report repeats it. Nothing
-about the corpus is read beyond what the Analyzer reads: the report holds endpoints, labels,
-counts and digests, never payload. Scoring is per labelled flow:
+about the corpus is read beyond what the engine reads: the report holds endpoints, labels,
+counts and digests, never payload. The engine is the Go binary (`protodetect analyze --json
+--sessions`, built by `make go-build`; PRO-403 removed the Python reference engine, last state
+under the tag python-final); `--binary` names another build. Scoring is per labelled flow:
 
 * correct: the session record names the labelled family (and the labelled application, when given);
 * wrong: the record names another family (a false identification, the serious case);
@@ -28,20 +30,23 @@ Manifest:
 import argparse
 import hashlib
 import json
+import subprocess
 import sys
 from collections import Counter, OrderedDict, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from protocol_adapters.analyze_pcap import Analyzer  # noqa: E402
-from protocol_adapters.link_packets import decode_frame  # noqa: E402
-from protocol_adapters.packets import PacketError, read_pcap_records  # noqa: E402
-from protocol_engine.descriptors import build  # noqa: E402
+BINARY = ROOT / "go" / "bin" / "protodetect"
+# The families the engine declares: the frozen catalog the Go service serves, which
+# go/internal/serve TestCatalogMatchesTheContentPackAndTheEngine keeps equal to the registered parsers.
+CATALOG = ROOT / "go" / "internal" / "serve" / "catalog.json"
 
 REQUIRED = ("corpus", "source", "labelled_by", "label_basis", "captures")
-ANALYZER_OPTIONS = ("observation", "checksums", "continuation", "tcp_hint", "udp_hint", "fingerprints", "certificates")
+# Whitelisted capture options and the analyze flag each becomes; nothing else reaches the engine.
+VALUE_OPTIONS = {"observation": "--observation", "checksums": "--checksums", "continuation": "--continuation",
+                 "tcp_hint": "--tcp-hint", "udp_hint": "--udp-hint"}
+FLAG_OPTIONS = {"fingerprints": "--fingerprints", "certificates": "--certificates"}
+ANALYZER_OPTIONS = tuple(VALUE_OPTIONS) + tuple(FLAG_OPTIONS)
 
 
 class CorpusError(ValueError):
@@ -71,7 +76,7 @@ def load_manifest(folder):
     missing = [key for key in REQUIRED if not manifest.get(key)]
     if missing:
         raise CorpusError("manifest lacks " + ", ".join(missing) + " (provenance and labelling must be stated)")
-    families = build()
+    families = declared_families()
     for capture in manifest["captures"]:
         for key in ("file", "sha256", "flows"):
             if key not in capture:
@@ -97,33 +102,55 @@ def _key(transport, client, server):
     return (transport, tuple(client), tuple(server))
 
 
-def run_capture(path, options):
-    """Session records of one capture through the recorded-adapter path (no payload kept)."""
-    records = []
-    analyzer = Analyzer(on_session=records.append, **options)
-    checksums = options.get("checksums", "ignore")
-    quality = Counter()
-    for record in read_pcap_records(str(path)):
-        if record.truncated:
-            quality["truncated"] += 1
-            continue
-        try:
-            packet = decode_frame(record.data, record.linktype, checksums)
-        except PacketError as error:
-            quality[error.kind] += 1
-            if error.endpoints is not None:
-                analyzer.note_input(error.kind, error.endpoints)
-            continue
-        analyzer.process(record.timestamp, packet)
-    analyzer.finish("Capture input EOF before initial message completed")
-    return records, dict(quality), analyzer.content
+def declared_families():
+    try:
+        catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise CorpusError("engine family catalog unreadable: {}".format(error)) from None
+    return {protocol["family"] for protocol in catalog["protocols"]}
+
+
+def analyze_arguments(path, options):
+    """The analyze command line for one capture: a fixed argv, options only from the whitelist."""
+    argv = ["analyze", str(path), "--json", "--sessions"]
+    for key, value in sorted(options.items()):
+        if key in VALUE_OPTIONS:
+            argv += [VALUE_OPTIONS[key], str(value)]
+        elif key in FLAG_OPTIONS:
+            if value:
+                argv.append(FLAG_OPTIONS[key])
+        else:
+            raise CorpusError("unsupported capture option: " + key)
+    return argv
+
+
+def run_capture(path, options, binary=None):
+    """Session records, rejected-input counts and the content pin of one capture (no payload kept)."""
+    binary = Path(binary or BINARY)
+    if not binary.is_file():
+        raise CorpusError("engine binary {} not found (run `make go-build`)".format(binary))
+    done = subprocess.run([str(binary)] + analyze_arguments(path, options), stdout=subprocess.PIPE, stderr=subprocess.PIPE,  # noqa: S603 - fixed argv
+                          timeout=600, check=False)
+    if done.returncode != 0:
+        raise CorpusError("analyze failed with status {} on {}".format(done.returncode, Path(path).name))
+    records, quality, pin = [], {}, None
+    for line in done.stdout.decode("utf-8").splitlines():
+        row = json.loads(line)
+        if row.get("type") == "session":
+            records.append(row)
+        elif "input_quality" in row and "summary" in row:
+            quality = dict(row["input_quality"].get("rejected") or {})
+            pin = row.get("content")
+    if pin is None:
+        raise CorpusError("analyze wrote no summary for " + Path(path).name)
+    return records, quality, pin
 
 
 def observed_family(record):
     return family_of(record.get("encryption") or record.get("client_protocol") or record.get("server_protocol"))
 
 
-def evaluate(folder, manifest=None):
+def evaluate(folder, manifest=None, binary=None):
     folder = Path(folder)
     manifest = manifest or load_manifest(folder)
     per_family = defaultdict(Counter)
@@ -133,7 +160,7 @@ def evaluate(folder, manifest=None):
     pins = set()
     for capture in manifest["captures"]:
         options = dict(capture.get("options", {}))
-        records, quality, pin = run_capture(folder / capture["file"], options)
+        records, quality, pin = run_capture(folder / capture["file"], options, binary)
         pins.add((pin["version"], pin["digest"]))
         by_key = {}
         for record in records:
@@ -236,9 +263,10 @@ def main(argv=None):
     parser.add_argument("--json", help="write the JSON report here")
     parser.add_argument("--min-accuracy", type=float, default=None, help="exit 1 when family accuracy is below this fraction")
     parser.add_argument("--max-wrong", type=int, default=None, help="exit 1 when wrong-family identifications exceed this count")
+    parser.add_argument("--binary", default=None, help="the protodetect binary (default go/bin/protodetect)")
     args = parser.parse_args(argv)
     try:
-        report = evaluate(args.corpus)
+        report = evaluate(args.corpus, binary=args.binary)
     except CorpusError as error:
         print("corpus error: {}".format(error))
         return 2
