@@ -127,6 +127,19 @@ def judge_report(returncode, stdout, stderr, old_packages, new_packages):
     return incompatible, compatible, note
 
 
+def stderr_lines(notes):
+    """Summary lines for apidiff's stderr: its "Ignoring internal package" notices counted, anything else quoted."""
+    ignored, other = set(), []
+    for note in notes:
+        for line in (note or "").splitlines():
+            if line.startswith("Ignoring internal package "):
+                ignored.add(line)
+            elif line.strip() and line not in other:
+                other.append(line)
+    lines = ["", "apidiff skipped {} internal package(s) in the public comparison.".format(len(ignored))] if ignored else []
+    return lines + (["", "apidiff stderr:"] + ["    " + line for line in other[-20:]] if other else [])
+
+
 def compare(tool, old, new, internal):
     command = [tool, "-m", str(old), str(new)]
     if internal:
@@ -192,9 +205,7 @@ def run(bin_dir, summary):
     lines += ["", "Internal API (reported only): {} incompatible, {} compatible change(s).".format(len(incompatible), len(compatible))]
     lines += ["- incompatible: {}".format(change) for change in incompatible[:40]]
     lines += ["- compatible: {}".format(change) for change in compatible[:40]]
-    notes = sorted({results[internal][2] for internal in results if results[internal][2]})
-    if notes:
-        lines += ["", "apidiff stderr:"] + ["    " + line for note in notes for line in note.splitlines()[-20:]]
+    lines += stderr_lines(results[internal][2] for internal in sorted(results))
     go_ci.summarise(summary, lines)
     return 1 if failed else 0
 
@@ -231,6 +242,9 @@ def self_test():
             assert expected in str(error), (label, str(error))
         else:
             raise AssertionError("{}: apidiff failed open".format(label))
+    assert stderr_lines(["Ignoring internal package m/a\nIgnoring internal package m/b", "Ignoring internal package m/a\nwarn: x"]) == [
+        "", "apidiff skipped 2 internal package(s) in the public comparison.", "", "apidiff stderr:", "    warn: x"]
+    assert stderr_lines(["", None]) == []
     scratch = tempfile.mkdtemp(prefix="go-api-self-test-")
     try:
         archive = Path(scratch, "x.api")
