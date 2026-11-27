@@ -167,6 +167,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Codex review of `docs/review-packet/` (7 chunks: Tier 1 1,350 lines, Tier 2 893) | QA Reviewer (Codex), currently paused |
 | PRO-347: the nightly `ledgers` workflow is read-only (strict check, refresh patch as an artifact). Opening the docs-only refresh pull request from it needs `contents: write` + `pull-requests: write` (rule 5 forbids both outside the release controller), the repository setting that lets Actions create pull requests, and a token whose pull requests trigger ci (`GITHUB_TOKEN` ones start no workflow). Until then Deputy applies the patch | Lee's decision (SSDLC item 43) |
 | PRO-480: branch `claude/platform-PRO-480-release-dryrun-counts` refreshes the generated ledgers (895 → 909) and runs `check_docs_counts.py --strict` in `publish-release.yml` for a tag only (policy `check_release_docs_counts`); the release build job also builds the Go binary before its gate (PRO-402 made `analyze` Go-only). After it merges: merge `main` into #149 (`claude/determined-mayer-cyjpa0`, PRO-194) and refresh Dependabot #151 (PRO-478) | Hermes's review, then Lee; PRO-194 and PRO-478 owners for the refresh |
+| PRO-268: branch `claude/platform-PRO-268-benchstat` adds the `go-bench` ci job (`tools/go_bench.py`, benchstat from `tools/golint/benchstat`): hot-path Go benchmarks at the PR head against the merge base, +10 % sec/op at p < 0.05 or more allocs/op fails (SSDLC item 44). First real CI run (`f16f75a` against `765feee`): 2 min 58 s, no hot-path regression; changing `HOT` or a threshold is a reviewed change to the tool | Hermes's review, then Lee |
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
@@ -199,6 +200,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **PRO-194:** `305f8ef` (finding 1, cherry-pick of `695bb09`) and the finding 2 commit on
   `claude/determined-mayer-cyjpa0`.
 - **PRO-176 (#155):** `6df38e72bfa96111fd68510bf2e5be782e456ff3` (nightly mutation job, policy `check_mutation_build`) and `6e5292ab4d9499cd5cce43813d43c0eee2ebae34` (notes: tlsx/textroute not measured).
+- **PRO-268 (#157):** `f16f75afe8b8c056e3601a85eec9de0f2c807514` (the `go-bench` job, `tools/go_bench.py`, the benchstat module, SSDLC item 44).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
