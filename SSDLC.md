@@ -213,7 +213,7 @@ supply-chain and every other job run in full on every change.
 Pull-request runs also start on `labeled` and `unlabeled` (the go-api job's `api-break` label, item 39).
 
 Codex review comments (automatic review on every opened pull request, P0/P1 only, rules
-in `AGENTS.md` "Code Review Rules"). When a Codex comment on a lane's pull request is
+in `REVIEW.md`, "Code Review Rules"). When a Codex comment on a lane's pull request is
 fixed, the lane pushes the fix to the same branch and replies in that PR's task on the
 board, naming the fixing commit. Lanes do not comment on GitHub, so Hermes verifies the
 fix and resolves the thread. A comment the lane judges wrong gets the same reply, with
