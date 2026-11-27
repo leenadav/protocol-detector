@@ -50,6 +50,8 @@ HEX_LINE = '\t{{"session key", "{}"}},\n'
 PLACEHOLDER_TEST = "go/internal/engine/security_a_test.go"
 PLACEHOLDER = "s3cr3t" + "-placeholder"
 PLACEHOLDER_LINE = '\tsecret := "{}"\n'
+# A different made-up value for the same line shape, which must still be reported in that file.
+OTHER_VALUE = "Wn5" + "cR8xLq2ZtV7mPk4Hd9Js"
 
 
 def live_allowlist(text):
@@ -130,7 +132,7 @@ def self_test():
     for path in ("go/internal/engine/security_b_test.go", "go/internal/engine/security_a.go", "x/" + PLACEHOLDER_TEST,
                  PLACEHOLDER_TEST + ".bak", "tools/capture.py", LIVE):
         assert not allowed(placeholder, path, PLACEHOLDER), path
-    for secret in (PLACEHOLDER + "1", "x" + PLACEHOLDER, PLACEHOLDER.upper(), HEX_REQUEST) + tuple(
+    for secret in (PLACEHOLDER + "1", "x" + PLACEHOLDER, PLACEHOLDER.upper(), HEX_REQUEST, OTHER_VALUE) + tuple(
             value for _, value in SECRETS):
         assert not allowed(placeholder, PLACEHOLDER_TEST, secret), secret
     print("check_gitleaks_allowlist self-test: ok (live-results CNAME chains only; hex HTTP/1 only in Go tests under go/; "
@@ -158,7 +160,7 @@ def run(bin_dir):
         placeholder_files = [PLACEHOLDER_TEST, "go/internal/engine/security_b_test.go"]
         (repo / PLACEHOLDER_TEST).parent.mkdir(parents=True, exist_ok=True)
         (repo / PLACEHOLDER_TEST).write_text(PLACEHOLDER_LINE.format(PLACEHOLDER) + PLACEHOLDER_LINE.format(
-            SECRETS[0][1].split("=")[1]), encoding="utf-8")
+            OTHER_VALUE), encoding="utf-8")
         (repo / placeholder_files[1]).write_text(PLACEHOLDER_LINE.format(PLACEHOLDER), encoding="utf-8")
         git = ["git", "-C", str(repo), "-c", "user.email=ci@example.invalid", "-c", "user.name=ci"]
         for command in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "fixture"]):
