@@ -2,6 +2,7 @@ package framed
 
 import (
 	"bytes"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -305,7 +306,8 @@ func (p *MQTT) validate() (string, error) {
 
 var respCommand = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_.-]*$`)
 
-const respHuge = 1 << 62 // stands in for numbers beyond int64; every comparison it meets is a budget bound
+// respHuge is 1<<62 on 64-bit and 1<<30 on 32-bit int (GOARCH=386), where 1<<62 does not fit.
+const respHuge = math.MaxInt>>1 + 1 // stands in for numbers beyond int64; every comparison it meets is a budget bound
 
 // RESP parses one command array of non-null bulk strings.
 type RESP struct {
@@ -333,7 +335,10 @@ func respNumber(digits []byte) int {
 	if len(trimmed) == 0 {
 		return 0
 	}
-	n, _ := strconv.Atoi(string(trimmed))
+	n, err := strconv.Atoi(string(trimmed))
+	if err != nil || n > respHuge { // a 32-bit int (GOARCH=386): Atoi clamps to MaxInt32, which wraps total+n+2
+		return respHuge
+	}
 	return n
 }
 
