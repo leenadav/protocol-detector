@@ -35,6 +35,8 @@ BASELINE = ROOT / "migration/mutation/baseline.json"
 PACKAGES = ("tlsx", "textroute", "quicx", "x509x", "hpack", "dnsx", "fingerprint", "heuristics", "framed")
 TOLERANCE = 5.0  # efficacy points a package may fall below its baseline before the nightly run fails
 TIMEOUT_SHARE = 0.25  # more timed-out mutants than this share of those tested invalidates a package's run
+CASES = ROOT / "migration/fixtures/cases.json"
+CASES_ENV = "PROTODETECT_CASES"  # parsertest.CasesEnv: where the package tests read the frozen parity cases from
 MEMORY_MB = 4096  # address-space cap per process (gremlins, go, the compiler, each mutant's test binary)
 
 
@@ -145,10 +147,21 @@ def address_limit(megabytes):
     return limit
 
 
+def run_env(base=None):
+    """The environment gremlins and each mutant's tests run in. gremlins tests every mutant in a temporary copy of
+    go/ alone, so a test's relative path up to migration/fixtures/ does not resolve there; without the absolute
+    path in CASES_ENV every covered mutant of tlsx and textroute failed to load the fixtures and counted as killed
+    (a false 100%, PRO-521)."""
+    return dict(os.environ if base is None else base, GOFLAGS="-mod=vendor", **{CASES_ENV: str(CASES)})
+
+
 def run(gremlins, packages, folder, summary, memory_mb=MEMORY_MB):
     gremlins = tool_path(gremlins)
+    if not CASES.is_file():
+        print("mutation: {} is missing; the package tests read it through {}".format(CASES, CASES_ENV))
+        return 1
     Path(folder).mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ, GOFLAGS="-mod=vendor")
+    env = run_env()
     for package in packages:
         out = Path(folder, package + ".json").resolve()
         if out.is_file():
@@ -188,6 +201,9 @@ def self_test():
     missing = compare({"tlsx": {"efficacy": 80.0}}, base)
     assert len(missing) == 1 and "quicx: no mutation result" in missing[0], missing
     assert compare({"dnsx": {"efficacy": None}}, {"dnsx": {"efficacy": None}}) == []           # never covered
+    env = run_env({"PATH": "/bin", CASES_ENV: "../stale.json"})
+    assert env[CASES_ENV] == str(CASES) and Path(env[CASES_ENV]).is_absolute(), env               # survives a copy of go/
+    assert env["GOFLAGS"] == "-mod=vendor" and env["PATH"] == "/bin", env
     assert tool_path("gremlins") == "gremlins"                                                   # left to PATH
     assert tool_path("build/mutation-bin/gremlins") == str(Path.cwd() / "build/mutation-bin/gremlins")
     with tempfile.TemporaryDirectory() as folder:
@@ -197,7 +213,7 @@ def self_test():
         with contextlib.redirect_stdout(io.StringIO()):
             assert check(folder, None, False, {"tlsx"}) == 0       # a partial run compares only what it ran
             assert check(folder, None, False, None) == 1           # a full run misses the other baseline packages
-    print("mutation self-test: ok (summary, survivors, 5-point gate, missing package, uncovered package, mostly timed out, never-covered package, tool path, partial run)")
+    print("mutation self-test: ok (summary, survivors, 5-point gate, missing package, uncovered package, mostly timed out, never-covered package, absolute fixtures path, tool path, partial run)")
     return 0
 
 
