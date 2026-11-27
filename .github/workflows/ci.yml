@@ -1026,9 +1026,23 @@ jobs:
         with:
           go-version: "1.27.4"
           cache: false
-      - name: Every security requirement names Go tests that exist and pass when run (none skipped)
+      - name: Build the Go binary the referenced Python tests run (offline and vendored)
+        # PRO-546 (SEC-PYRM-2): --run now runs the referenced Python tests strictly, and SR-63 and SR-67 drive
+        # go/bin/protodetect; without it they skip or error, which fails the gate instead of passing silently.
+        env:
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: python -B tools/go_ci.py build --summary "$GITHUB_STEP_SUMMARY"
+      - name: Every security requirement names tests that exist and pass when run (none skipped)
         # PRO-403: the requirements are verified by the Go engine's tests; --run runs each referenced test with
-        # the pinned Go, offline and vendored, and fails unless every one reports PASS.
+        # the pinned Go, offline and vendored, and fails unless every one reports PASS. PRO-546: the referenced
+        # Python test methods (test_*::test_*) run too, and a skip, failure, error or missing method fails.
         env:
           GOPROXY: "off"
           GOSUMDB: sum.golang.org

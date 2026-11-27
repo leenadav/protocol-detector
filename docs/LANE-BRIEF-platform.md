@@ -189,9 +189,14 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
 - **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #37 `7d04266`, #38 `7c33b1a`, #39 `37b3c84`.
 - **PRO-480 (#154):** `8e13f57a1303fca696db674da6414b833c4ad544` (strict docs counts on a tag only, ledgers refresh) and `031f23635834f4a42fa226b4adf8589c5ed2c7d8` (Go binary before the release gate).
+- **PRO-546 (SEC-PYRM-2, stacked on #174):** see `migration/notes/PRO-546.md` for the frozen SHA.
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
+
+- **Python test references must run (PRO-546):** a grepped `def` is not evidence. The requirements gate runs every
+  referenced `test_*::test_*` method under `--run` and fails on a skip; tests that drive `go/bin/protodetect` need
+  `tools/go_ci.py build` (or `make go-build`) first, in every job that runs `--run`.
 
 - **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
   `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An

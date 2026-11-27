@@ -2,9 +2,12 @@
 
 Each requirement names the test(s) that verify it. `tools/check_security_requirements.py`
 fails CI when a referenced test no longer exists, and with `--run` (`make requirements-run`,
-the CI `security-requirements` job) when a referenced Go test does not PASS on the pinned Go.
+the CI `security-requirements` job) when a referenced Go test does not PASS on the pinned Go
+or a referenced Python test method does not pass (a skip, expected failure, error or missing
+method fails; PRO-546).
 Format of the last column: `go/<package dir>::TestName[, ...]` for a Go test or fuzz function,
-or `<python test module>::test_function` for a test of the repository's Python tooling.
+or `<dir>/test_<name>::test_<method>` for a unittest method of the repository's Python tooling
+(a bare module or a non-`test_` function is refused).
 
 PRO-403 removed the Python reference engine and the Python tests that verified these rows (the
 tag `python-final` keeps them). The protocol-profile rows are now verified by
