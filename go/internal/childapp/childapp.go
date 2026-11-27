@@ -144,8 +144,9 @@ type Set struct {
 	children []*Child
 	byName   map[string]*Child
 	rules    []*rule
-	exact    map[string][]int // host -> rule orders, ascending
-	suffix   map[string][]int // domain -> rule orders, ascending
+	exact    map[string][]int          // host -> rule orders, ascending
+	suffix   map[string][]int          // domain -> rule orders, ascending
+	nested   map[string][]nestedDomain // while loading: parent domain -> catalog domains under it (SEC-CHILD-5)
 	opts     Options
 	foldCase bool // some rule matches its path case-insensitively
 }
