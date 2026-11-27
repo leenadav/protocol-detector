@@ -196,6 +196,20 @@ def compare_schema_sets(old_files, new_files):
 
 
 # ---------------------------------------------------------------------------------------------- protodetect CLI
+CLI_REMOVED = "protodetect CLI removed (go/cmd/protodetect is at the base but not at the head)"
+
+
+def cli_presence(at_base, at_head):
+    """What to do with the CLI: "compare" both, "removed" (breaking), "added" (reported) or "none".
+
+    Only a base with no CLI may skip the comparison: deleting or moving go/cmd/protodetect is a breaking change
+    (SEC-CI-A12-1), not a reason to compare nothing.
+    """
+    if at_base:
+        return "compare" if at_head else "removed"
+    return "added" if at_head else "none"
+
+
 GO_FLAG = re.compile(r"^  -(?P<name>[A-Za-z0-9][\w-]*)(?: (?P<type>\S+))?\s*$")
 DEFAULT = re.compile(r"\(default (?P<value>.*)\)\s*$")
 USAGE_FLAG = re.compile(r"(?<![\w-])--(?P<name>[A-Za-z0-9][\w-]*)(?:[ =](?P<metavar>(?![\[(|-])[^\s\]|)]+(?:\|[^\s\]|)]+)*))?")
@@ -311,8 +325,14 @@ def run(summary):
         breaking += found_breaking
         notes += found_notes
         lines.append("Schemas: {} at the base, {} here.".format(len(schema_files(worktree)), len(schema_files("."))))
-        has_cli = Path("go", MAIN).is_dir() and (worktree / "go" / MAIN).is_dir()
-        if has_cli:
+        presence = cli_presence((worktree / "go" / MAIN).is_dir(), Path("go", MAIN).is_dir())
+        if presence == "removed":
+            breaking.append(CLI_REMOVED)
+            lines.append("CLI: go/cmd/protodetect is at the base but not here.")
+        elif presence == "added":
+            notes.append("protodetect CLI added")
+            lines.append("CLI: go/cmd/protodetect is new here, nothing to compare with.")
+        elif presence == "compare":
             tree, problems = go_ci.toolchain_problems()
             if problems:
                 raise RuntimeError("; ".join(problems))
@@ -423,7 +443,12 @@ def self_test():
     breaking, notes = cli_changed(lambda n: (n["subcommands"].append("serve"), n["flags"].update({"serve": {}}),
                                              n["flags"]["live"].update({"pcap": {"metavar": "FILE"}})))
     assert breaking == [] and len(notes) == 2, (breaking, notes)
-    print("contract_check self-test: ok ($ref resolution, every breaking and reported schema rule, file deletion, cycles, "
+    assert cli_presence(True, True) == "compare" and cli_presence(False, False) == "none"
+    assert cli_presence(True, False) == "removed", "a CLI deleted or moved at the head must not skip the comparison"
+    assert cli_presence(False, True) == "added"
+    failed, _ = go_api.decide([CLI_REMOVED], go_api.labels_of(""))
+    assert failed, "a removed CLI without the api-break label must fail the gate"
+    print("contract_check self-test: ok (CLI removal is breaking, $ref resolution, every breaking and reported schema rule, file deletion, cycles, "
           "both CLI help formats, subcommand and flag rules)")
     return 0
 
