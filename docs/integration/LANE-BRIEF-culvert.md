@@ -82,6 +82,10 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   +0.15 to +0.22 CPU-s per 1,000 flows; RSS within the 0.3 to 2.7 MiB noise floor; throughput unchanged. 1,000 req/s
   saturates the 4-vCPU harness in every configuration. Tools: `lab/culvert/tools/loadtest.py`,
   `loadtest_summary.py` and `loadorigin/`; data in `lab/culvert/results-loadtest/`.
+- **Culvert ADR draft** (PRO-496, 2026-11-27): `docs/integration/adr/ADR-DRAFT-protodetect-in-process.md`, the ADR that
+  working plan section 12 requires, in Culvert's format (ADR-0006 injection, ADR-0051 admission, the `pd` block, the
+  ADR-0011 budget amendment with the load-test numbers, `alpnpeek` as the one TLS fact source, kill switch and abort
+  criteria). Local draft only; proposing it upstream is Lee's decision, after the licence and signed-tag items.
 - **Culvert team request** (`docs/integration/CULVERT-TEAM-REQUEST.md`): anchors refreshed at `ef94311`. It
   covers the SNI finding, UDP/HTTP3 and the allocation gap. It is not sent; Lee decides.
 - **Allocations per flow, two figures** (`docs/integration/ENGINE-DRIFT-2026-11-21.md`):

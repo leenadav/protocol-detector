@@ -93,6 +93,7 @@ type Request struct {
 type Result struct {
 	App         string   // the child when one matched, else the catalog application ("" when none)
 	Container   string   // the parent of App when App is a child, else ""
+	HostOwner   string   // the catalog application owning the host (the server-name identity), "" when none
 	Rule        string   // the matched rule, "<child>#<index>" ("" when none)
 	Basis       string   // BasisNone, BasisServerName or BasisRequestRule
 	Reasons     []string // closed vocabulary, in evaluation order
@@ -115,6 +116,7 @@ type Child struct {
 	Characteristics, DependsOn   []string
 	ImplicitlyUses, Evidence     []string
 	app                          *content.Application
+	owners                       map[string]bool // the container and depends_on: the only host owners it refines
 }
 
 type rule struct {
@@ -501,7 +503,7 @@ func (s *Set) Classify(req Request) Result {
 		res.Reasons = []string{ReasonHostWebFront}
 		return res
 	}
-	res.App, res.Basis = owner, BasisServerName
+	res.App, res.HostOwner, res.Basis = owner, owner, BasisServerName
 	if len(req.Method) > maxMethodBytes || len(req.ContentType) > maxContentTypeBytes {
 		res.Reasons, res.Limit = []string{ReasonFieldTooLong}, LimitFieldBytes
 		return res
@@ -554,6 +556,11 @@ func (s *Set) Classify(req Request) Result {
 		last = lists[best][heads[best]]
 		r := s.rules[last]
 		res.Evaluated++
+		// A host_suffixes rule is indexed under a domain its child's owner claims, but the catalog can give a more
+		// specific host to another application: a child only refines its own owners' identity (SEC-CHILD-2).
+		if !r.child.owners[owner] {
+			continue
+		}
 		// Precedence: the highest score wins; on a tie the earlier rule (file order) keeps it.
 		if hit, score := r.matches(&req, path, ct, query, headers); hit && (winner == nil || score > winnerScore) {
 			winner, winnerScore = r, score
@@ -599,6 +606,10 @@ func (s *Set) Verdict(res Result) *appid.Verdict {
 	if res.Container != "" {
 		container := res.Container
 		v.BaseApp = &container
+	}
+	if res.HostOwner != "" {
+		owner := res.HostOwner
+		v.HostOwner = &owner
 	}
 	return v
 }

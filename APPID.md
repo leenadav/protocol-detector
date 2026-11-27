@@ -189,4 +189,4 @@ implies ChatGPT usage.
 
 ## Child applications (PRO-492, Go only)
 
-A decrypting proxy can classify one HTTP request into a child application per function (for example `app=gmail-uploading`, `container=gmail`) with `go/detector` `AppClassifier`; policies parsed with child applications match a parent and its children with `containers`. The record is `go/detector/app-verdict.schema.json`. Data format, limits and the wave process: [docs/CHILD-APPS.md](docs/CHILD-APPS.md).
+A decrypting proxy can classify one HTTP request into a child application per function (for example `app=gmail-uploading`, `container=gmail`) with `go/detector` `AppClassifier`; policies parsed with child applications match a parent, its children and every child matched on a host it owns (`host_owner`) with `containers`. The record is `go/detector/app-verdict.schema.json`. Data format, limits and the wave process: [docs/CHILD-APPS.md](docs/CHILD-APPS.md).

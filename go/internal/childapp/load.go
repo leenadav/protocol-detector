@@ -248,8 +248,9 @@ func (s *Set) addChild(i int, raw json.RawMessage) error {
 		return fail("description must be 1..512 bytes")
 	}
 	c.Risk = parent.Risk
-	if raw, ok := doc["risk"]; ok {
-		if err := json.Unmarshal(raw, &c.Risk); err != nil || c.Risk < 1 || c.Risk > 5 || strings.ContainsAny(string(raw), ".eE") {
+	riskRaw, explicitRisk := doc["risk"]
+	if explicitRisk {
+		if err := json.Unmarshal(riskRaw, &c.Risk); err != nil || c.Risk < 1 || c.Risk > 5 || strings.ContainsAny(string(riskRaw), ".eE") {
 			return fail("risk must be an integer 1..5")
 		}
 	}
@@ -275,6 +276,27 @@ func (s *Set) addChild(i int, raw json.RawMessage) error {
 			}
 		}
 	}
+	owners := map[string]bool{c.Container: true}
+	for _, d := range c.DependsOn {
+		owners[d] = true
+	}
+	c.owners = owners
+	// A child never ranks below an application it is matched under (SEC-CHILD-2): the default risk is the highest
+	// of the container's and of each depends_on (the owners of the hosts its rules may name), and an explicit
+	// lower risk is refused.
+	floor, floorOwner := 0, ""
+	for owner := range owners {
+		if r := s.pack.Applications[owner].Risk; r > floor || (r == floor && owner < floorOwner) {
+			floor, floorOwner = r, owner
+		}
+	}
+	if explicitRisk {
+		if c.Risk < floor {
+			return fail("risk %d is below %d of '%s', an application it is matched under", c.Risk, floor, floorOwner)
+		}
+	} else {
+		c.Risk = floor
+	}
 	if c.Evidence, err = strs(doc["evidence"], MaxEvidence); err != nil {
 		return fail("evidence: %v", err)
 	}
@@ -297,10 +319,6 @@ func (s *Set) addChild(i int, raw json.RawMessage) error {
 	var rules []json.RawMessage
 	if err := json.Unmarshal(doc["rules"], &rules); err != nil || len(rules) == 0 || len(rules) > MaxRulesPerChild {
 		return fail("rules must be a list of 1..%d rules", MaxRulesPerChild)
-	}
-	owners := map[string]bool{c.Container: true}
-	for _, d := range c.DependsOn {
-		owners[d] = true
 	}
 	for j, raw := range rules {
 		if len(s.rules) >= MaxRules {

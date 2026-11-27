@@ -5,11 +5,12 @@
   "description": "The enterprise App-ID verdict of go/detector AppClassifier (PRO-492): the catalog application of the server name and, when a child-app rule of the content data matched, the child application per function with its container. A rule only refines the catalog's identity. limit names a work ceiling that was hit (never silent); a verdict with a limit names no child. No path, content type, body or credential is recorded; app, container and rule are content-data names.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "app", "container", "rule", "basis", "reasons", "limit", "rules_evaluated", "child_release", "content_release"],
+  "required": ["schema_version", "app", "container", "host_owner", "rule", "basis", "reasons", "limit", "rules_evaluated", "child_release", "content_release"],
   "properties": {
     "schema_version": {"const": 1},
     "app": {"type": "string", "description": "The child application when a child rule matched, else the catalog application of the server name, else empty"},
     "container": {"type": "string", "description": "The parent of app when app is a child application, else empty"},
+    "host_owner": {"type": "string", "description": "The catalog application that owns the server name (the identity a child refines); equals app when no child matched, empty when the server name names none. A policy entry for it covers every child matched on its hosts"},
     "rule": {"type": "string", "description": "<child>#<rule index> of the matched rule, else empty"},
     "basis": {"enum": ["none", "server_name", "request_rule"]},
     "reasons": {
