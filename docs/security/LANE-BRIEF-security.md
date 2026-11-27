@@ -10,6 +10,8 @@ This lane finds, proves and verifies; the owning lanes fix (Engine: `go/`, `prot
 |---|---|---|---|
 | PRO-477 limits and counters | `LIMITS-AUDIT-PRO-477.md` | `main` `6c6d4dd` | SEC-LIM-1, -2, -6 fixed; 3, 4, 5, 7, 8, 9, 10 still skip |
 | PRO-497 A14, 26/11 merge train | `A14-MERGE-TRAIN-PRO-497.md` | `main` `5cb35d2` | 5 fixes verified; SEC-SESS-2 (P2), SEC-SESS-3, SEC-KEY-2, SEC-LIM-11 (P3) |
+| PRO-477 limits and counters | `LIMITS-AUDIT-PRO-477.md` | `main` `6c6d4dd` | 10 gaps (SEC-LIM-1..10), skip-marked reproducers; fix tasks asked of Engine |
+| PRO-523 A17 CI and supply-chain PRs #149 #155 #157 #158 #159 | `A17-ci-prs.md` | `main` `5cb35d2` | P0 0, P1 0, P2 0, P3 2 (SEC-CI-1, SEC-CI-2); P3 only, no FIX tasks required |
 
 ## Fix verification
 
@@ -22,6 +24,8 @@ This lane finds, proves and verifies; the owning lanes fix (Engine: `go/`, `prot
 | SEC-QUIC-1 sticky exhausted | #145 | FIXED |
 | SEC-SESS-2, SEC-SESS-3 | pending | NOT FIXED (`analyzer.TestSecGap*` skip with the id) |
 | SEC-KEY-2, SEC-LIM-11 | pending | NOT FIXED (code reading, no reproducer) |
+| SEC-LIM-1..10 | pending | NOT FIXED (reproducers skip with the id) |
+| SEC-CI-1, SEC-CI-2 | pending (Platform & CI, optional: P3) | NOT FIXED |
 
 A fix is verified when its `TestLimitGap*` or `TestSecGap*` test fails with "now reports its limit" / "is fixed",
 the marker is removed in the same change, and the plain assertion passes.

@@ -1040,6 +1040,14 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      job summary, never re-run to green (AGENTS.md, "Flaky tests").
    - **Negative control:** the self-test fails a hot benchmark at +20 % with p=0.002, passes +20 % at p=0.18,
      fails one more allocation, and fails a missing hot benchmark.
+45. Agent guardrail hooks (PRO-75, Hermes, 2026-11-27). `.claude/settings.json` runs `.claude/hooks/guard.py` as a
+   Claude Code `PreToolUse` hook on Bash, Write, Edit, MultiEdit, NotebookEdit and the GitHub MCP tools; exit 2
+   blocks the call and shows the reason and the approval route. It blocks force-pushes, pushes to `main`, tag and
+   mirror pushes, rebase or `reset --hard` of a shared `claude/*` branch the session did not create, merges,
+   approvals, PR closes, repository-settings, secret and release changes (`gh` and MCP), and likely secrets in a
+   write or a command (`go/**/testdata/` allowed). Its 30 tests run in `make workflow-policy` and the ci
+   `workflow-lint` job. It is a guardrail for honest mistakes, not a sandbox: an alias, a script file or another
+   interpreter is out of its reach, so the instructions, branch protection and review stay the controls.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
