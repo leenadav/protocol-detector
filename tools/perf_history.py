@@ -103,11 +103,15 @@ def go_bench_packages(root):
 
 
 def measure(out):
-    with tempfile.TemporaryDirectory() as scratch:
-        report_path = Path(scratch, "profile.json")
-        subprocess.run([sys.executable, "-B", str(ROOT / "tools/perf_profile.py"), "--sections", "cpu,bytes,memory",  # noqa: S603
-                        "--json", str(report_path)], check=True, stdout=subprocess.DEVNULL, cwd=str(ROOT))
-        metrics = profile_metrics(json.loads(report_path.read_text(encoding="utf-8")))
+    metrics = {}
+    # PRO-403: tools/perf_profile.py measures the Python reference engine, so it runs only on a tree that still has
+    # it (the tag python-final and earlier); on the Go-only tree the Go benchmarks below are the measurements.
+    if (ROOT / "protocol_adapters").is_dir() and (ROOT / "protocol_engine").is_dir():
+        with tempfile.TemporaryDirectory() as scratch:
+            report_path = Path(scratch, "profile.json")
+            subprocess.run([sys.executable, "-B", str(ROOT / "tools/perf_profile.py"), "--sections", "cpu,bytes,memory",  # noqa: S603
+                            "--json", str(report_path)], check=True, stdout=subprocess.DEVNULL, cwd=str(ROOT))
+            metrics = profile_metrics(json.loads(report_path.read_text(encoding="utf-8")))
     go_note = "no go/go.mod"
     if (ROOT / "go/go.mod").is_file():
         packages = go_bench_packages(ROOT / "go")

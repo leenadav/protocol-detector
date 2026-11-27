@@ -1,10 +1,11 @@
 # Bandit configuration (SSDLC static analysis gate).
 #
+# PRO-403: the Python reference engine is removed; bandit scans the root launchers (protodetect.py, main.py),
+# and ruff's flake8-bandit rules (S, pyproject.toml) cover every remaining Python file.
 # Accepted findings, reviewed against THREAT-MODEL.md T8 and SR-12:
-#   B404 import subprocess, B603 subprocess call without shell — live_capture.py
-#   starts tcpdump with an argv list only (no shell), a resolved executable path,
-#   a validated interface name and a filter that is passed as one argument.
-#   test_live.test_command_arguments_are_not_shell_code verifies this.
+#   B404 import subprocess, B603 subprocess call without shell — protodetect.py runs the Go binary with an
+#   argv list only (no shell) and the caller's own arguments; the Go engine starts tcpdump the same way
+#   (go/internal/live, verified by the SR-12 tests in SECURITY-REQUIREMENTS.md).
 skips: ["B404", "B603"]
 exclude_dirs:
   - tests

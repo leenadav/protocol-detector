@@ -103,7 +103,7 @@
 13. No masked ci job (`ci.yml`): the gate only means something if every job it needs can fail.
    No job or step may set `continue-on-error`; no run line may use `|| true`, `|| :` or
    `set +e`; no job other than the gate may set `if:`, and the gate's is exactly `always()`;
-   only the steps in CONDITIONAL_STEPS (the three pull-request-only behaviour-diff base steps,
+   only the steps in CONDITIONAL_STEPS (none since PRO-403 removed the behaviour-diff job;
    pinned by job and every field) may be conditional; and the
    gate's decision step is pinned (GATE_ENV / GATE_RUN), the gate job is pinned whole
    (CI_GATE_KEYS, harden-runner then the decision, nothing else) and the workflow env may set
@@ -975,13 +975,9 @@ def check_codeql(workflows):
 # The only ci steps that may be conditional: the three pull-request-only behaviour-diff base steps,
 # pinned by job, every field and action identity (version consistency is rule 7), so the condition
 # cannot be moved onto a test, lint or policy step, nor a critical step renamed into an exception.
-CONDITIONAL_STEPS = {
-    "behaviour-diff": [
-        {'name': 'Check out the pull request base (the first checkout drops its credentials, so git fetch cannot)', 'if': "github.event_name == 'pull_request'", 'uses': 'actions/checkout', 'with': {'persist-credentials': 'false', 'fetch-depth': '1', 'ref': '${{ github.event.pull_request.base.sha }}', 'path': 'pr-base'}},
-        {'name': 'Compare with the pull request base as well (whole change, when the base carries the engine)', 'if': "github.event_name == 'pull_request'", 'env': {'BASE_SHA': '${{ github.event.pull_request.base.sha }}', 'SEED': '${{ github.run_id }}'}, 'run': ['if [ -f pr-base/protocol_engine/engine.py ]; then', 'python -B tools/compare_engine.py pr-base --iterations 300 --seed "$SEED" --report behaviour-diff-base.md --report-only', 'else', 'printf \'# Engine behaviour diff\\n\\nThe pull request base %s has no engine to compare with.\\n\' "$BASE_SHA" > behaviour-diff-base.md', 'fi', 'head -60 behaviour-diff-base.md', '{', 'echo "### Behaviour diff against the pull request base"', 'echo', 'head -40 behaviour-diff-base.md', '} >> "$GITHUB_STEP_SUMMARY"']},
-        {'name': 'Upload the pull request base diff report', 'if': "github.event_name == 'pull_request'", 'uses': 'actions/upload-artifact', 'with': {'name': 'behaviour-diff-base-${{ github.sha }}', 'path': 'behaviour-diff-base.md', 'retention-days': '30'}},
-    ],
-}
+# PRO-403: the behaviour-diff job and its pull-request-only base steps went with the Python reference engine, so
+# no ci step may be conditional any more.
+CONDITIONAL_STEPS = {}
 GATE_ENV = {"RESULTS": "${{ toJSON(needs) }}"}
 CI_GATE_KEYS = {"name", "runs-on", "timeout-minutes", "if", "needs", "steps"}
 GATE_RUN = [
@@ -1007,17 +1003,11 @@ SHELL_ALLOWED_OR = {
     'python -B -m unittest discover -q 2> test-output.txt || (cat test-output.txt && exit 1)',
     "grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt",
 }
-SHELL_ALLOWED_IF = {
-    'if [ -f pr-base/protocol_engine/engine.py ]; then',
-    'if git rev-parse --verify -q HEAD~1 >/dev/null && git cat-file -e HEAD~1:protocol_engine/engine.py 2>/dev/null; then',
-}
+SHELL_ALLOWED_IF = set()   # PRO-403: the behaviour-diff and mutation-smoke checks of the parent engine are gone
 # Under `bash -e` a failing command on the left of `&&` does not stop the script, so `&&` is allowed
 # only on the SHELL_ALLOWED_OR lines (inside their handlers), in an allowed `if` condition, or in these
 # subshells, whose status is their last command's.
-SHELL_ALLOWED_AND = {
-    '(cd /tmp && /tmp/wheel-env/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"',
-    '(cd /tmp && /tmp/wheel-env39/bin/python "$GITHUB_WORKSPACE/tools/wheel_smoke.py") | tee -a "$GITHUB_STEP_SUMMARY"',
-}
+SHELL_ALLOWED_AND = set()  # PRO-403: the wheel smoke subshells went with the package job
 SHELL_BANNED = re.compile(r"\bexit\s+0\b|\breturn\b|\bset\s+\+|\btrap\b|(^|[;&|(]\s*)!\s|\b(while|until)\b|(^|[^&])&\s*$")
 
 
@@ -1083,8 +1073,8 @@ def check_ci_masking(workflows, path=".github/workflows/ci.yml", gate="gate"):
             if "uses" in normalized:
                 normalized["uses"] = strip_quotes(normalized["uses"] or "").split("@", 1)[0].lower()
             if normalized not in CONDITIONAL_STEPS.get(job, []):
-                problems.append("{}: job {}: step `{}` may not be conditional (only the pinned pull-request-only "
-                                "behaviour-diff base steps may)".format(path, job, fields.get("name", "unnamed")))
+                problems.append("{}: job {}: step `{}` may not be conditional (no ci step may, PRO-403)".format(
+                    path, job, fields.get("name", "unnamed")))
     return problems
 
 
@@ -1178,8 +1168,7 @@ SCANNER_JOBS = {
         {"run": [ISOLATED_INSTALL]},
         {"run": ["ruff check --output-format github .",
                  'echo "ruff: no findings ($(ruff --version))" | tee -a "$GITHUB_STEP_SUMMARY"']},
-        {"run": ["bandit -c bandit.yaml -r protocol_engine analyze_pcap.py live_capture.py sessions.py packets.py link_packets.py "
-                 "capture_stream.py -f txt | tee bandit.txt",
+        {"run": ["bandit -c bandit.yaml -r protodetect.py main.py -f txt | tee bandit.txt",
                  "{", "echo", "echo '```'", "grep -A 12 '^Run metrics:' bandit.txt || tail -n 15 bandit.txt", "echo '```'",
                  '} >> "$GITHUB_STEP_SUMMARY"']},
         # items 21 and 22: gitleaks 8.30.1 from the tools/scanners module (go.sum pins every dependency,
@@ -2316,16 +2305,15 @@ def self_test():
         "set +e": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          set +e\n          ruff check --output-format github .\n", 1),
         "job skipped": ci_text_for_masking.replace("    name: workflow lint (actionlint, zizmor)\n",
                                                  "    name: workflow lint (actionlint, zizmor)\n    if: false\n"),
-        "step skipped": ci_text_for_masking.replace("        if: github.event_name == 'pull_request'\n", "        if: false\n", 1),
+        "step skipped": ci_text_for_masking.replace("      - name: Compile every module (syntax gate, no runtime dependencies allowed)\n",
+            "      - name: Compile every module (syntax gate, no runtime dependencies allowed)\n        if: false\n", 1),
         # item 10 round 1: the pull-request-only condition moved onto critical steps
         "tests skipped on push": ci_text_for_masking.replace("      - name: Compile every module (syntax gate, no runtime dependencies allowed)\n",
             "      - name: Compile every module (syntax gate, no runtime dependencies allowed)\n        if: github.event_name == 'pull_request'\n", 1),
         "lint skipped on push": ci_text_for_masking.replace("      - name: Workflow policy (gate covers every ci job",
             "      - if: github.event_name == 'pull_request'\n        name: Workflow policy (gate covers every ci job", 1),
-        "behaviour diff skipped on push": ci_text_for_masking.replace("      - name: Compare every fixture, truncation and seeded mutation with the parent commit\n",
-            "      - name: Compare every fixture, truncation and seeded mutation with the parent commit\n        if: github.event_name == 'pull_request'\n", 1),
-        "critical step renamed into an exception": ci_text_for_masking.replace(
-            "      - name: Compare every fixture, truncation and seeded mutation with the parent commit\n",
+        "critical step renamed into a former exception": ci_text_for_masking.replace(
+            "      - name: Compile every module (syntax gate, no runtime dependencies allowed)\n",
             "      - name: Upload the pull request base diff report\n        if: github.event_name == 'pull_request'\n", 1),
         # item 10 round 2: generic handlers and other ways to swallow a status
         "or echo": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . || echo ignored\n", 1),
@@ -2346,8 +2334,6 @@ def self_test():
         "allowed line extended": ci_text_for_masking.replace("|| (cat test-output.txt && exit 1)", "|| true || (cat test-output.txt && exit 1)", 1),
         "and-list masks": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github . && echo checked\n", 1),
         "explicit exit 0": ci_text_for_masking.replace("          ruff check --output-format github .\n", "          ruff check --output-format github .; exit 0\n", 1),
-        "exception step body changed": ci_text_for_masking.replace("--iterations 300 --seed \"$SEED\" --report behaviour-diff-base.md --report-only",
-                                                                  "--iterations 1 --seed \"$SEED\" --report behaviour-diff-base.md --report-only"),
         "gate condition changed": ci_text_for_masking.replace("    if: always()\n", "    if: success()\n"),
         "gate decision masked": ci_text_for_masking.replace(decision, decision + " || echo ignored"),
         "gate decision dropped": ci_text_for_masking.replace("          " + decision + "\n", ""),
@@ -2666,7 +2652,7 @@ def self_test():
         "gitleaks rule disabled": ([(".gitleaks.toml", lambda t: t.replace("useDefault = true\n", "useDefault = true\ndisabledRules = [\"generic-api-key\"]\n"))],
                                    True, "disabledRules may not"),
         "gitleaks defaults off": ([(".gitleaks.toml", lambda t: t.replace("useDefault = true", "useDefault = false"))], True, "useDefault = true` is required"),
-        "gitleaks ignore fingerprint": ([(".gitleaksignore", lambda t: "a1b2c3:protocol_fixtures.py:generic-api-key:12\n")], True, ".gitleaksignore: a scanner loads"),
+        "gitleaks ignore fingerprint": ([(".gitleaksignore", lambda t: "a1b2c3:protodetect.py:generic-api-key:12\n")], True, ".gitleaksignore: a scanner loads"),
         "nested ruff.toml": ([("tools/ruff.toml", lambda t: "[lint]\nselect = []\n")], True, "tools/ruff.toml: a scanner loads"),
         "nested pyproject.toml": ([("protocol_engine/pyproject.toml", lambda t: "[tool.ruff.lint]\nselect = []\n")], True,
                                   "protocol_engine/pyproject.toml: a scanner loads"),
@@ -2703,7 +2689,7 @@ def self_test():
         "blanket nolint": ([("go/x.go", lambda t: "package x\n\nvar v = 1 //no" + "lint\n")], True, "silences a scanner"),
         "staticcheck file-wide ignore": ([("go/x.go", lambda t: "//lint" + ":file-ignore U1000 unused helpers\npackage x\n")], True, "silences a scanner"),
         "PGH004 dropped": ([("pyproject.toml", lambda t: t.replace(', "PGH004"]', "]", 1))], False, "pyproject.toml: differs from"),
-        "gitleaks inline allow": ([("protocol_fixtures.py", lambda t: t + '\nTOKEN = "x"  # gitleaks' + ':allow\n')], True, "silences a scanner"),
+        "gitleaks inline allow": ([("protodetect.py", lambda t: t + '\nTOKEN = "x"  # gitleaks' + ':allow\n')], True, "silences a scanner"),
         # task 16 round 2: gitleaks scans Markdown and build directories too, so its token is found there,
         # and disabledRules is refused in every spelling, even with the lock advanced
         "gitleaks allow in Markdown": ([("credentials.md", lambda t: 'token = "x" <!-- gitleaks' + ':allow -->\n')], False, "credentials.md:1:"),
@@ -2728,7 +2714,7 @@ def self_test():
     }
     for label, (edits, relock, expected) in cases.items():
         with tempfile.TemporaryDirectory() as directory:
-            if any(path in ("tools/sbom_summary.py", "protocol_fixtures.py") for path, _ in edits):
+            if any(path in ("tools/sbom_summary.py", "protodetect.py") for path, _ in edits):
                 for path, _ in edits:
                     (Path(directory) / path).parent.mkdir(parents=True, exist_ok=True)
                     (Path(directory) / path).write_text(Path(path).read_text(encoding="utf-8"), encoding="utf-8")
