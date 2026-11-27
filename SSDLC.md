@@ -974,6 +974,14 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
      controller, the repository setting that lets Actions create pull requests, and a token whose pull requests
      trigger ci (one opened with `GITHUB_TOKEN` starts no workflow, so the required `ci gate` never reports).
      That is Lee's decision; until then the patch is applied as a docs-only pull request by hand (Deputy).
+44. Agent guardrail hooks (PRO-75, Hermes, 2026-11-27). `.claude/settings.json` runs `.claude/hooks/guard.py` as a
+   Claude Code `PreToolUse` hook on Bash, Write, Edit, MultiEdit, NotebookEdit and the GitHub MCP tools; exit 2
+   blocks the call and shows the reason and the approval route. It blocks force-pushes, pushes to `main`, tag and
+   mirror pushes, rebase or `reset --hard` of a shared `claude/*` branch the session did not create, merges,
+   approvals, PR closes, repository-settings, secret and release changes (`gh` and MCP), and likely secrets in a
+   write or a command (`go/**/testdata/` allowed). Its 29 tests run in `make workflow-policy` and the ci
+   `workflow-lint` job. It is a guardrail for honest mistakes, not a sandbox: an alias, a script file or another
+   interpreter is out of its reach, so the instructions, branch protection and review stay the controls.
 18. First real runs (blocked on the Actions billing limit, which Lee will
    not raise).
    Every control so far is verified locally only. Once jobs start, confirm
