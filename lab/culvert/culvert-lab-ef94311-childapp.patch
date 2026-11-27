@@ -1,0 +1,1161 @@
+From 88d2c0a4bd7fec528a1e4f56581df52bf0144afe Mon Sep 17 00:00:00 2001
+From: lab <lab@localhost>
+Date: Fri, 27 Nov 2026 02:36:54 +0000
+Subject: [PATCH] LAB: classify decrypted requests into child applications; pd
+ block on TUNNEL_CLOSED (PRO-504)
+
+Inspected tunnels see each inner HTTP request in clear, which is where the
+detector's child applications (go/detector AppClassifier, protocol-detector
+PR #163) can be told apart: gmail-uploading inside gmail. Visibility only:
+the verdict is computed before the exchange and never passed to it.
+
+- internal/pdobs: the closed vocabularies (basis, reason, limit) and the
+  application-name shape check; anything else is logged as "unknown".
+- internal/protodetect: a Culvert-owned AppClassifier interface; real_apps.go
+  is the only file naming the library API. A test keeps pdobs equal to the
+  library's vocabularies.
+- childapp_lab.go: CULVERT_LAB_CHILDAPP=real turns it on (default off: nil
+  tally, no entry, zero added allocations). The H1 loop and each H2 stream
+  note their request (H2 before the reshape clears RequestURI); at tunnel end
+  a log-only TUNNEL_CLOSED entry carries the nested "pd" block: requests,
+  at most 8 distinct verdicts with counts, apps_dropped, releases. It holds
+  no host, path or header value; the entry's host is redacted at
+  persistLogEntry like every other entry, and the rule's log-traffic flag
+  gates it.
+- logstore.Entry gains PD (block-level omitempty: absent when off).
+
+Local lab only; never proposed upstream.
+---
+ childapp_lab.go                        | 199 ++++++++++
+ childapp_lab_test.go                   | 493 +++++++++++++++++++++++++
+ internal/logstore/logstore.go          |  27 ++
+ internal/pdobs/pdobs.go                | 107 ++++++
+ internal/pdobs/pdobs_test.go           |  34 ++
+ internal/protodetect/apps.go           |  30 ++
+ internal/protodetect/real_apps.go      |  40 ++
+ internal/protodetect/real_apps_test.go |  54 +++
+ logstore.go                            |   3 +
+ proxy_tunnel.go                        |   3 +
+ proxy_tunnel_h2.go                     |   3 +
+ store.go                               |   3 +
+ 12 files changed, 996 insertions(+)
+ create mode 100644 childapp_lab.go
+ create mode 100644 childapp_lab_test.go
+ create mode 100644 internal/pdobs/pdobs.go
+ create mode 100644 internal/pdobs/pdobs_test.go
+ create mode 100644 internal/protodetect/apps.go
+ create mode 100644 internal/protodetect/real_apps.go
+ create mode 100644 internal/protodetect/real_apps_test.go
+
+diff --git a/childapp_lab.go b/childapp_lab.go
+new file mode 100644
+index 000000000..b2b1834d5
+--- /dev/null
++++ b/childapp_lab.go
+@@ -0,0 +1,199 @@
++package main
++
++// LAB ONLY (local branch, never proposed upstream as-is). PRO-504.
++//
++// Child applications on the decrypted-request path: every inner request of an INSPECTED tunnel (HTTP/1.1
++// keep-alive loop and HTTP/2 streams) is classified by the detector's AppClassifier, and the distinct
++// verdicts ride a log-only TUNNEL_CLOSED entry for the tunnel as the nested "pd" block. Visibility only:
++// nothing here reads or changes a policy match, a block decision, a header, a body or a deadline, and the
++// verdict is computed before the exchange runs and never passed to it.
++//
++//	CULVERT_LAB_CHILDAPP            off (default) | real
++//	CULVERT_LAB_CHILDAPP_MAX_RULES  rule evaluations per request (default 0: the library's 64)
++//	CULVERT_LAB_CHILDAPP_MAX_PATH   path bytes per request (default 0: the library's 4,096)
++//
++// Off: labAppsFor returns nil, every hook is a nil check, no entry is written and no allocation is added.
++// Inspected tunnels write no TUNNEL_CLOSED entry in Culvert ef94311 (the inspect-success terminal logs per
++// inner request); the lab adds one only when the classifier is on, gated by the rule's log-traffic flag like
++// every other TUNNEL_CLOSED entry. Its byte counts are 0: the inspected path accounts bytes per request, not
++// per tunnel, and this lab does not add a counter. ActionTaken says so.
++
++import (
++	"crypto/tls"
++	"net/http"
++	"os"
++	"strconv"
++	"sync"
++	"time"
++
++	"github.com/KidCarmi/Culvert/internal/pdobs"
++	"github.com/KidCarmi/Culvert/internal/protodetect"
++)
++
++const (
++	labAppsMaxDistinct = 8  // distinct verdicts kept per tunnel; the rest are counted in apps_dropped
++	labAppsMaxHeaders  = 32 // header names passed to the classifier per request
++	labAppsAction      = "lab_childapp_summary"
++)
++
++var (
++	labAppsOnce       sync.Once
++	labAppsClassifier protodetect.AppClassifier // nil: off
++)
++
++func labAppsCls() protodetect.AppClassifier {
++	labAppsOnce.Do(func() {
++		if os.Getenv("CULVERT_LAB_CHILDAPP") != "real" {
++			return
++		}
++		rules, _ := strconv.Atoi(os.Getenv("CULVERT_LAB_CHILDAPP_MAX_RULES"))
++		path, _ := strconv.Atoi(os.Getenv("CULVERT_LAB_CHILDAPP_MAX_PATH"))
++		c, err := protodetect.NewRealApps(rules, path)
++		if err != nil {
++			logger.Printf("LAB childapp: classifier refused its configuration, it stays off: %v", err)
++			return
++		}
++		labAppsClassifier = c
++		logger.Printf("LAB childapp: application classification of decrypted requests ON (visibility only; lab build)")
++	})
++	return labAppsClassifier
++}
++
++// labAppTally collects the verdicts of one inspected tunnel. Its mutex is per tunnel, never global: the
++// HTTP/1.1 loop is one goroutine, and HTTP/2 streams of one tunnel are the only concurrent writers.
++type labAppTally struct {
++	cls   protodetect.AppClassifier
++	sni   string
++	start time.Time
++
++	mu    sync.Mutex
++	block ProtoDetectBlock
++}
++
++// labAppsFor returns the tunnel's tally, or nil when the lab classifier is off. The client's server name
++// is read only when the classifier is on, so the off path adds nothing.
++func labAppsFor(clientTLS *tls.Conn) *labAppTally {
++	c := labAppsCls()
++	if c == nil {
++		return nil
++	}
++	return newLabAppTally(c, clientTLS.ConnectionState().ServerName)
++}
++
++func newLabAppTally(c protodetect.AppClassifier, sni string) *labAppTally {
++	return &labAppTally{cls: c, sni: sni, start: time.Now(), block: ProtoDetectBlock{SchemaVersion: 1, Apps: []ProtoDetectApp{}}}
++}
++
++// labRequestPath is the origin-form path with its query as the client sent it: RequestURI on both the
++// HTTP/1.1 reader and the HTTP/2 server (its :path), before any reshaping. An absolute-form or empty
++// RequestURI falls back to the parsed URL's escaped form.
++func labRequestPath(req *http.Request) string {
++	if p := req.RequestURI; p != "" && p[0] == '/' {
++		return p
++	}
++	return req.URL.RequestURI()
++}
++
++// note classifies one decrypted request and adds its verdict. It must run before the exchange reshapes
++// the request (the HTTP/2 path clears RequestURI) and never touches req.
++func (t *labAppTally) note(req *http.Request) {
++	if t == nil {
++		return
++	}
++	var names []string
++	for k := range req.Header {
++		if len(names) == labAppsMaxHeaders {
++			break
++		}
++		names = append(names, k)
++	}
++	v := t.cls.Classify(protodetect.AppRequest{SNI: t.sni, Host: req.Host, Method: req.Method, Path: labRequestPath(req),
++		ContentType: req.Header.Get("Content-Type"), RequestBodyBytes: req.ContentLength,
++		WebSocket: isWebSocketUpgrade(req), HeaderNames: names})
++	t.add(v)
++}
++
++func (t *labAppTally) add(v protodetect.AppVerdict) {
++	e := ProtoDetectApp{App: pdobs.AppName(v.App), Container: pdobs.AppName(v.Container), Basis: pdobs.Basis(v.Basis),
++		Limit: pdobs.Limit(v.Limit), Reasons: make([]string, 0, len(v.Reasons))}
++	for _, r := range v.Reasons {
++		e.Reasons = append(e.Reasons, pdobs.Reason(r))
++	}
++	t.mu.Lock()
++	defer t.mu.Unlock()
++	b := &t.block
++	b.Requests++
++	if b.ChildRelease == "" {
++		b.ChildRelease, b.ContentRelease = labRelease(v.ChildRelease), labRelease(v.PackRelease)
++	}
++	for i := range b.Apps {
++		if sameVerdict(b.Apps[i], e) {
++			b.Apps[i].Count++
++			return
++		}
++	}
++	if len(b.Apps) == labAppsMaxDistinct {
++		b.AppsDropped++
++		return
++	}
++	e.Count = 1
++	b.Apps = append(b.Apps, e)
++}
++
++func sameVerdict(a, b ProtoDetectApp) bool {
++	if a.App != b.App || a.Container != b.Container || a.Basis != b.Basis || a.Limit != b.Limit || len(a.Reasons) != len(b.Reasons) {
++		return false
++	}
++	for i := range a.Reasons {
++		if a.Reasons[i] != b.Reasons[i] {
++			return false
++		}
++	}
++	return true
++}
++
++// labRelease keeps a YYYY.MM.N release string and nothing else.
++func labRelease(v string) string {
++	if len(v) == 0 || len(v) > 16 {
++		return ""
++	}
++	for i := 0; i < len(v); i++ {
++		if c := v[i]; !(c >= '0' && c <= '9' || c == '.') {
++			return ""
++		}
++	}
++	return v
++}
++
++// snapshot returns a copy of the block (nil for a nil tally or a tunnel with no classified request).
++func (t *labAppTally) snapshot() *ProtoDetectBlock {
++	if t == nil {
++		return nil
++	}
++	t.mu.Lock()
++	defer t.mu.Unlock()
++	if t.block.Requests == 0 {
++		return nil
++	}
++	b := t.block
++	b.Apps = append([]ProtoDetectApp{}, t.block.Apps...)
++	return &b
++}
++
++// labLogInspectClose writes the tunnel's log-only TUNNEL_CLOSED entry with the pd block. Host redaction is
++// persistLogEntry's (the keyed HMAC chokepoint); the block itself carries no host.
++func labLogInspectClose(t *labAppTally, hostOnly string, match *PolicyMatch, id ProxyIdentity, decBlock *DecryptionBlock) {
++	b := t.snapshot()
++	if b == nil {
++		return
++	}
++	if match != nil && match.Rule != nil && !ruleLogsTraffic(match.Rule) {
++		return
++	}
++	ruleName, ruleID := "", ""
++	if match != nil && match.Rule != nil {
++		ruleName, ruleID = match.Rule.Name, match.Rule.ID
++	}
++	persistLogEntry(id.ClientIP, http.MethodConnect, hostOnly, "TUNNEL_CLOSED", ruleName, labAppsAction, id.Identity,
++		0, 0, time.Since(t.start).Milliseconds(), "inspect", "", AuthLogFields{RuleID: ruleID, Dec: decBlock, AuthSource: id.AuthSource, PD: b})
++}
+diff --git a/childapp_lab_test.go b/childapp_lab_test.go
+new file mode 100644
+index 000000000..2e06f6e8c
+--- /dev/null
++++ b/childapp_lab_test.go
+@@ -0,0 +1,493 @@
++package main
++
++// LAB ONLY (PRO-504): child applications on the decrypted-request path, with the real detector library.
++
++import (
++	"bufio"
++	"crypto/ecdsa"
++	"crypto/elliptic"
++	"crypto/rand"
++	"crypto/tls"
++	"crypto/x509"
++	"crypto/x509/pkix"
++	"encoding/json"
++	"fmt"
++	"io"
++	"log"
++	"math/big"
++	"net"
++	"net/http"
++	"strings"
++	"sync"
++	"sync/atomic"
++	"testing"
++	"time"
++
++	"golang.org/x/net/http2"
++
++	"github.com/KidCarmi/Culvert/internal/pdobs"
++	"github.com/KidCarmi/Culvert/internal/protodetect"
++)
++
++// withLabApps installs a classifier (nil: off) for one test and restores the previous one.
++func withLabApps(t *testing.T, c protodetect.AppClassifier) {
++	t.Helper()
++	labAppsCls() // settle the Once first, so it never overwrites the test's value
++	prev := labAppsClassifier
++	labAppsClassifier = c
++	t.Cleanup(func() { labAppsClassifier = prev })
++}
++
++func realApps(t testing.TB, maxRules, maxPath int) protodetect.AppClassifier {
++	t.Helper()
++	c, err := protodetect.NewRealApps(maxRules, maxPath)
++	if err != nil {
++		t.Fatal(err)
++	}
++	return c
++}
++
++// innerReq builds a decrypted request as http.ReadRequest leaves it (RequestURI is the raw target).
++func innerReq(t testing.TB, method, host, target, contentType string, body int64) *http.Request {
++	t.Helper()
++	raw := fmt.Sprintf("%s %s HTTP/1.1\r\nHost: %s\r\n", method, target, host)
++	if contentType != "" {
++		raw += "Content-Type: " + contentType + "\r\n"
++	}
++	if body >= 0 {
++		raw += fmt.Sprintf("Content-Length: %d\r\n", body)
++	}
++	raw += "\r\n" + strings.Repeat("x", int(max(body, 0)))
++	req, err := http.ReadRequest(bufio.NewReader(strings.NewReader(raw)))
++	if err != nil {
++		t.Fatal(err)
++	}
++	return req
++}
++
++const gmailUploadPath = "/upload/gmail/v1/users/me/messages?uploadType=media"
++
++// TestLabChildAppVerdicts is the task's four cases through the tally, with the real classifier.
++func TestLabChildAppVerdicts(t *testing.T) {
++	std := realApps(t, 0, 0)
++	cases := []struct {
++		name                   string
++		cls                    protodetect.AppClassifier
++		sni, host, path, ctype string
++		wantApp, wantContainer string
++		wantBasis, wantLimit   string
++		wantReason             string
++	}{
++		{"gmail upload is the child", std, "gmail.googleapis.com", "gmail.googleapis.com", gmailUploadPath, "message/rfc822",
++			"gmail-uploading", "gmail", pdobs.BasisRequestRule, "", pdobs.ReasonChildMatched},
++		{"unowned host has no app", std, "unowned.example", "unowned.example", "/upload", "message/rfc822",
++			"", "", pdobs.BasisNone, "", pdobs.ReasonHostUnowned},
++		{"non-canonical path has no child", std, "gmail.googleapis.com", "gmail.googleapis.com",
++			"/upload/gmail/v1/users/me/../me/messages?uploadType=media", "message/rfc822",
++			"google-base", "", pdobs.BasisServerName, "", pdobs.ReasonPathNotCanonical},
++		{"limit hit names the parent only", realApps(t, 0, 16), "gmail.googleapis.com", "gmail.googleapis.com", gmailUploadPath,
++			"message/rfc822", "google-base", "", pdobs.BasisServerName, pdobs.LimitPathBytes, pdobs.ReasonWorkLimit},
++	}
++	for _, c := range cases {
++		t.Run(c.name, func(t *testing.T) {
++			tl := newLabAppTally(c.cls, c.sni)
++			tl.note(innerReq(t, "POST", c.host, c.path, c.ctype, 900))
++			b := tl.snapshot()
++			if b == nil || b.Requests != 1 || len(b.Apps) != 1 || b.AppsDropped != 0 || b.SchemaVersion != 1 {
++				t.Fatalf("block %+v", b)
++			}
++			a := b.Apps[0]
++			if a.App != c.wantApp || a.Container != c.wantContainer || a.Basis != c.wantBasis || a.Limit != c.wantLimit ||
++				a.Count != 1 || !labHas(a.Reasons, c.wantReason) {
++				t.Fatalf("got %+v, want app=%q container=%q basis=%q limit=%q reason %q", a, c.wantApp, c.wantContainer,
++					c.wantBasis, c.wantLimit, c.wantReason)
++			}
++			if c.wantLimit != "" && a.Container != "" {
++				t.Fatal("a limited verdict named a child")
++			}
++			if b.ChildRelease == "" || b.ContentRelease == "" {
++				t.Fatalf("releases missing: %+v", b)
++			}
++		})
++	}
++}
++
++func labHas(s []string, v string) bool {
++	for _, x := range s {
++		if x == v {
++			return true
++		}
++	}
++	return false
++}
++
++// TestLabChildAppTallyIsBounded: distinct verdicts stop at labAppsMaxDistinct, the rest are counted.
++func TestLabChildAppTallyIsBounded(t *testing.T) {
++	tl := newLabAppTally(nil, "")
++	for i := 0; i < labAppsMaxDistinct+5; i++ {
++		tl.add(protodetect.AppVerdict{App: fmt.Sprintf("app%d", i), Basis: "server_name"})
++	}
++	tl.add(protodetect.AppVerdict{App: "app0", Basis: "server_name"})
++	b := tl.snapshot()
++	if len(b.Apps) != labAppsMaxDistinct || b.AppsDropped != 5 || b.Requests != labAppsMaxDistinct+6 || b.Apps[0].Count != 2 {
++		t.Fatalf("block %+v", b)
++	}
++	// Open values never pass: a host-shaped app name, an unknown basis, reason or limit.
++	tl = newLabAppTally(nil, "")
++	tl.add(protodetect.AppVerdict{App: "mail.google.com/x", Container: "Gmail", Basis: "made_up", Limit: "lim",
++		Reasons: []string{"why"}, ChildRelease: "2026.11.1; drop", PackRelease: "2026.11.9"})
++	a := tl.snapshot()
++	if x := a.Apps[0]; x.App != pdobs.Unknown || x.Container != pdobs.Unknown || x.Basis != pdobs.Unknown ||
++		x.Limit != pdobs.Unknown || x.Reasons[0] != pdobs.Unknown || a.ChildRelease != "" || a.ContentRelease != "2026.11.9" {
++		t.Fatalf("open values passed: %+v", a)
++	}
++}
++
++// TestLabChildAppOffIsByteIdenticalAndAllocationFree: with the classifier off nothing is classified, no entry
++// is written, the hooks allocate nothing, and an entry without the block has no "pd" key.
++func TestLabChildAppOffIsByteIdenticalAndAllocationFree(t *testing.T) {
++	withLabApps(t, nil)
++	resetRequestLogState()
++	conn := tls.Client(nil, &tls.Config{MinVersion: tls.VersionTLS12})
++	req := innerReq(t, "POST", "gmail.googleapis.com", gmailUploadPath, "message/rfc822", 4)
++	ip := labIP()
++	allocs := testing.AllocsPerRun(200, func() {
++		apps := labAppsFor(conn)
++		apps.note(req)
++		labLogInspectClose(apps, "gmail.googleapis.com", nil, ProxyIdentity{ClientIP: ip}, nil)
++	})
++	if allocs != 0 {
++		t.Fatalf("off path allocates %.1f per tunnel", allocs)
++	}
++	if n := len(labEntries(ip)); n != 0 {
++		t.Fatalf("off path wrote %d entries", n)
++	}
++	js, _ := json.Marshal(LogEntry{Host: "h", Status: "TUNNEL_CLOSED"})
++	if strings.Contains(string(js), `"pd"`) {
++		t.Fatalf("pd key present when off: %s", js)
++	}
++}
++
++// --- an inspected HTTP/1.1 tunnel, end to end through runH1InspectLoop ---
++
++func labSelfSigned(t testing.TB, names ...string) tls.Certificate {
++	t.Helper()
++	k, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
++	if err != nil {
++		t.Fatal(err)
++	}
++	tpl := &x509.Certificate{SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: names[0]}, DNSNames: names,
++		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour)}
++	der, err := x509.CreateCertificate(rand.Reader, tpl, tpl, &k.PublicKey, k)
++	if err != nil {
++		t.Fatal(err)
++	}
++	return tls.Certificate{Certificate: [][]byte{der}, PrivateKey: k}
++}
++
++// labTLSPair returns the two ends of an in-memory TLS connection, already handshaked. proto is offered by
++// ALPN ("" for none).
++func labTLSPair(t testing.TB, sni, proto string) (client, server *tls.Conn) {
++	t.Helper()
++	a, b := net.Pipe()
++	var protos []string
++	if proto != "" {
++		protos = []string{proto}
++	}
++	server = tls.Server(b, &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{labSelfSigned(t, sni)}, NextProtos: protos})
++	client = tls.Client(a, &tls.Config{MinVersion: tls.VersionTLS12, ServerName: sni, InsecureSkipVerify: true, NextProtos: protos}) //nolint:gosec // in-memory lab test pair
++	errc := make(chan error, 1)
++	go func() { errc <- server.Handshake() }()
++	if err := client.Handshake(); err != nil {
++		t.Fatal(err)
++	}
++	if err := <-errc; err != nil {
++		t.Fatal(err)
++	}
++	t.Cleanup(func() { client.Close(); server.Close() })
++	return client, server
++}
++
++// labOriginH1 answers every request on c with 200 and an empty body until the connection ends.
++func labOriginH1(c *tls.Conn) {
++	br := bufio.NewReader(c)
++	for {
++		req, err := http.ReadRequest(br)
++		if err != nil {
++			return
++		}
++		_, _ = io.Copy(io.Discard, req.Body)
++		if _, err := io.WriteString(c, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"); err != nil {
++			return
++		}
++	}
++}
++
++var labIPSeq atomic.Int64
++
++// labIP returns a client IP no earlier run of any test in this process used (198.18.0.0/15, benchmarking).
++func labIP() string {
++	n := labIPSeq.Add(1)
++	return fmt.Sprintf("198.18.%d.%d", n/250, n%250+1)
++}
++
++// labEntries returns the request-log entries of one client IP (the ring is not cleared between tests, so
++// each test uses its own IP).
++func labEntries(ip string) []LogEntry {
++	var out []LogEntry
++	for _, e := range logGet() {
++		if e.IP == ip {
++			out = append(out, e)
++		}
++	}
++	return out
++}
++
++func tunnelClosedPD(t *testing.T, ip string) (LogEntry, *ProtoDetectBlock) {
++	t.Helper()
++	var found []LogEntry
++	for _, e := range labEntries(ip) {
++		if e.Status == "TUNNEL_CLOSED" && e.PD != nil {
++			found = append(found, e)
++		}
++	}
++	if len(found) != 1 {
++		t.Fatalf("want one TUNNEL_CLOSED entry with a pd block, got %d", len(found))
++	}
++	return found[0], found[0].PD
++}
++
++func TestLabChildAppInspectedH1TunnelLogsAppsOnTunnelClosed(t *testing.T) {
++	withLabApps(t, realApps(t, 0, 0))
++	resetRequestLogState()
++	swapTrafficKey(t, []byte("0123456789abcdef0123456789abcdef"))
++	swapDecRedact(t, true)
++
++	const host = "gmail.googleapis.com"
++	cli, clientTLS := labTLSPair(t, host, "")
++	upstreamTLS, originTLS := labTLSPair(t, host, "")
++	go labOriginH1(originTLS)
++	ip := labIP()
++	outer := &http.Request{Method: http.MethodConnect, Host: host + ":443", RemoteAddr: ip + ":5555"}
++	done := make(chan struct{})
++	go func() {
++		defer close(done)
++		runH1InspectLoop(outer, clientTLS, upstreamTLS, host, nil, ProxyIdentity{ClientIP: ip}, nil)
++	}()
++
++	br := bufio.NewReader(cli)
++	send := func(method, target, ctype, body string) {
++		t.Helper()
++		raw := fmt.Sprintf("%s %s HTTP/1.1\r\nHost: %s\r\nContent-Length: %d\r\n", method, target, host, len(body))
++		if ctype != "" {
++			raw += "Content-Type: " + ctype + "\r\n"
++		}
++		if _, err := io.WriteString(cli, raw+"\r\n"+body); err != nil {
++			t.Fatal(err)
++		}
++		resp, err := http.ReadResponse(br, nil)
++		if err != nil {
++			t.Fatal(err)
++		}
++		resp.Body.Close()
++		if resp.StatusCode != 200 {
++			t.Fatalf("%s %s: status %d (visibility must not change the exchange)", method, target, resp.StatusCode)
++		}
++	}
++	send("POST", gmailUploadPath, "message/rfc822", "Subject: x\r\n\r\nhi")
++	send("POST", gmailUploadPath, "message/rfc822", "Subject: y\r\n\r\nhi")
++	send("GET", "/gmail/v1/users/me/labels", "", "")
++	cli.Close()
++	select {
++	case <-done:
++	case <-time.After(10 * time.Second):
++		t.Fatal("inspect loop did not end")
++	}
++
++	e, b := tunnelClosedPD(t, ip)
++	if b.Requests != 3 || len(b.Apps) != 2 || b.AppsDropped != 0 {
++		t.Fatalf("block %+v", b)
++	}
++	if a := b.Apps[0]; a.App != "gmail-uploading" || a.Container != "gmail" || a.Basis != pdobs.BasisRequestRule || a.Count != 2 || a.Limit != "" {
++		t.Fatalf("first verdict %+v", a)
++	}
++	if a := b.Apps[1]; a.App != "google-base" || a.Container != "" || a.Basis != pdobs.BasisServerName || a.Count != 1 {
++		t.Fatalf("second verdict %+v", a)
++	}
++	if e.ActionTaken != labAppsAction || e.SSLAction != "inspect" || e.Method != http.MethodConnect {
++		t.Fatalf("entry %+v", e)
++	}
++	// Redaction: the host field is the keyed pseudonym, and nothing in the record names the host or a path.
++	js, _ := json.Marshal(e)
++	if !strings.HasPrefix(e.Host, "h_") || strings.Contains(string(js), "googleapis") || strings.Contains(string(js), "/upload") ||
++		strings.Contains(string(js), "uploadType") {
++		t.Fatalf("record leaks the destination: %s", js)
++	}
++}
++
++// TestLabChildAppTunnelClosedHonoursLogTraffic: a rule that does not log traffic writes no entry.
++func TestLabChildAppTunnelClosedHonoursLogTraffic(t *testing.T) {
++	resetRequestLogState()
++	tl := newLabAppTally(nil, "")
++	tl.add(protodetect.AppVerdict{App: "gmail", Basis: "server_name"})
++	off := false
++	match := &PolicyMatch{Rule: &PolicyRule{Name: "quiet", LogTraffic: &off}}
++	if ruleLogsTraffic(match.Rule) {
++		t.Fatal("the rule fixture logs traffic; the gate cannot be exercised")
++	}
++	id := ProxyIdentity{ClientIP: labIP()}
++	labLogInspectClose(tl, "gmail.googleapis.com", match, id, nil)
++	if n := len(labEntries(id.ClientIP)); n != 0 {
++		t.Fatalf("quiet rule wrote %d entries", n)
++	}
++	labLogInspectClose(tl, "gmail.googleapis.com", nil, id, nil)
++	if _, b := tunnelClosedPD(t, id.ClientIP); b.Apps[0].App != "gmail" {
++		t.Fatalf("block %+v", b)
++	}
++}
++
++// --- an inspected HTTP/2 tunnel, end to end through handleInspectH2 ---
++
++func TestLabChildAppInspectedH2TunnelLogsAppsOnTunnelClosed(t *testing.T) {
++	withLabApps(t, realApps(t, 0, 0))
++	resetRequestLogState()
++
++	const host = "gmail.googleapis.com"
++	cli, clientTLS := labTLSPair(t, host, "h2")
++	upstreamTLS, originTLS := labTLSPair(t, host, "h2")
++	go (&http2.Server{}).ServeConn(originTLS, &http2.ServeConnOpts{Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		_, _ = io.Copy(io.Discard, r.Body)
++		w.WriteHeader(200)
++	})})
++	ip := labIP()
++	outer := &http.Request{Method: http.MethodConnect, Host: host + ":443", RemoteAddr: ip + ":5555"}
++	done := make(chan struct{})
++	go func() {
++		defer close(done)
++		handleInspectH2(outer, clientTLS, upstreamTLS, host, nil, ProxyIdentity{ClientIP: ip}, nil)
++	}()
++
++	cc, err := (&http2.Transport{}).NewClientConn(cli)
++	if err != nil {
++		t.Fatal(err)
++	}
++	var wg sync.WaitGroup
++	for i := 0; i < 4; i++ { // concurrent streams: the tally's only concurrent writers
++		wg.Add(1)
++		go func() {
++			defer wg.Done()
++			req, _ := http.NewRequest("POST", "https://"+host+gmailUploadPath, strings.NewReader("Subject: x\r\n\r\nhi"))
++			req.Header.Set("Content-Type", "message/rfc822")
++			resp, err := cc.RoundTrip(req)
++			if err != nil {
++				t.Error(err)
++				return
++			}
++			resp.Body.Close()
++			if resp.StatusCode != 200 {
++				t.Errorf("status %d", resp.StatusCode)
++			}
++		}()
++	}
++	wg.Wait()
++	cc.Close()
++	cli.Close()
++	select {
++	case <-done:
++	case <-time.After(10 * time.Second):
++		t.Fatal("h2 tunnel did not end")
++	}
++	_, b := tunnelClosedPD(t, ip)
++	if b.Requests != 4 || len(b.Apps) != 1 || b.Apps[0].App != "gmail-uploading" || b.Apps[0].Container != "gmail" || b.Apps[0].Count != 4 {
++		t.Fatalf("block %+v", b)
++	}
++}
++
++// --- cost per decrypted request (PRO-504 item 3) ---
++
++// BenchmarkLabChildAppNote is the added work per decrypted request when the lab classifier is on:
++// building the request view, Classify and the tally update.
++func BenchmarkLabChildAppNote(b *testing.B) {
++	cls := realApps(b, 0, 0)
++	for _, c := range []struct{ name, host, path, ctype string }{
++		{"child", "gmail.googleapis.com", gmailUploadPath, "message/rfc822"},
++		{"parent", "gmail.googleapis.com", "/gmail/v1/users/me/labels", ""},
++		{"unowned", "unowned.example", "/upload", ""},
++	} {
++		b.Run(c.name, func(b *testing.B) {
++			req := innerReq(b, "POST", c.host, c.path, c.ctype, 16)
++			tl := newLabAppTally(cls, c.host)
++			b.ReportAllocs()
++			b.ResetTimer()
++			for i := 0; i < b.N; i++ {
++				tl.note(req)
++			}
++		})
++	}
++}
++
++// BenchmarkLabChildAppTunnel is the added work per inspected tunnel: the tally, one note and the
++// TUNNEL_CLOSED snapshot (persistLogEntry itself is Culvert's per-entry cost and is excluded).
++func BenchmarkLabChildAppTunnel(b *testing.B) {
++	cls := realApps(b, 0, 0)
++	req := innerReq(b, "POST", "gmail.googleapis.com", gmailUploadPath, "message/rfc822", 16)
++	b.ReportAllocs()
++	for i := 0; i < b.N; i++ {
++		tl := newLabAppTally(cls, "gmail.googleapis.com")
++		tl.note(req)
++		_ = tl.snapshot()
++	}
++}
++
++// BenchmarkLabChildAppInspectedH1 prices the lab on the real path: b.N keep-alive requests (the gmail
++// upload) through one inspected HTTP/1.1 tunnel (runH1InspectLoop over in-memory TLS pairs), classifier
++// off and on. The difference between the two arms is the per-request cost; allocations count the whole
++// process (client, proxy loop and origin), so only the difference is the lab's.
++func BenchmarkLabChildAppInspectedH1(b *testing.B) {
++	prevLogger := logger
++	logger = log.New(io.Discard, "", 0) // the per-request SSL_INNER line is the same in both arms
++	defer func() { logger = prevLogger }()
++	for _, arm := range []struct {
++		name string
++		on   bool
++	}{{"off", false}, {"on", true}} {
++		b.Run(arm.name, func(b *testing.B) {
++			labAppsCls()
++			prev := labAppsClassifier
++			labAppsClassifier = nil
++			if arm.on {
++				labAppsClassifier = realApps(b, 0, 0)
++			}
++			defer func() { labAppsClassifier = prev }()
++			const host = "gmail.googleapis.com"
++			cli, clientTLS := labTLSPair(b, host, "")
++			upstreamTLS, originTLS := labTLSPair(b, host, "")
++			go labOriginH1(originTLS)
++			outer := &http.Request{Method: http.MethodConnect, Host: host + ":443", RemoteAddr: "192.0.2.20:5555"}
++			done := make(chan struct{})
++			go func() {
++				defer close(done)
++				runH1InspectLoop(outer, clientTLS, upstreamTLS, host, nil, ProxyIdentity{ClientIP: "192.0.2.20"}, nil)
++			}()
++			raw := []byte("POST " + gmailUploadPath + " HTTP/1.1\r\nHost: " + host +
++				"\r\nContent-Type: message/rfc822\r\nContent-Length: 16\r\n\r\nSubject: x\r\n\r\nhi")
++			br := bufio.NewReader(cli)
++			b.ReportAllocs()
++			b.ResetTimer()
++			for i := 0; i < b.N; i++ {
++				if _, err := cli.Write(raw); err != nil {
++					b.Fatal(err)
++				}
++				resp, err := http.ReadResponse(br, nil)
++				if err != nil {
++					b.Fatal(err)
++				}
++				_, _ = io.Copy(io.Discard, resp.Body)
++				resp.Body.Close()
++			}
++			b.StopTimer()
++			cli.Close()
++			<-done
++		})
++	}
++}
+diff --git a/internal/logstore/logstore.go b/internal/logstore/logstore.go
+index 665874a96..efae08da6 100644
+--- a/internal/logstore/logstore.go
++++ b/internal/logstore/logstore.go
+@@ -102,6 +102,33 @@ type Entry struct {
+ 	// is queryable rather than indistinguishable from an old/forgotten record. Populated
+ 	// only on the decryption decision path (a later ADR-0011 slice); nil until then.
+ 	Dec *DecryptionBlock `json:"dec,omitempty"`
++
++	// LAB ONLY: the protocol detector's "pd" block. Nested pointer, block-level omitempty: nil on every
++	// entry unless the lab classifier is on (CULVERT_LAB_CHILDAPP), so the wire stays byte-identical when off.
++	PD *ProtoDetectBlock `json:"pd,omitempty"`
++}
++
++// ProtoDetectBlock is the LAB "pd" object. Today it carries only the application verdicts of an inspected
++// tunnel's decrypted requests (child applications, PRO-504). Once present, every field serializes
++// explicitly (the ADR-0011 serialization rule), so "no application" is queryable. It holds no hostname,
++// path, query or header value: application names come from the content data, the rest from internal/pdobs.
++type ProtoDetectBlock struct {
++	SchemaVersion  int              `json:"schema_version"`
++	Requests       int              `json:"requests"`        // decrypted requests classified on this tunnel
++	Apps           []ProtoDetectApp `json:"apps"`            // distinct verdicts, first seen first, at most 8
++	AppsDropped    int              `json:"apps_dropped"`    // requests whose verdict did not fit in Apps
++	ChildRelease   string           `json:"child_release"`   // the child-app component's release
++	ContentRelease string           `json:"content_release"` // the content pack's release
++}
++
++// ProtoDetectApp is one distinct application verdict and the number of requests that got it.
++type ProtoDetectApp struct {
++	App       string   `json:"app"`       // "" when the server name names no application
++	Container string   `json:"container"` // App's parent when App is a child, else ""
++	Basis     string   `json:"basis"`     // pdobs basis
++	Limit     string   `json:"limit"`     // pdobs limit, "" when no work ceiling was hit
++	Reasons   []string `json:"reasons"`   // pdobs reasons
++	Count     int      `json:"count"`
+ }
+ 
+ // DecryptionBlock is the nested "dec" object on Entry (ADR-0011 §2.1). Fields are plain
+diff --git a/internal/pdobs/pdobs.go b/internal/pdobs/pdobs.go
+new file mode 100644
+index 000000000..5cd7ad349
+--- /dev/null
++++ b/internal/pdobs/pdobs.go
+@@ -0,0 +1,107 @@
++// Package pdobs holds the closed vocabularies of the LAB "pd" log block (protocol detector observation),
++// modelled on internal/decryptobs. LAB ONLY: never proposed upstream as-is.
++//
++// Only values listed here may appear as categorical fields of the block, so they are safe as metric labels
++// and SIEM fields (ADR-0011 rules: closed vocabularies only; no hostnames, paths or free text). A value the
++// detector library returns that is not listed is logged as Unknown, never passed through: the library can
++// grow a value before this list does, and the exhaustiveness test in internal/protodetect fails when it
++// does.
++package pdobs
++
++// Unknown replaces any categorical value that is not in its closed set.
++const Unknown = "unknown"
++
++// AppBasis is how the application of one decrypted request was established.
++const (
++	BasisNone        = "none"         // no application: the server name names none
++	BasisServerName  = "server_name"  // the server-name catalog; no child rule matched
++	BasisRequestRule = "request_rule" // a child rule refined the catalog's application
++)
++
++// AppLimit is the work ceiling a request hit (the verdict then names the parent only).
++const (
++	LimitRuleEvaluations = "child_rule_evaluations"
++	LimitPathBytes       = "child_path_bytes"
++	LimitFieldBytes      = "child_field_bytes"
++)
++
++// AppReason is one reason of an application verdict.
++const (
++	ReasonNoHost           = "no_host"
++	ReasonHostInvalid      = "host_invalid"
++	ReasonHostUnowned      = "host_unowned"
++	ReasonHostWebFront     = "host_web_front"
++	ReasonSNIHostMismatch  = "sni_host_owner_mismatch"
++	ReasonPathNotCanonical = "path_not_canonical"
++	ReasonFieldTooLong     = "field_too_long"
++	ReasonNoChildMatched   = "no_child_rule_matched"
++	ReasonChildMatched     = "child_rule_matched"
++	ReasonWorkLimit        = "work_limit"
++	ReasonPanic            = "panic"
++)
++
++// AllBases, AllLimits and AllReasons list each closed set.
++func AllBases() []string { return []string{BasisNone, BasisServerName, BasisRequestRule} }
++
++// AllLimits lists the AppLimit values (the empty value, no limit, is not one of them).
++func AllLimits() []string { return []string{LimitRuleEvaluations, LimitPathBytes, LimitFieldBytes} }
++
++// AllReasons lists the AppReason values.
++func AllReasons() []string {
++	return []string{ReasonNoHost, ReasonHostInvalid, ReasonHostUnowned, ReasonHostWebFront, ReasonSNIHostMismatch,
++		ReasonPathNotCanonical, ReasonFieldTooLong, ReasonNoChildMatched, ReasonChildMatched, ReasonWorkLimit, ReasonPanic}
++}
++
++func in(v string, set []string) bool {
++	for _, s := range set {
++		if v == s {
++			return true
++		}
++	}
++	return false
++}
++
++// Basis returns v when it is a closed AppBasis value, otherwise Unknown.
++func Basis(v string) string {
++	if in(v, AllBases()) {
++		return v
++	}
++	return Unknown
++}
++
++// Limit returns v when it is "" or a closed AppLimit value, otherwise Unknown.
++func Limit(v string) string {
++	if v == "" || in(v, AllLimits()) {
++		return v
++	}
++	return Unknown
++}
++
++// Reason returns v when it is a closed AppReason value, otherwise Unknown.
++func Reason(v string) string {
++	if in(v, AllReasons()) {
++		return v
++	}
++	return Unknown
++}
++
++// AppName returns v when it has the shape of a content-data application name (1 to 64 bytes of a-z, 0-9,
++// '-', '.' and '_', starting with a letter or digit), otherwise Unknown. Application names come from the
++// content data built into the binary, never from the request, but the shape check keeps a host, a path or
++// free text out of the block even if that ever changed.
++func AppName(v string) string {
++	if v == "" {
++		return ""
++	}
++	if len(v) > 64 {
++		return Unknown
++	}
++	for i := 0; i < len(v); i++ {
++		c := v[i]
++		ok := c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || i > 0 && (c == '-' || c == '.' || c == '_')
++		if !ok {
++			return Unknown
++		}
++	}
++	return v
++}
+diff --git a/internal/pdobs/pdobs_test.go b/internal/pdobs/pdobs_test.go
+new file mode 100644
+index 000000000..8dce96da2
+--- /dev/null
++++ b/internal/pdobs/pdobs_test.go
+@@ -0,0 +1,34 @@
++package pdobs
++
++import "testing"
++
++func TestClosedSetsPassAndEverythingElseIsUnknown(t *testing.T) {
++	for _, v := range AllBases() {
++		if Basis(v) != v {
++			t.Fatalf("basis %q", v)
++		}
++	}
++	for _, v := range AllLimits() {
++		if Limit(v) != v {
++			t.Fatalf("limit %q", v)
++		}
++	}
++	for _, v := range AllReasons() {
++		if Reason(v) != v {
++			t.Fatalf("reason %q", v)
++		}
++	}
++	if Limit("") != "" || Basis("") != Unknown || Reason("") != Unknown || Basis("x") != Unknown || Limit("x") != Unknown {
++		t.Fatal("open values passed")
++	}
++	for _, v := range []string{"mail.google.com/x", "Gmail", "-a", "a b", "a/b", string(make([]byte, 65))} {
++		if AppName(v) != Unknown {
++			t.Fatalf("AppName(%q) passed", v)
++		}
++	}
++	for _, v := range []string{"gmail", "gmail-uploading", "google-base", "ms-base", "a"} {
++		if AppName(v) != v {
++			t.Fatalf("AppName(%q) refused", v)
++		}
++	}
++}
+diff --git a/internal/protodetect/apps.go b/internal/protodetect/apps.go
+new file mode 100644
+index 000000000..7fb6d9307
+--- /dev/null
++++ b/internal/protodetect/apps.go
+@@ -0,0 +1,30 @@
++package protodetect
++
++// LAB ONLY. Culvert-owned interface to the detector's application classifier for DECRYPTED requests
++// (an inspected tunnel's inner HTTP requests). Visibility only: a verdict never feeds a policy decision.
++
++// AppRequest is what the inspection pipeline saw of one decrypted request. Values are borrowed for the call.
++type AppRequest struct {
++	SNI              string // the client's TLS server name on the tunnel
++	Host             string // the inner request's Host or :authority
++	Method           string
++	Path             string // origin-form, with its query, as the client sent it
++	ContentType      string
++	RequestBodyBytes int64 // negative: unknown
++	WebSocket        bool
++	HeaderNames      []string
++}
++
++// AppVerdict is the classifier's answer. Basis, Reasons and Limit are the library's closed vocabularies;
++// the caller maps them through internal/pdobs before logging.
++type AppVerdict struct {
++	App, Container, Basis, Limit string
++	Reasons                      []string
++	ChildRelease, PackRelease    string
++}
++
++// AppClassifier classifies decrypted requests. Implementations must be safe for concurrent use and must not
++// panic into the caller.
++type AppClassifier interface {
++	Classify(AppRequest) AppVerdict
++}
+diff --git a/internal/protodetect/real_apps.go b/internal/protodetect/real_apps.go
+new file mode 100644
+index 000000000..047d7e033
+--- /dev/null
++++ b/internal/protodetect/real_apps.go
+@@ -0,0 +1,40 @@
++package protodetect
++
++import (
++	"github.com/leenadav/protocol-detector/go/detector"
++)
++
++// RealApps wraps detector.AppClassifier. Like real.go, it is the only place that names the library's API.
++type RealApps struct{ c *detector.AppClassifier }
++
++var _ AppClassifier = (*RealApps)(nil)
++
++// NewRealApps builds the classifier from the content data built into the library. Zero limits take the
++// library's defaults (64 rule evaluations, 4,096 path bytes).
++func NewRealApps(maxRuleEvaluations, maxPathBytes int) (*RealApps, error) {
++	c, err := detector.NewAppClassifier(detector.AppLimitsConfig{MaxRuleEvaluations: maxRuleEvaluations, MaxPathBytes: maxPathBytes})
++	if err != nil {
++		return nil, err
++	}
++	return &RealApps{c: c}, nil
++}
++
++// Classify never panics: the library recovers its own, and this is the second layer.
++func (r *RealApps) Classify(q AppRequest) (v AppVerdict) {
++	defer func() {
++		if recover() != nil {
++			v = AppVerdict{Basis: "none", Reasons: []string{"panic"}}
++		}
++	}()
++	d := r.c.Classify(detector.HTTPRequest{SNI: q.SNI, Host: q.Host, Method: q.Method, Path: q.Path,
++		ContentType: q.ContentType, RequestBodyBytes: q.RequestBodyBytes, ResponseBodyBytes: -1,
++		WebSocket: q.WebSocket, HeaderNames: q.HeaderNames})
++	return AppVerdict{App: d.App, Container: d.Container, Basis: d.Basis, Limit: d.Limit, Reasons: d.Reasons,
++		ChildRelease: d.ChildRelease, PackRelease: d.PackRelease}
++}
++
++// LibraryAppVocab returns the library's closed vocabularies (bases, reasons, limits), for the test that
++// keeps internal/pdobs exhaustive.
++func LibraryAppVocab() (bases, reasons, limits []string) {
++	return detector.AppBases(), detector.AppReasons(), detector.AppLimits()
++}
+diff --git a/internal/protodetect/real_apps_test.go b/internal/protodetect/real_apps_test.go
+new file mode 100644
+index 000000000..2edf19ad1
+--- /dev/null
++++ b/internal/protodetect/real_apps_test.go
+@@ -0,0 +1,54 @@
++package protodetect
++
++import (
++	"sort"
++	"strings"
++	"testing"
++
++	"github.com/KidCarmi/Culvert/internal/pdobs"
++)
++
++// TestPdobsCoversTheLibraryAppVocabulary fails when the library gains a basis, reason or limit that the
++// lab's closed sets do not list (it would otherwise be logged as "unknown").
++func TestPdobsCoversTheLibraryAppVocabulary(t *testing.T) {
++	bases, reasons, limits := LibraryAppVocab()
++	for _, c := range []struct {
++		name     string
++		lib, lab []string
++	}{{"bases", bases, pdobs.AllBases()}, {"reasons", reasons, pdobs.AllReasons()}, {"limits", limits, pdobs.AllLimits()}} {
++		a, b := append([]string{}, c.lib...), append([]string{}, c.lab...)
++		sort.Strings(a)
++		sort.Strings(b)
++		if strings.Join(a, ",") != strings.Join(b, ",") {
++			t.Errorf("%s: library %v, pdobs %v", c.name, a, b)
++		}
++	}
++}
++
++// BenchmarkRealAppsClassify is the library's share of the per-request cost (Classify alone, the wrapper's
++// recover included), so the lab hook's own share is BenchmarkLabChildAppNote minus this.
++func BenchmarkRealAppsClassify(b *testing.B) {
++	c, err := NewRealApps(0, 0)
++	if err != nil {
++		b.Fatal(err)
++	}
++	for _, q := range []struct {
++		name string
++		req  AppRequest
++	}{
++		{"child", AppRequest{SNI: "gmail.googleapis.com", Host: "gmail.googleapis.com", Method: "POST",
++			Path: "/upload/gmail/v1/users/me/messages?uploadType=media", ContentType: "message/rfc822", RequestBodyBytes: 16,
++			HeaderNames: []string{"Content-Type", "Content-Length"}}},
++		{"parent", AppRequest{SNI: "gmail.googleapis.com", Host: "gmail.googleapis.com", Method: "POST",
++			Path: "/gmail/v1/users/me/labels", RequestBodyBytes: 16, HeaderNames: []string{"Content-Length"}}},
++		{"unowned", AppRequest{SNI: "unowned.example", Host: "unowned.example", Method: "POST", Path: "/upload",
++			RequestBodyBytes: 16, HeaderNames: []string{"Content-Length"}}},
++	} {
++		b.Run(q.name, func(b *testing.B) {
++			b.ReportAllocs()
++			for i := 0; i < b.N; i++ {
++				_ = c.Classify(q.req)
++			}
++		})
++	}
++}
+diff --git a/logstore.go b/logstore.go
+index 160200a9a..e2d5ecb58 100644
+--- a/logstore.go
++++ b/logstore.go
+@@ -32,6 +32,9 @@ type (
+ 	// DecryptionBlock is the nested "dec" observability block on a LogEntry
+ 	// (ADR-0011); re-exposed unqualified for the recorder seam and callers.
+ 	DecryptionBlock = logstore.DecryptionBlock
++	// ProtoDetectBlock is the LAB nested "pd" block on a LogEntry.
++	ProtoDetectBlock = logstore.ProtoDetectBlock
++	ProtoDetectApp   = logstore.ProtoDetectApp
+ )
+ 
+ // errLogStoreEncMismatch / errLogStoreSaltUnusable are re-exposed for the
+diff --git a/proxy_tunnel.go b/proxy_tunnel.go
+index 2c170f284..ce7564f11 100644
+--- a/proxy_tunnel.go
++++ b/proxy_tunnel.go
+@@ -1211,6 +1211,8 @@ func runH1InspectLoop(r *http.Request, clientTLS, upstreamTLS *tls.Conn, hostOnl
+ 	clientBR, upstreamBR := newInspectLoopReaders(clientTLS, upstreamTLS)
+ 
+ 	clientIP, _, _ := net.SplitHostPort(r.RemoteAddr)
++	labApps := labAppsFor(clientTLS)                                 // LAB (PRO-504): nil unless CULVERT_LAB_CHILDAPP=real
++	defer labLogInspectClose(labApps, hostOnly, match, id, decBlock) // LAB: no-op when nil
+ 
+ relayLoop:
+ 	for {
+@@ -1222,6 +1224,7 @@ relayLoop:
+ 		if err != nil {
+ 			break
+ 		}
++		labApps.note(req) // LAB (PRO-504): visibility only; nil-safe, never touches req
+ 		// Wrap req.Body with a stall-detecting reader that re-arms the
+ 		// client-side read deadline on every Body.Read, so a pause longer than
+ 		// sslInspectBodyStallTimeout trips the next Read — long legitimate
+diff --git a/proxy_tunnel_h2.go b/proxy_tunnel_h2.go
+index 9d76b9c06..485fcfb52 100644
+--- a/proxy_tunnel_h2.go
++++ b/proxy_tunnel_h2.go
+@@ -449,8 +449,11 @@ func handleInspectH2(outer *http.Request, clientTLS, upstreamTLS *tls.Conn, host
+ 	defer upstreamCC.Close() //nolint:errcheck // best-effort GOAWAY + reader-goroutine reap
+ 
+ 	clientIP, _, _ := net.SplitHostPort(outer.RemoteAddr)
++	labApps := labAppsFor(clientTLS)                                 // LAB (PRO-504): nil unless CULVERT_LAB_CHILDAPP=real
++	defer labLogInspectClose(labApps, hostOnly, match, id, decBlock) // LAB: no-op when nil
+ 
+ 	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
++		labApps.note(req) // LAB (PRO-504): before the reshape clears RequestURI; never touches req
+ 		h2InspectStream(outer, w, req, upstreamCC, hostOnly, clientIP, match, id, decBlock)
+ 	})
+ 
+diff --git a/store.go b/store.go
+index 0a31fdf21..799a4c9cb 100644
+--- a/store.go
++++ b/store.go
+@@ -347,6 +347,8 @@ type AuthLogFields struct {
+ 	// (the wire stays byte-identical); populated only on the CONNECT decision
+ 	// path. Maps to LogEntry.Dec.
+ 	Dec *DecryptionBlock
++	// PD is the LAB protocol-detector block (nil unless the lab classifier is on). Maps to LogEntry.PD.
++	PD *ProtoDetectBlock
+ 	// AuthSource is the categorical authentication source that produced this
+ 	// request's identity context (F5): "local" | "exempt" | "unauth" | an IdP
+ 	// profile source ("oidc:<id>" / "saml:<id>" / bare profile ID from
+@@ -373,6 +375,7 @@ func (a AuthLogFields) applyTo(e *LogEntry) {
+ 	e.RuleID = a.RuleID
+ 	e.Dec = a.Dec // nil ⇒ no dec block (byte-identical); set only on the decryption decision path
+ 	e.AuthSource = a.AuthSource
++	e.PD = a.PD // LAB: nil unless the lab classifier is on
+ }
+ 
+ // The request-log engine (ring + persistent JSONL layer + TTL read cache +
+-- 
+2.43.0
+

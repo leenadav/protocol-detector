@@ -1,0 +1,3186 @@
+{
+ "schema": "child-apps/1",
+ "task": "PRO-495",
+ "feeds": "PRO-492 (Engine: enterprise App-ID model with child apps per function)",
+ "wave": 0,
+ "date": "2026-11-27",
+ "pack_base": "main 5cb35d2, go/internal/content/pack.json (544 applications)",
+ "pro491_overlap": "None on 2026-11-27: no PRO-491 output exists on any branch yet. Services added later by PRO-491 should link to this file instead of repeating these rows.",
+ "rule_field_policy": [
+  "signals hold only facts read in the cited official document (vendor API reference, vendor's own SDK or spec repository, vendor network page, or the git project's protocol document).",
+  "Anything inferred, unread or opaque (a URL returned at run time) is in notes or not_separable, never in signals.",
+  "client_scope 'api' means the rule describes the vendor's public API (SDKs, scripts, integrations, automation). It is not evidence about the vendor's own web or desktop client, whose paths are unpublished for every service here.",
+  "Paths use {name} for a variable segment. path_exact must equal the path (query excluded), path_prefix must start it, path_pattern matches segment by segment.",
+  "A credential or opaque id in a path (bot token, webhook token, file id) is matched by shape and never emitted (AGENTS.md: no payloads, credentials or opaque identifiers as identity).",
+  "Precedence inside a parent: the most specific child wins (more signal fields matched); base is the fallback."
+ ],
+ "visibility": "Every path, method and content-type signal needs Culvert's TLS decryption. In the visibility-only phase (research/README.md) the detector sees SNI, offered ALPN and port, so only the base children and host-only facts apply there.",
+ "services": [
+  {
+   "service": "Gmail",
+   "parent": "gmail",
+   "spec": "research/apps/google-workspace.md",
+   "children": [
+    {
+     "id": "gmail-base",
+     "function": "base",
+     "parent": "gmail",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[gmail] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/google-workspace.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "gmail-sending",
+     "function": "posting",
+     "parent": "gmail",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "gmail.googleapis.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/gmail/v1/users/{userId}/messages/send",
+        "/gmail/v1/users/{userId}/drafts/send",
+        "/upload/gmail/v1/users/{userId}/messages/send",
+        "/upload/gmail/v1/users/{userId}/drafts/send",
+        "/resumable/upload/gmail/v1/users/{userId}/messages/send",
+        "/resumable/upload/gmail/v1/users/{userId}/drafts/send"
+       ],
+       "content_type": [
+        "message/* (on the /upload/ and /resumable/upload/ paths)"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+       "accessed": "2026-11-27",
+       "locator": "resources users.messages.send and users.drafts.send: httpMethod POST, flatPath, mediaUpload.protocols simple/resumable paths, accept ['message/*'], maxSize 36700160",
+       "page_date": "discovery revision 20261116"
+      }
+     ]
+    },
+    {
+     "id": "gmail-uploading",
+     "function": "uploading",
+     "parent": "gmail",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "gmail.googleapis.com"
+       ],
+       "method": "POST",
+       "path_prefix": [
+        "/upload/gmail/v1/users/",
+        "/resumable/upload/gmail/v1/users/"
+       ],
+       "query": "uploadType=media|multipart|resumable",
+       "content_type": [
+        "message/*"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+       "accessed": "2026-11-27",
+       "locator": "mediaUpload of users.messages.insert, users.messages.import, users.drafts.create (accept ['message/*'], maxSize 157286400 for insert/import); top-level parameter uploadType",
+       "page_date": "discovery revision 20261116"
+      }
+     ],
+     "notes": "Attachments travel inside the uploaded RFC 822 message. A request matching gmail-sending is reported as gmail-sending (more specific)."
+    },
+    {
+     "id": "gmail-downloading",
+     "function": "downloading",
+     "parent": "gmail",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "gmail.googleapis.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/gmail/v1/users/{userId}/messages/{messageId}/attachments/{id}"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://gmail.googleapis.com/$discovery/rest?version=v1",
+       "accessed": "2026-11-27",
+       "locator": "resource users.messages.attachments.get: httpMethod GET, flatPath",
+       "page_date": "discovery revision 20261116"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "uploading/downloading/sending in the Gmail web UI (mail.google.com)",
+     "reason": "Google publishes no request paths for the first-party web client; only the public API above is documented. UNVERIFIED for mail.google.com, left out of the rule fields."
+    }
+   ],
+   "host_note": "gmail.googleapis.com is not in pack app_domains[gmail]: today it matches google-base (googleapis.com). The children need Engine to map this exact host plus path to gmail."
+  },
+  {
+   "service": "Outlook.com",
+   "parent": "outlook-web",
+   "spec": "research/apps/microsoft-365.md",
+   "children": [
+    {
+     "id": "outlook-web-base",
+     "function": "base",
+     "parent": "outlook-web",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[outlook-web] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/microsoft-365.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "outlook-sending",
+     "function": "posting",
+     "parent": "outlook-web",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.microsoft.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v1.0/me/sendMail",
+        "/v1.0/users/{id}/sendMail"
+       ],
+       "content_type": [
+        "application/json",
+        "text/plain (MIME content)"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/user-sendmail",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: POST /me/sendMail, POST /users/{id | userPrincipalName}/sendMail; permissions table lists Delegated (personal Microsoft account) Mail.Send; Content-Type 'Use application/json for a JSON object and text/plain for MIME content'",
+       "page_date": "ms.date 2024-06-21"
+      }
+     ]
+    },
+    {
+     "id": "outlook-uploading",
+     "function": "uploading",
+     "parent": "outlook-web",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.microsoft.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v1.0/me/messages/{id}/attachments",
+        "/v1.0/users/{id}/messages/{id}/attachments",
+        "/v1.0/me/messages/{id}/attachments/createUploadSession",
+        "/v1.0/users/{id}/messages/{id}/attachments/createUploadSession"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/message-post-attachments",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: POST /me/messages/{id}/attachments; Delegated (personal Microsoft account) Mail.ReadWrite",
+       "page_date": "ms.date 2024-06-21"
+      },
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/attachment-createuploadsession",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: POST /me/messages/{id}/attachments/createUploadSession",
+       "page_date": "ms.date 2024-04-04"
+      }
+     ],
+     "notes": "Large attachments are then PUT to the returned uploadUrl. The page's examples show https://outlook.office.com/api/v2.0|gv1.0/.../AttachmentSessions('...')?authtoken=..., but the URL is opaque and returned by the service, so it is not a rule field."
+    },
+    {
+     "id": "outlook-downloading",
+     "function": "downloading",
+     "parent": "outlook-web",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.microsoft.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/v1.0/me/messages/{id}/attachments/{id}/$value",
+        "/v1.0/users/{id}/messages/{id}/attachments/{id}/$value"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/attachment-get",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: GET /me/messages/{id}/attachments/{id}/$value",
+       "page_date": "ms.date 2024-08-08"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "personal (Outlook.com) versus work (Exchange Online) mailbox",
+     "reason": "The same Graph paths serve both account types (/me/... is the signed-in user). The path does not say which, so these children cannot separate consumer from business use."
+    },
+    {
+     "function": "functions in the Outlook web UI (outlook.live.com, outlook.office.com)",
+     "reason": "No published request paths for the first-party web client. UNVERIFIED, left out."
+    }
+   ],
+   "host_note": "graph.microsoft.com is not in app_domains[outlook-web]: today it matches ms-base (microsoft.com). Graph serves every Microsoft 365 workload, so the parent comes from the path, never the host."
+  },
+  {
+   "service": "Google Drive",
+   "parent": "google-drive",
+   "spec": "research/apps/onedrive-drive-personal-business.md",
+   "children": [
+    {
+     "id": "google-drive-base",
+     "function": "base",
+     "parent": "google-drive",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[google-drive] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/onedrive-drive-personal-business.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "google-drive-uploading",
+     "function": "uploading",
+     "parent": "google-drive",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "www.googleapis.com"
+       ],
+       "method": "POST",
+       "path_prefix": [
+        "/upload/drive/v3/files",
+        "/resumable/upload/drive/v3/files"
+       ],
+       "query": "uploadType=media|multipart|resumable",
+       "content_type": [
+        "*/* (any file type)"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "www.googleapis.com"
+       ],
+       "method": "PATCH",
+       "path_pattern": [
+        "/upload/drive/v3/files/{fileId}",
+        "/resumable/upload/drive/v3/files/{fileId}"
+       ],
+       "content_type": [
+        "*/*"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+       "accessed": "2026-11-27",
+       "locator": "rootUrl https://www.googleapis.com/; files.create POST, files.update PATCH, mediaUpload.protocols simple/resumable paths, accept ['*/*'], maxSize 5497558138880",
+       "page_date": "discovery revision 20261117"
+      }
+     ]
+    },
+    {
+     "id": "google-drive-downloading",
+     "function": "downloading",
+     "parent": "google-drive",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "www.googleapis.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/drive/v3/files/{fileId}"
+       ],
+       "query": "alt=media",
+       "direction": "download",
+       "websocket": false
+      },
+      {
+       "host": [
+        "www.googleapis.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/drive/v3/files/{fileId}/export"
+       ],
+       "direction": "download",
+       "websocket": false
+      },
+      {
+       "host": [
+        "www.googleapis.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/drive/v3/files/{fileId}/download"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+       "accessed": "2026-11-27",
+       "locator": "files.get GET supportsMediaDownload true; parameter alt enum media ('Media download with context-dependent Content-Type'); files.export GET supportsMediaDownload true; files.download POST files/{fileId}/download",
+       "page_date": "discovery revision 20261117"
+      }
+     ]
+    },
+    {
+     "id": "google-drive-sharing",
+     "function": "sharing",
+     "parent": "google-drive",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "www.googleapis.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/drive/v3/files/{fileId}/permissions"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest",
+       "accessed": "2026-11-27",
+       "locator": "permissions.create POST files/{fileId}/permissions",
+       "page_date": "discovery revision 20261117"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "upload/download in the Drive web UI and Drive for desktop",
+     "reason": "drive.google.com and the sync client use request paths Google does not publish. UNVERIFIED, left out; the documented content hosts (drive.usercontent.google.com and others) stay in base."
+    }
+   ],
+   "host_note": "www.googleapis.com is shared by many Google APIs and today matches google-base; the parent comes from the /drive/v3/ or /upload/drive/v3/ path."
+  },
+  {
+   "service": "OneDrive",
+   "parent": "ms-onedrive",
+   "spec": "research/apps/onedrive-drive-personal-business.md",
+   "children": [
+    {
+     "id": "ms-onedrive-base",
+     "function": "base",
+     "parent": "ms-onedrive",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[ms-onedrive] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/onedrive-drive-personal-business.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "ms-onedrive-uploading",
+     "function": "uploading",
+     "parent": "ms-onedrive",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.microsoft.com"
+       ],
+       "method": "PUT",
+       "path_pattern": [
+        "/v1.0/me/drive/items/{parent-id}:/{filename}:/content",
+        "/v1.0/me/drive/items/{item-id}/content",
+        "/v1.0/drives/{drive-id}/items/{item-id}/content"
+       ],
+       "content_type": [
+        "the file's own type (examples: text/plain)"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "graph.microsoft.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v1.0/me/drive/items/{itemId}/createUploadSession",
+        "/v1.0/me/drive/items/{parentItemId}:/{fileName}:/createUploadSession",
+        "/v1.0/drives/{driveId}/items/{itemId}/createUploadSession"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/driveitem-put-content",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: PUT /me/drive/items/{parent-id}:/{filename}:/content and variants; Delegated (personal Microsoft account) Files.ReadWrite",
+       "page_date": "ms.date 2017-09-10"
+      },
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/driveitem-createuploadsession",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: POST .../createUploadSession; 'your app makes a PUT request to the uploadUrl value received in the createUploadSession response'",
+       "page_date": "ms.date 2025-10-15"
+      }
+     ],
+     "notes": "Upload bytes then go by PUT with Content-Range to the returned uploadUrl (example host sn3302.up.1drv.com, under 1drv.com, already in the parent's domains). Opaque URL: not a rule field."
+    },
+    {
+     "id": "ms-onedrive-downloading",
+     "function": "downloading",
+     "parent": "ms-onedrive",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.microsoft.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/v1.0/me/drive/items/{item-id}/content",
+        "/v1.0/me/drive/root:/{item-path}:/content",
+        "/v1.0/drives/{drive-id}/items/{item-id}/content",
+        "/v1.0/shares/{shareIdOrEncodedSharingUrl}/driveItem/content"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/driveitem-get-content",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: GET /me/drive/items/{item-id}/content and variants; response HTTP/1.1 302 Found with a Location on files.1drv.com in the example",
+       "page_date": "ms.date 2024-06-12"
+      }
+     ],
+     "notes": "The 302 target (example b0mpua-by3301.files.1drv.com) is a pre-authenticated, opaque URL: it matches base by host, not this child."
+    },
+    {
+     "id": "ms-onedrive-sharing",
+     "function": "sharing",
+     "parent": "ms-onedrive",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.microsoft.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v1.0/me/drive/items/{itemId}/createLink",
+        "/v1.0/drives/{driveId}/items/{itemId}/createLink"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/driveitem-createlink",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: POST /me/drive/items/{itemId}/createLink and variants",
+       "page_date": "ms.date 2017-09-10"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "OneDrive personal versus OneDrive for Business / SharePoint",
+     "reason": "The same /me/drive and /drives/{id} paths serve both; only /sites/{id}/drive and /groups/{id}/drive are clearly SharePoint (sharepoint-online). A /me/drive request cannot be assigned to one."
+    },
+    {
+     "function": "the OneDrive web UI and sync client",
+     "reason": "No published request paths for first-party clients. UNVERIFIED, left out."
+    }
+   ],
+   "host_note": "graph.microsoft.com is not in app_domains[ms-onedrive] (today ms-base); parent from the path."
+  },
+  {
+   "service": "Dropbox",
+   "parent": "dropbox",
+   "spec": "research/apps/dropbox.md",
+   "children": [
+    {
+     "id": "dropbox-base",
+     "function": "base",
+     "parent": "dropbox",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[dropbox] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/dropbox.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "dropbox-uploading",
+     "function": "uploading",
+     "parent": "dropbox",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "content.dropboxapi.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/2/files/upload",
+        "/2/files/upload_session/start",
+        "/2/files/upload_session/append_v2",
+        "/2/files/upload_session/finish",
+        "/2/files/upload_session/append_batch"
+       ],
+       "content_type": [
+        "application/octet-stream"
+       ],
+       "header_present": [
+        "Dropbox-API-Arg"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/dropbox/dropbox-api-spec/main/files.stone",
+       "accessed": "2026-11-27",
+       "locator": "routes upload, upload_session/start, upload_session/append:2, upload_session/finish: attrs host = \"content\", style = \"upload\""
+      },
+      {
+       "url": "https://raw.githubusercontent.com/dropbox/dropbox-api-spec/main/stone_cfg.stone",
+       "accessed": "2026-11-27",
+       "locator": "struct Route: host pattern ^(api|content|notify)$, style ^(rpc|download|upload|sse)$"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/session.py",
+       "accessed": "2026-11-27",
+       "locator": "API_DOMAIN '.dropboxapi.com'; API_CONTENT_HOST = 'content' + API_DOMAIN"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/dropbox_client.py",
+       "accessed": "2026-11-27",
+       "locator": "URL https://{hostname}/{version}/{route_name} (2); route name gets '_v{N}' for version > 1; upload style sets Content-Type application/octet-stream and Dropbox-API-Arg; requests are POST"
+      }
+     ]
+    },
+    {
+     "id": "dropbox-downloading",
+     "function": "downloading",
+     "parent": "dropbox",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "content.dropboxapi.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/2/files/download",
+        "/2/files/download_zip",
+        "/2/files/export"
+       ],
+       "header_present": [
+        "Dropbox-API-Arg"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/dropbox/dropbox-api-spec/main/files.stone",
+       "accessed": "2026-11-27",
+       "locator": "routes download, download_zip, export: host = \"content\", style = \"download\""
+      },
+      {
+       "url": "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/dropbox_client.py",
+       "accessed": "2026-11-27",
+       "locator": "download style: argument in Dropbox-API-Arg, result in Dropbox-API-Result, body is the binary payload"
+      }
+     ]
+    },
+    {
+     "id": "dropbox-sharing",
+     "function": "sharing",
+     "parent": "dropbox",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.dropboxapi.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/2/sharing/create_shared_link_with_settings"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/dropbox/dropbox-api-spec/main/sharing.stone",
+       "accessed": "2026-11-27",
+       "locator": "route create_shared_link_with_settings: attrs scope = \"sharing.write\" (no host or style attr, so the defaults api and rpc of stone_cfg.stone)"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/dropbox/dropbox-sdk-python/main/dropbox/dropbox_client.py",
+       "accessed": "2026-11-27",
+       "locator": "rpc style sets Content-Type application/json"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "upload/download in the Dropbox web UI and desktop sync client",
+     "reason": "Their request paths are not published (the spec covers API v2 only). UNVERIFIED, left out."
+    }
+   ],
+   "host_note": "content.dropboxapi.com and api.dropboxapi.com are already under dropboxapi.com in the pack."
+  },
+  {
+   "service": "Box",
+   "parent": "box",
+   "spec": "research/apps/box.md",
+   "children": [
+    {
+     "id": "box-base",
+     "function": "base",
+     "parent": "box",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[box] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/box.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child. research/apps/box.md is BLOCKED (sign-in wall on the firewall article); the pack's box names predate it."
+    },
+    {
+     "id": "box-uploading",
+     "function": "uploading",
+     "parent": "box",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "upload.box.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/api/2.0/files/content",
+        "/api/2.0/files/{file_id}/content"
+       ],
+       "content_type": [
+        "multipart/form-data"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "upload.box.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/api/2.0/files/upload_sessions",
+        "/api/2.0/files/{file_id}/upload_sessions"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "{box-upload-server}"
+       ],
+       "method": "PUT",
+       "path_pattern": [
+        "/api/2.0/files/upload_sessions/{upload_session_id}"
+       ],
+       "content_type": [
+        "application/octet-stream"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+       "accessed": "2026-11-27",
+       "locator": "paths /files/content POST (servers https://upload.box.com/api/2.0, multipart/form-data), /files/{file_id}/content POST, /files/upload_sessions POST (application/json), /files/upload_sessions/{upload_session_id} PUT (servers https://{box-upload-server}/api/2.0, application/octet-stream)",
+       "page_date": "info.version 2024.0"
+      }
+     ],
+     "notes": "{box-upload-server} is a server variable, so that row's host is not a fixed name: Engine matches its path only together with a box host."
+    },
+    {
+     "id": "box-downloading",
+     "function": "downloading",
+     "parent": "box",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.box.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/2.0/files/{file_id}/content"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+       "accessed": "2026-11-27",
+       "locator": "servers https://api.box.com/2.0; /files/{file_id}/content GET; response 302: 'Location header for the file on dl.boxcloud.com' which 'is not persistent'",
+       "page_date": "info.version 2024.0"
+      }
+     ],
+     "notes": "The redirect target dl.boxcloud.com is under boxcloud.com, in the parent's domains."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "sharing (create a shared link)",
+     "reason": "The documented call is PUT /2.0/files/{file_id} with a shared_link body (operation put_files_id#add_shared_link); the same method and path also rename or move a file, so only the body separates them, which is outside these signals.",
+     "proposed_id": "box-sharing",
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+       "accessed": "2026-11-27",
+       "locator": "paths '/files/{file_id}#add_shared_link' PUT application/json",
+       "page_date": "info.version 2024.0"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "service": "WeTransfer",
+   "parent": "wetransfer",
+   "spec": "research/apps/wetransfer.md",
+   "children": [
+    {
+     "id": "wetransfer-base",
+     "function": "base",
+     "parent": "wetransfer",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[wetransfer] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/wetransfer.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      },
+      {
+       "url": "https://wetransfer.com/help-center/troubleshooting/configure-firewall",
+       "accessed": "2026-11-27",
+       "locator": "sections Core WeTransfer domains, WeTransfer.net domains, Amazon S3 storage (wt-prod-euwest1-storm.s3*.amazonaws.com, wt-prod-useast1-storm.s3*.amazonaws.com)",
+       "page_date": "Updated 22 October 2026"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "uploading versus downloading",
+     "reason": "The firewall page lists the S3 storage buckets under 'Amazon S3 storage' without saying which direction uses which host, and no request paths are published. The bucket names identify WeTransfer storage, not the direction.",
+     "proposed_id": "wetransfer-uploading",
+     "citations": [
+      {
+       "url": "https://wetransfer.com/help-center/troubleshooting/configure-firewall",
+       "accessed": "2026-11-27",
+       "locator": "section Amazon S3 storage",
+       "page_date": "Updated 22 October 2026"
+      }
+     ]
+    },
+    {
+     "function": "transfers over HTTP/3",
+     "reason": "'WeTransfer uses HTTPS (port 443) ... and the QUIC protocol'. A QUIC transfer does not pass an HTTP CONNECT proxy, so a decrypting proxy sees nothing of it.",
+     "citations": [
+      {
+       "url": "https://wetransfer.com/help-center/troubleshooting/configure-firewall",
+       "accessed": "2026-11-27",
+       "locator": "section Protocols and ports",
+       "page_date": "Updated 22 October 2026"
+      }
+     ]
+    }
+   ],
+   "source_blocked": [
+    {
+     "url": "https://developer.wetransfer.com/",
+     "why": "host not reachable from this environment",
+     "needed": "any published request paths for creating and downloading transfers"
+    }
+   ]
+  },
+  {
+   "service": "Slack",
+   "parent": "slack",
+   "spec": "research/apps/slack.md",
+   "children": [
+    {
+     "id": "slack-base",
+     "function": "base",
+     "parent": "slack",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[slack] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/slack.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "slack-uploading",
+     "function": "uploading",
+     "parent": "slack",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "slack.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/api/files.getUploadURLExternal",
+        "/api/files.completeUploadExternal"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "files.slack.com"
+       ],
+       "method": "POST",
+       "path_prefix": [
+        "/upload/v1/"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/slackapi/python-slack-sdk/main/slack_sdk/web/client.py",
+       "accessed": "2026-11-27",
+       "locator": "files_upload_v2 docstring: 'step1: files.getUploadURLExternal', 'step2: \"https://files.slack.com/upload/v1/...\" URLs returned from files.getUploadURLExternal API', 'step3: files.completeUploadExternal'; api_call(..., params=kwargs)"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/slackapi/python-slack-sdk/main/slack_sdk/web/base_client.py",
+       "accessed": "2026-11-27",
+       "locator": "BASE_URL = \"https://slack.com/api/\"; api_call http_verb default \"POST\""
+      }
+     ],
+     "notes": "Source is Slack's own SDK (MIT); Slack's method pages on docs.slack.dev were not reachable. The files.slack.com prefix is stated by the SDK; the rest of that URL is opaque."
+    },
+    {
+     "id": "slack-posting",
+     "function": "posting",
+     "parent": "slack",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "slack.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/api/chat.postMessage"
+       ],
+       "content_type": [
+        "application/json",
+        "application/x-www-form-urlencoded"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/slackapi/python-slack-sdk/main/slack_sdk/web/client.py",
+       "accessed": "2026-11-27",
+       "locator": "chat_postMessage: self.api_call(\"chat.postMessage\", json=kwargs)"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/slackapi/slack-api-specs/master/web-api/slack_web_openapi_v2.json",
+       "accessed": "2026-11-27",
+       "locator": "host slack.com, basePath /api; /chat.postMessage post consumes application/x-www-form-urlencoded, application/json",
+       "page_date": "spec info.version 1.7.0 (archived repository)"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "huddles (voice/video) and the first-party Slack clients' own calls",
+     "reason": "No published network description of huddle media was read. UNVERIFIED, left out."
+    },
+    {
+     "function": "downloading files",
+     "reason": "File download URLs (url_private) are described on docs.slack.dev, which was not reachable. Left out rather than inferred.",
+     "proposed_id": "slack-downloading"
+    }
+   ],
+   "source_blocked": [
+    {
+     "url": "https://docs.slack.dev/reference/methods/files.getUploadURLExternal",
+     "why": "host not reachable",
+     "needed": "the method page itself (method, content type, upload URL host) to confirm the SDK"
+    },
+    {
+     "url": "https://docs.slack.dev/messaging/working-with-files",
+     "why": "host not reachable",
+     "needed": "the download URL form (url_private, files.slack.com path)"
+    }
+   ]
+  },
+  {
+   "service": "Microsoft Teams",
+   "parent": "ms-teams",
+   "spec": "research/apps/microsoft-365.md",
+   "children": [
+    {
+     "id": "ms-teams-base",
+     "function": "base",
+     "parent": "ms-teams",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[ms-teams] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/microsoft-365.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      },
+      {
+       "url": "https://endpoints.office.com/endpoints/worldwide?clientrequestid=<uuid>",
+       "accessed": "2026-11-27",
+       "locator": "endpoint set id 12 (Allow): *.lync.com, *.teams.cloud.microsoft, *.teams.microsoft.com, teams.cloud.microsoft, teams.microsoft.com, TCP 80,443, UDP 443",
+       "page_date": "feed version 2026103000"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "ms-teams-posting",
+     "function": "posting",
+     "parent": "ms-teams",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.microsoft.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v1.0/teams/{team-id}/channels/{channel-id}/messages",
+        "/v1.0/chats/{chat-id}/messages"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/channel-post-messages",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: POST /teams/{team-id}/channels/{channel-id}/messages; Delegated (personal Microsoft account) Not supported",
+       "page_date": "ms.date 2024-04-04"
+      },
+      {
+       "url": "https://learn.microsoft.com/en-us/graph/api/chat-post-messages",
+       "accessed": "2026-11-27",
+       "locator": "HTTP request: POST /chats/{chat-id}/messages",
+       "page_date": "ms.date 2024-04-04"
+      }
+     ],
+     "notes": "Work and school accounts only (personal accounts not supported by this API)."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "voice/video (meetings and calls)",
+     "reason": "Media prefers UDP 3478-3481 to 52.112.0.0/14 and 52.122.0.0/15 (feed id 11, category Optimize). It is UDP to published IP ranges, so it does not pass an HTTP proxy, and no HTTP signal marks it.",
+     "proposed_id": "ms-teams-voice-video",
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/microsoftteams/prepare-network",
+       "accessed": "2026-11-27",
+       "locator": "'Teams media prefers UDP ports 3478-3481'",
+       "page_date": "ms.date 2026-10-28"
+      },
+      {
+       "url": "https://endpoints.office.com/endpoints/worldwide?clientrequestid=<uuid>",
+       "accessed": "2026-11-27",
+       "locator": "endpoint set id 11: udpPorts 3478,3479,3480,3481, ips 52.112.0.0/14, 52.122.0.0/15",
+       "page_date": "feed version 2026103000"
+      }
+     ]
+    },
+    {
+     "function": "file transfer in chats and channels",
+     "reason": "Not read: where Teams stores shared files was not taken from a primary page in this task. UNVERIFIED, left out.",
+     "proposed_id": "ms-teams-file-transfer"
+    }
+   ]
+  },
+  {
+   "service": "Zoom",
+   "parent": "zoom",
+   "spec": "research/apps/zoom.md",
+   "children": [
+    {
+     "id": "zoom-base",
+     "function": "base",
+     "parent": "zoom",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[zoom] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/zoom.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      },
+      {
+       "url": "https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0060548",
+       "accessed": "2026-11-27",
+       "locator": "table Firewall rules for Zoom: TCP 80, 443 and UDP 443, user's web browser to *.zoom.us, *.zoom.com (page rendered in headless Chromium)"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "voice/video (meetings, webinars)",
+     "reason": "Published as TCP 443, 8801, 8802 and UDP 3478, 3479, 8801-8810 to IP ranges only, with no host name or path. Media to 8801/UDP never reaches an HTTP proxy.",
+     "proposed_id": "zoom-voice-video",
+     "citations": [
+      {
+       "url": "https://support.zoom.com/hc/en/article?id=zm_kb&sysparm_article=KB0060548",
+       "accessed": "2026-11-27",
+       "locator": "table Firewall rules for Zoom Meetings and Webinars"
+      }
+     ]
+    },
+    {
+     "function": "chat file transfer, recordings download",
+     "reason": "developers.zoom.us was not reachable, so no request path was read. Left out.",
+     "proposed_id": "zoom-file-transfer"
+    }
+   ],
+   "source_blocked": [
+    {
+     "url": "https://developers.zoom.us/docs/api/",
+     "why": "host not reachable",
+     "needed": "the chat file upload and recording download endpoints (host, method, path)"
+    }
+   ]
+  },
+  {
+   "service": "WhatsApp Web",
+   "parent": "whatsapp",
+   "spec": "research/apps/whatsapp.md",
+   "children": [
+    {
+     "id": "whatsapp-base",
+     "function": "base",
+     "parent": "whatsapp",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[whatsapp] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/whatsapp.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "messaging, file transfer, voice/video",
+     "reason": "WhatsApp publishes no request paths for WhatsApp Web, and this lane found no consumer network page (blocked-urls.md row 3). The help article 'About end-to-end encryption' could be loaded only as its title (the body did not render), so the encryption reason is UNVERIFIED here. Nothing separates the functions by host, method or path.",
+     "proposed_id": "whatsapp-file-transfer",
+     "citations": [
+      {
+       "url": "https://faq.whatsapp.com/820124435853543",
+       "accessed": "2026-11-27",
+       "locator": "page title 'About end-to-end encryption | WhatsApp Help Center' only"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "service": "Telegram Web",
+   "parent": "telegram",
+   "spec": "research/apps/telegram.md",
+   "children": [
+    {
+     "id": "telegram-base",
+     "function": "base",
+     "parent": "telegram",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[telegram] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/telegram.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "telegram-web-mtproto",
+     "function": "base",
+     "parent": "telegram",
+     "status": "cited",
+     "client_scope": "first-party",
+     "signals": [
+      {
+       "host": [
+        "*.web.telegram.org"
+       ],
+       "method": "GET",
+       "path_exact": [
+        "/apiws",
+        "/apiws_test"
+       ],
+       "direction": "bidirectional",
+       "websocket": true
+      },
+      {
+       "host": [
+        "*.web.telegram.org"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/apiw",
+        "/apiw_test"
+       ],
+       "direction": "bidirectional",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://core.telegram.org/mtproto/transports",
+       "accessed": "2026-11-27",
+       "locator": "URI format https://(name)(-1).web.telegram.org:443/api(w)(s)(_test); 'a Sec-WebSocket-Protocol: binary header must be present'; HTTP transport: 'a POST request to the URL/api'"
+      }
+     ],
+     "notes": "Telegram Web carries MTProto in these. Every function (messages, uploads with upload.saveFilePart, calls) is inside the MTProto encryption, so this child names the transport, not a function."
+    },
+    {
+     "id": "telegram-bot-uploading",
+     "function": "uploading",
+     "parent": "telegram",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.telegram.org"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/bot{token}/sendDocument",
+        "/bot{token}/sendPhoto",
+        "/bot{token}/sendVideo",
+        "/bot{token}/sendAudio"
+       ],
+       "content_type": [
+        "multipart/form-data"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://core.telegram.org/bots/api",
+       "accessed": "2026-11-27",
+       "locator": "'https://api.telegram.org/bot<token>/METHOD_NAME'; 'multipart/form-data (use to upload files)'; sendDocument 'upload a new one using multipart/form-data'"
+      }
+     ],
+     "notes": "The bot token is a credential in the path: match the shape, never log the value."
+    },
+    {
+     "id": "telegram-bot-downloading",
+     "function": "downloading",
+     "parent": "telegram",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.telegram.org"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/file/bot{token}/{file_path}"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://core.telegram.org/bots/api",
+       "accessed": "2026-11-27",
+       "locator": "File object: 'can be downloaded via the link https://api.telegram.org/file/bot<token>/<file_path>'"
+      }
+     ],
+     "notes": "The token is a credential: never logged."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "file transfer and calls in the Telegram user clients",
+     "reason": "Files move as MTProto methods (upload.saveFilePart, upload.getFile) inside the encrypted MTProto stream, so no HTTP signal separates them.",
+     "proposed_id": "telegram-file-transfer",
+     "citations": [
+      {
+       "url": "https://core.telegram.org/api/files",
+       "accessed": "2026-11-27",
+       "locator": "upload.saveFilePart, upload.saveBigFilePart, upload.getFile"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "service": "Discord",
+   "parent": "discord",
+   "spec": null,
+   "children": [
+    {
+     "id": "discord-base",
+     "function": "base",
+     "parent": "discord",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[discord] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx",
+       "accessed": "2026-11-27",
+       "locator": "Base URL https://discord.com/api; CDN base https://cdn.discordapp.com/"
+      }
+     ],
+     "notes": "Fallback child: pack app_domains[discord]. No spec in research/apps (Discord's help centre returns 403; developer docs only, backlog batch O). The base citation is the developer reference below."
+    },
+    {
+     "id": "discord-posting",
+     "function": "posting",
+     "parent": "discord",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "discord.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/api/v10/channels/{channel_id}/messages",
+        "/api/webhooks/{webhook_id}/{webhook_token}"
+       ],
+       "content_type": [
+        "application/json",
+        "application/x-www-form-urlencoded"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json",
+       "accessed": "2026-11-27",
+       "locator": "servers https://discord.com/api/v10; POST /channels/{channel_id}/messages create_message; POST /webhooks/{webhook_id}/{webhook_token} execute_webhook",
+       "page_date": "spec version 10"
+      }
+     ]
+    },
+    {
+     "id": "discord-uploading",
+     "function": "uploading",
+     "parent": "discord",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "discord.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/api/v10/channels/{channel_id}/messages",
+        "/api/webhooks/{webhook_id}/{webhook_token}"
+       ],
+       "content_type": [
+        "multipart/form-data"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json",
+       "accessed": "2026-11-27",
+       "locator": "create_message and execute_webhook requestBody content multipart/form-data",
+       "page_date": "spec version 10"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx",
+       "accessed": "2026-11-27",
+       "locator": "'Endpoints that support file uploads use a multipart/form-data request body'"
+      }
+     ],
+     "notes": "Same path as discord-posting; the request content type multipart/form-data separates an upload. The webhook token is a credential: never logged."
+    },
+    {
+     "id": "discord-downloading",
+     "function": "downloading",
+     "parent": "discord",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "cdn.discordapp.com"
+       ],
+       "method": "GET",
+       "path_prefix": [
+        "/attachments/"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx",
+       "accessed": "2026-11-27",
+       "locator": "example https://cdn.discordapp.com/attachments/<channel>/<attachment>/my_image.png?ex=..."
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "voice/video (voice channels, calls, Go Live)",
+     "reason": "Voice uses a separate voice WebSocket for signalling and UDP for media, and DMs, voice channels and Go Live are moving to end-to-end encryption (DAVE). UDP media does not pass an HTTP proxy.",
+     "proposed_id": "discord-voice-video",
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/topics/voice-connections.mdx",
+       "accessed": "2026-11-27",
+       "locator": "'a separate UDP-based connection for voice data'; section End-to-End Encryption (DAVE Protocol)"
+      }
+     ]
+    }
+   ],
+   "host_note": "The gateway WebSocket host comes from GET /gateway at run time; its name was not taken from a page here, so it is not listed."
+  },
+  {
+   "service": "Facebook",
+   "parent": "facebook",
+   "spec": null,
+   "children": [
+    {
+     "id": "facebook-base",
+     "function": "base",
+     "parent": "facebook",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[facebook] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/session.py",
+       "accessed": "2026-11-27",
+       "locator": "GRAPH = 'https://graph.facebook.com'"
+      }
+     ],
+     "notes": "Fallback child: pack app_domains[facebook]. No spec in research/apps."
+    },
+    {
+     "id": "facebook-posting",
+     "function": "posting",
+     "parent": "facebook",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.facebook.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v{version}/{page-id}/feed"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/adobjects/page.py",
+       "accessed": "2026-11-27",
+       "locator": "create_feed: method='POST', endpoint='/feed'"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/apiconfig.py",
+       "accessed": "2026-11-27",
+       "locator": "'API_VERSION': 'v27.0'"
+      }
+     ],
+     "notes": "Graph API (Pages). Meta's developer site was not reachable; the source is Meta's own Business SDK."
+    },
+    {
+     "id": "facebook-uploading",
+     "function": "uploading",
+     "parent": "facebook",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.facebook.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v{version}/{page-id}/photos"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "graph-video.facebook.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v{version}/{ad-account-id}/advideos"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/adobjects/page.py",
+       "accessed": "2026-11-27",
+       "locator": "create_photo: method='POST', endpoint='/photos'"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/video_uploader.py",
+       "accessed": "2026-11-27",
+       "locator": "self._api.call('POST', path, ..., url_override='https://graph-video.facebook.com'); request.send((context.account_id, 'advideos'))"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/api.py",
+       "accessed": "2026-11-27",
+       "locator": "path = \"/\".join((url_override or self._session.GRAPH, api_version, ...))"
+      }
+     ],
+     "notes": "The video row is the ad-account video upload of the Business SDK (advertising), the one video path the SDK sends to graph-video.facebook.com."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "posting and uploading on facebook.com and in the Facebook apps",
+     "reason": "The first-party clients' request paths are not published. UNVERIFIED, left out."
+    }
+   ],
+   "source_blocked": [
+    {
+     "url": "https://developers.facebook.com/docs/graph-api/",
+     "why": "host not reachable",
+     "needed": "the Graph API reference pages for /feed, /photos and /videos, to confirm the SDK"
+    }
+   ]
+  },
+  {
+   "service": "Instagram",
+   "parent": "instagram",
+   "spec": null,
+   "children": [
+    {
+     "id": "instagram-base",
+     "function": "base",
+     "parent": "instagram",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[instagram] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/adobjects/iguser.py",
+       "accessed": "2026-11-27",
+       "locator": "IGUser object (Instagram professional account) in Meta's SDK"
+      }
+     ],
+     "notes": "Fallback child: pack app_domains[instagram]. No spec in research/apps."
+    },
+    {
+     "id": "instagram-posting",
+     "function": "posting",
+     "parent": "instagram",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "graph.facebook.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v{version}/{ig-user-id}/media",
+        "/v{version}/{ig-user-id}/media_publish"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/facebook/facebook-python-business-sdk/main/facebook_business/adobjects/iguser.py",
+       "accessed": "2026-11-27",
+       "locator": "create_media: method='POST', endpoint='/media'; create_media_publish: method='POST', endpoint='/media_publish'"
+      }
+     ],
+     "notes": "This publishing API runs on graph.facebook.com, which today matches facebook: the parent must come from the edge name (media_publish), and only for an id that is an Instagram user."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "posting, uploading and direct messages on instagram.com and in the app",
+     "reason": "No published request paths for the first-party clients. UNVERIFIED, left out."
+    },
+    {
+     "function": "POST /{id}/media alone",
+     "reason": "The id in the path does not say whether it is an Instagram user, so /media alone is a weak signal; media_publish is the distinctive edge."
+    }
+   ],
+   "source_blocked": [
+    {
+     "url": "https://developers.facebook.com/docs/instagram-platform/",
+     "why": "host not reachable",
+     "needed": "the content-publishing reference (container and media_publish), and whether graph.instagram.com is used"
+    }
+   ]
+  },
+  {
+   "service": "X/Twitter",
+   "parent": "twitter",
+   "spec": null,
+   "children": [
+    {
+     "id": "twitter-base",
+     "function": "base",
+     "parent": "twitter",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[twitter] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/client.py",
+       "accessed": "2026-11-27",
+       "locator": "base_url: str = \"https://api.x.com\""
+      }
+     ],
+     "notes": "Fallback child: pack app_domains[twitter]. No spec in research/apps."
+    },
+    {
+     "id": "twitter-posting",
+     "function": "posting",
+     "parent": "twitter",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.x.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/2/tweets"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/posts/client.py",
+       "accessed": "2026-11-27",
+       "locator": "create: url = self.client.base_url + \"/2/tweets\"; self.client.session.post(...)"
+      }
+     ],
+     "notes": "Source is X's own SDK (xdevplatform/xdk-python, MIT); docs.x.com was not reachable."
+    },
+    {
+     "id": "twitter-uploading",
+     "function": "uploading",
+     "parent": "twitter",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.x.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/2/media/upload/initialize",
+        "/2/media/upload/{id}/append",
+        "/2/media/upload/{id}/finalize"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/media/client.py",
+       "accessed": "2026-11-27",
+       "locator": "initialize_upload, append_upload, finalize_upload: base_url + \"/2/media/upload/...\"; headers[\"Content-Type\"] = \"application/json\"; session.post"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "posting and uploading on x.com",
+     "reason": "The web client's request paths are not published. UNVERIFIED."
+    }
+   ],
+   "source_blocked": [
+    {
+     "url": "https://docs.x.com/x-api/media/upload-media",
+     "why": "host not reachable",
+     "needed": "the media upload reference, to confirm the SDK and any multipart form"
+    }
+   ]
+  },
+  {
+   "service": "LinkedIn",
+   "parent": "linkedin",
+   "spec": null,
+   "children": [
+    {
+     "id": "linkedin-base",
+     "function": "base",
+     "parent": "linkedin",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[linkedin] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api",
+       "accessed": "2026-11-27",
+       "locator": "base https://api.linkedin.com/rest/",
+       "page_date": "ms.date 2026-05-07"
+      }
+     ],
+     "notes": "Fallback child: pack app_domains[linkedin]. No spec in research/apps."
+    },
+    {
+     "id": "linkedin-posting",
+     "function": "posting",
+     "parent": "linkedin",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.linkedin.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/rest/posts"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api",
+       "accessed": "2026-11-27",
+       "locator": "POST https://api.linkedin.com/rest/posts",
+       "page_date": "ms.date 2026-05-07"
+      }
+     ]
+    },
+    {
+     "id": "linkedin-uploading",
+     "function": "uploading",
+     "parent": "linkedin",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.linkedin.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/rest/images",
+        "/rest/videos",
+        "/rest/documents"
+       ],
+       "query": "action=initializeUpload",
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/images-api",
+       "accessed": "2026-11-27",
+       "locator": "POST https://api.linkedin.com/rest/images?action=initializeUpload",
+       "page_date": "ms.date 2026-06-19"
+      },
+      {
+       "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/videos-api",
+       "accessed": "2026-11-27",
+       "locator": "POST https://api.linkedin.com/rest/videos?action=initializeUpload; upload by 'HTTP PUT' to uploadUrl with Content-Type application/octet-stream",
+       "page_date": "ms.date 2026-02-12"
+      },
+      {
+       "url": "https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/documents-api",
+       "accessed": "2026-11-27",
+       "locator": "Documents API initializeUpload",
+       "page_date": "ms.date 2026-06-19"
+      }
+     ],
+     "notes": "The bytes then go by PUT, application/octet-stream, to the returned uploadUrl (examples on www.linkedin.com/dms-uploads/...). Opaque URL: noted, not a rule field."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "posting and messaging on www.linkedin.com",
+     "reason": "The web client's paths are not published. UNVERIFIED."
+    }
+   ]
+  },
+  {
+   "service": "YouTube",
+   "parent": "youtube",
+   "spec": null,
+   "children": [
+    {
+     "id": "youtube-base",
+     "function": "base",
+     "parent": "youtube",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[youtube] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://youtube.googleapis.com/$discovery/rest?version=v3",
+       "accessed": "2026-11-27",
+       "locator": "rootUrl https://youtube.googleapis.com/",
+       "page_date": "discovery revision 20261124"
+      }
+     ],
+     "notes": "Fallback child: pack app_domains[youtube]. No spec in research/apps."
+    },
+    {
+     "id": "youtube-uploading",
+     "function": "uploading",
+     "parent": "youtube",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "youtube.googleapis.com"
+       ],
+       "method": "POST",
+       "path_prefix": [
+        "/upload/youtube/v3/videos",
+        "/resumable/upload/youtube/v3/videos"
+       ],
+       "query": "uploadType=resumable|multipart|media",
+       "content_type": [
+        "video/*",
+        "application/octet-stream"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "youtube.googleapis.com"
+       ],
+       "method": "POST",
+       "path_prefix": [
+        "/upload/youtube/v3/thumbnails/set",
+        "/upload/youtube/v3/captions"
+       ],
+       "content_type": [
+        "image/jpeg",
+        "image/png",
+        "text/xml",
+        "application/octet-stream"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://youtube.googleapis.com/$discovery/rest?version=v3",
+       "accessed": "2026-11-27",
+       "locator": "videos.insert mediaUpload paths, accept ['video/*', 'application/octet-stream'], maxSize 274877906944; thumbnails.set and captions.insert mediaUpload",
+       "page_date": "discovery revision 20261124"
+      }
+     ]
+    },
+    {
+     "id": "youtube-posting",
+     "function": "posting",
+     "parent": "youtube",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "youtube.googleapis.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/youtube/v3/commentThreads"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://youtube.googleapis.com/$discovery/rest?version=v3",
+       "accessed": "2026-11-27",
+       "locator": "commentThreads.insert POST youtube/v3/commentThreads",
+       "page_date": "discovery revision 20261124"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "watching (video download)",
+     "reason": "Playback from googlevideo.com uses paths Google does not publish; only captions.download is documented. Watching stays in base by host.",
+     "proposed_id": "youtube-downloading"
+    },
+    {
+     "function": "uploading through youtube.com / YouTube Studio",
+     "reason": "First-party upload paths are not published."
+    }
+   ],
+   "host_note": "youtube.googleapis.com is under googleapis.com, today google-base: parent from the path."
+  },
+  {
+   "service": "ChatGPT",
+   "parent": "openai-chatgpt",
+   "spec": "research/apps/openai-chatgpt.md",
+   "children": [
+    {
+     "id": "openai-chatgpt-base",
+     "function": "base",
+     "parent": "openai-chatgpt",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[openai-chatgpt] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/openai-chatgpt.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "openai-platform-uploading",
+     "function": "uploading",
+     "parent": "openai-platform",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.openai.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v1/files",
+        "/v1/uploads/{upload_id}/parts"
+       ],
+       "content_type": [
+        "multipart/form-data"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "api.openai.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/v1/uploads"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml",
+       "accessed": "2026-11-27",
+       "locator": "servers https://api.openai.com/v1; /files post multipart/form-data; /uploads post application/json; /uploads/{upload_id}/parts post multipart/form-data"
+      }
+     ]
+    },
+    {
+     "id": "openai-platform-downloading",
+     "function": "downloading",
+     "parent": "openai-platform",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.openai.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/v1/files/{file_id}/content"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml",
+       "accessed": "2026-11-27",
+       "locator": "/files/{file_id}/content get"
+      }
+     ]
+    },
+    {
+     "id": "openai-platform-prompting",
+     "function": "posting",
+     "parent": "openai-platform",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.openai.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/v1/responses",
+        "/v1/chat/completions"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml",
+       "accessed": "2026-11-27",
+       "locator": "/responses post application/json; /chat/completions post requestBody application/json (createChatCompletion)"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "file upload, voice and prompts in ChatGPT (chatgpt.com and the apps)",
+     "reason": "OpenAI publishes no request paths for ChatGPT's own clients; the API above is a different product (openai-platform). UNVERIFIED, left out.",
+     "proposed_id": "openai-chatgpt-uploading"
+    }
+   ],
+   "host_note": "The API children have parent openai-platform (a separate pack id), not openai-chatgpt."
+  },
+  {
+   "service": "Claude",
+   "parent": "anthropic-claude",
+   "spec": "research/apps/anthropic-claude.md",
+   "children": [
+    {
+     "id": "anthropic-claude-base",
+     "function": "base",
+     "parent": "anthropic-claude",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[anthropic-claude] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/anthropic-claude.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "anthropic-api-uploading",
+     "function": "uploading",
+     "parent": "anthropic-api",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.anthropic.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/v1/files"
+       ],
+       "content_type": [
+        "multipart/form-data"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://docs.claude.com/en/api/files-create",
+       "accessed": "2026-11-27",
+       "locator": "curl https://api.anthropic.com/v1/files -H 'Content-Type: multipart/form-data'"
+      }
+     ]
+    },
+    {
+     "id": "anthropic-api-downloading",
+     "function": "downloading",
+     "parent": "anthropic-api",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.anthropic.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/v1/files/{file_id}/content"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://docs.claude.com/en/api/files-content",
+       "accessed": "2026-11-27",
+       "locator": "GET /v1/files/{file_id}/content"
+      }
+     ]
+    },
+    {
+     "id": "anthropic-api-prompting",
+     "function": "posting",
+     "parent": "anthropic-api",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.anthropic.com"
+       ],
+       "method": "POST",
+       "path_exact": [
+        "/v1/messages"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://platform.claude.com/docs/en/api/messages",
+       "accessed": "2026-11-27",
+       "locator": "POST /v1/messages"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "file upload and prompts on claude.ai and in the Claude apps",
+     "reason": "Anthropic publishes no request paths for the claude.ai clients; the API above is anthropic-api. UNVERIFIED, left out.",
+     "proposed_id": "anthropic-claude-uploading"
+    }
+   ]
+  },
+  {
+   "service": "Gemini",
+   "parent": "google-gemini",
+   "spec": "research/apps/google-gemini.md",
+   "children": [
+    {
+     "id": "google-gemini-base",
+     "function": "base",
+     "parent": "google-gemini",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[google-gemini] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/google-gemini.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "google-gemini-api-uploading",
+     "function": "uploading",
+     "parent": "google-gemini-api",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "generativelanguage.googleapis.com"
+       ],
+       "method": "POST",
+       "path_prefix": [
+        "/upload/v1beta/files",
+        "/resumable/upload/v1beta/files"
+       ],
+       "content_type": [
+        "*/* (any file type)"
+       ],
+       "header_present": [
+        "X-Goog-Upload-Protocol",
+        "X-Goog-Upload-Command"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://generativelanguage.googleapis.com/$discovery/rest?version=v1beta",
+       "accessed": "2026-11-27",
+       "locator": "media.upload POST v1beta/files, mediaUpload simple /upload/v1beta/files and resumable paths, accept ['*/*'], maxSize 2147483648",
+       "page_date": "discovery revision 20261126"
+      },
+      {
+       "url": "https://ai.google.dev/gemini-api/docs/files",
+       "accessed": "2026-11-27",
+       "locator": "curl \"https://generativelanguage.googleapis.com/upload/v1beta/files\" -H \"X-Goog-Upload-Protocol: resumable\" -H \"X-Goog-Upload-Command: start\""
+      }
+     ]
+    },
+    {
+     "id": "google-gemini-api-prompting",
+     "function": "posting",
+     "parent": "google-gemini-api",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "generativelanguage.googleapis.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v1beta/models/{model}:generateContent",
+        "/v1beta/models/{model}:streamGenerateContent"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://generativelanguage.googleapis.com/$discovery/rest?version=v1beta",
+       "accessed": "2026-11-27",
+       "locator": "models.generateContent and models.streamGenerateContent POST",
+       "page_date": "discovery revision 20261126"
+      }
+     ]
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "file upload and prompts on gemini.google.com",
+     "reason": "Request paths of the consumer web app are not published. UNVERIFIED, left out.",
+     "proposed_id": "google-gemini-uploading"
+    }
+   ],
+   "host_note": "Parent google-gemini-api is the id proposed in batch G (research/apps/google-gemini-api.md), not yet in the pack; today generativelanguage.googleapis.com matches google-base."
+  },
+  {
+   "service": "Copilot",
+   "parent": "ms-copilot",
+   "spec": "research/apps/microsoft-copilot.md",
+   "children": [
+    {
+     "id": "ms-copilot-base",
+     "function": "base",
+     "parent": "ms-copilot",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[ms-copilot] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/microsoft-copilot.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      },
+      {
+       "url": "https://learn.microsoft.com/en-us/copilot/microsoft-365/microsoft-365-copilot-requirements",
+       "accessed": "2026-11-27",
+       "locator": "'The primary URL for accessing the updated Copilot app is changing to copilot.cloud.microsoft'",
+       "page_date": "ms.date 2026-11-04"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "chat, file upload",
+     "reason": "Microsoft requires 'full WebSocket Secure (WSS) connectivity' to *.office.com and *.cloud.microsoft, domains shared by every Microsoft 365 app, and 'doesn't support allowing only selected Microsoft 365 application URLs within the *.cloud.microsoft domain'. No Copilot path is published, so a WSS upgrade there does not name Copilot or a function.",
+     "proposed_id": "ms-copilot-uploading",
+     "citations": [
+      {
+       "url": "https://learn.microsoft.com/en-us/copilot/microsoft-365/microsoft-365-copilot-requirements",
+       "accessed": "2026-11-27",
+       "locator": "sections The cloud.microsoft domain and WebSockets requirements",
+       "page_date": "ms.date 2026-11-04"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "service": "GitHub",
+   "parent": "github",
+   "spec": "research/apps/github-copilot.md",
+   "children": [
+    {
+     "id": "github-base",
+     "function": "base",
+     "parent": "github",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[github] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/github-copilot.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "github-git-push",
+     "function": "uploading",
+     "parent": "github",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "github.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/{owner}/{repo}.git/git-receive-pack"
+       ],
+       "content_type": [
+        "application/x-git-receive-pack-request"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "github.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/{owner}/{repo}.git/info/refs"
+       ],
+       "query": "service=git-receive-pack",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/git/git/master/Documentation/gitprotocol-http.adoc",
+       "accessed": "2026-11-27",
+       "locator": "'C: Content-Type: application/x-git-receive-pack-request'; '$GIT_URL/info/refs?service=git-receive-pack'"
+      },
+      {
+       "url": "https://docs.github.com/en/get-started/git-basics/about-remote-repositories",
+       "accessed": "2026-11-27",
+       "locator": "'The https:// clone URLs are available on all repositories'; 'git clone, git fetch, git pull, or git push ... using HTTPS URLs'"
+      }
+     ],
+     "notes": "Smart HTTP is git's own protocol (git project documentation), used by GitHub's HTTPS remotes."
+    },
+    {
+     "id": "github-git-fetch",
+     "function": "downloading",
+     "parent": "github",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "github.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/{owner}/{repo}.git/git-upload-pack"
+       ],
+       "content_type": [
+        "application/x-git-upload-pack-request"
+       ],
+       "direction": "download",
+       "websocket": false
+      },
+      {
+       "host": [
+        "github.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/{owner}/{repo}.git/info/refs"
+       ],
+       "query": "service=git-upload-pack",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/git/git/master/Documentation/gitprotocol-http.adoc",
+       "accessed": "2026-11-27",
+       "locator": "'C: POST $GIT_URL/git-upload-pack'; 'C: Content-Type: application/x-git-upload-pack-request'"
+      },
+      {
+       "url": "https://docs.github.com/en/get-started/git-basics/about-remote-repositories",
+       "accessed": "2026-11-27",
+       "locator": "HTTPS clone URLs"
+      }
+     ]
+    },
+    {
+     "id": "github-uploading",
+     "function": "uploading",
+     "parent": "github",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "uploads.github.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/repos/{owner}/{repo}/releases/{release_id}/assets"
+       ],
+       "query": "name={name}",
+       "content_type": [
+        "application/octet-stream"
+       ],
+       "direction": "upload",
+       "websocket": false
+      },
+      {
+       "host": [
+        "api.github.com"
+       ],
+       "method": "PUT",
+       "path_pattern": [
+        "/repos/{owner}/{repo}/contents/{path}"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
+       "accessed": "2026-11-27",
+       "locator": "repos/upload-release-asset POST, servers https://uploads.github.com, application/octet-stream; repos/create-or-update-file-contents PUT application/json",
+       "page_date": "description version 1.1.4"
+      }
+     ]
+    },
+    {
+     "id": "github-downloading",
+     "function": "downloading",
+     "parent": "github",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.github.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/repos/{owner}/{repo}/zipball/{ref}",
+        "/repos/{owner}/{repo}/tarball/{ref}",
+        "/repos/{owner}/{repo}/releases/assets/{asset_id}"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
+       "accessed": "2026-11-27",
+       "locator": "repos/download-zipball-archive and download-tarball-archive GET (302); repos/get-release-asset GET (200, 302)",
+       "page_date": "description version 1.1.4"
+      }
+     ]
+    },
+    {
+     "id": "github-posting",
+     "function": "posting",
+     "parent": "github",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.github.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/gists",
+        "/repos/{owner}/{repo}/issues/{issue_number}/comments"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json",
+       "accessed": "2026-11-27",
+       "locator": "gists/create POST /gists; issues/create-comment POST",
+       "page_date": "description version 1.1.4"
+      }
+     ],
+     "notes": "A gist is a paste: relevant to the same data-loss policy as Pastebin."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "uploads and edits in the github.com web UI",
+     "reason": "The web UI's form paths are not published. UNVERIFIED."
+    },
+    {
+     "function": "git over SSH",
+     "reason": "SSH is not TLS, so push and fetch over an SSH remote are not visible to a TLS-decrypting HTTP proxy."
+    }
+   ]
+  },
+  {
+   "service": "Pastebin",
+   "parent": "pastebin",
+   "spec": null,
+   "children": [
+    {
+     "id": "pastebin-base",
+     "function": "base",
+     "parent": "pastebin",
+     "status": "pack-only",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[pastebin] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [],
+     "notes": "No primary source was readable in this task (pastebin.com unreachable). The host is the pack's existing entry, not re-verified here."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "posting (create a paste)",
+     "reason": "The API page could not be read, so its method, path and form fields are not taken from memory. Left out.",
+     "proposed_id": "pastebin-posting"
+    }
+   ],
+   "source_blocked": [
+    {
+     "url": "https://pastebin.com/doc_api",
+     "why": "host not reachable from this environment",
+     "needed": "the paste-creation request: method, path (for example the api_post script), content type and the field that selects 'paste'"
+    }
+   ]
+  },
+  {
+   "service": "Google Docs",
+   "parent": "google-drive",
+   "spec": "research/apps/google-workspace.md",
+   "children": [
+    {
+     "id": "google-docs-editing",
+     "function": "posting",
+     "parent": "google-drive",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "docs.googleapis.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/v1/documents",
+        "/v1/documents/{documentId}:batchUpdate"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://docs.googleapis.com/$discovery/rest?version=v1",
+       "accessed": "2026-11-27",
+       "locator": "documents.create POST v1/documents; documents.batchUpdate POST v1/documents/{documentId}:batchUpdate",
+       "page_date": "discovery revision 20261118"
+      }
+     ],
+     "notes": "Google Docs has no pack id of its own: docs.google.com is in app_domains[google-drive]. The children use parent google-drive until Engine decides on a google-docs id."
+    },
+    {
+     "id": "google-docs-reading",
+     "function": "downloading",
+     "parent": "google-drive",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "docs.googleapis.com"
+       ],
+       "method": "GET",
+       "path_pattern": [
+        "/v1/documents/{documentId}"
+       ],
+       "direction": "download",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://docs.googleapis.com/$discovery/rest?version=v1",
+       "accessed": "2026-11-27",
+       "locator": "documents.get GET v1/documents/{documentId}",
+       "page_date": "discovery revision 20261118"
+      }
+     ],
+     "notes": "Export of a Doc as a file is google-drive-downloading (/drive/v3/files/{fileId}/export)."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "editing and downloading in the Docs editor (docs.google.com)",
+     "reason": "The editor's request paths are not published. UNVERIFIED, left out; it stays google-drive by host.",
+     "proposed_id": "google-docs-uploading"
+    }
+   ],
+   "host_note": "docs.googleapis.com is under googleapis.com, today google-base."
+  },
+  {
+   "service": "iCloud",
+   "parent": "icloud",
+   "spec": "research/apps/apple-icloud.md",
+   "children": [
+    {
+     "id": "icloud-base",
+     "function": "base",
+     "parent": "icloud",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[icloud] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/apple-icloud.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      },
+      {
+       "url": "https://support.apple.com/en-us/101555",
+       "accessed": "2026-11-27",
+       "locator": "section iCloud: *.apple-cloudkit.com, *.apple-livephotoskit.com ... 443 TCP, 'iCloud services'"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    },
+    {
+     "id": "icloud-cloudkit-uploading",
+     "function": "uploading",
+     "parent": "icloud",
+     "status": "cited",
+     "client_scope": "api",
+     "signals": [
+      {
+       "host": [
+        "api.apple-cloudkit.com"
+       ],
+       "method": "POST",
+       "path_pattern": [
+        "/database/1/{container}/{environment}/{database}/assets/upload"
+       ],
+       "content_type": [
+        "application/json"
+       ],
+       "direction": "upload",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://developer.apple.com/library/archive/documentation/DataManagement/Conceptual/CloudKitWebServicesReference/UploadAssets.html",
+       "accessed": "2026-11-27",
+       "locator": "'POST [path]/database/[version]/[container]/[environment]/[database]/assets/upload'; '[path] The URL to the CloudKit web service, which is https://api.apple-cloudkit.com'; '[version] The protocol version—currently, 1'",
+       "page_date": "Updated: 2016-06-13 (Documentation Archive)"
+      }
+     ],
+     "notes": "CloudKit Web Services: web apps built on an iCloud container. The returned asset upload URL is opaque. This is not iCloud Drive in the browser."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "iCloud Drive, Photos and Mail upload/download (www.icloud.com and devices)",
+     "reason": "Apple publishes host names only (support article 101555), no request paths. UNVERIFIED, left out.",
+     "proposed_id": "icloud-uploading",
+     "citations": [
+      {
+       "url": "https://support.apple.com/en-us/101555",
+       "accessed": "2026-11-27",
+       "locator": "section iCloud (hosts and ports only)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "service": "Mega",
+   "parent": "mega",
+   "spec": null,
+   "children": [
+    {
+     "id": "mega-base",
+     "function": "base",
+     "parent": "mega",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[mega] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/meganz/sdk/master/src/megaclient.cpp",
+       "accessed": "2026-11-27",
+       "locator": "g_APIURL_default = \"https://g.api.mega.co.nz/\"; MEGAURL_NZ = \"https://mega.nz\""
+      }
+     ],
+     "notes": "Fallback child: pack app_domains[mega]. No spec in research/apps."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "uploading, downloading, sharing",
+     "reason": "Every client command goes as a POST to the API host's cs endpoint (posturl.append(\"cs?id=\")) with the command inside the JSON body, so the path does not name the function; and file data is encrypted on the client ('User Controlled Encryption (UCE), and it happens automatically'; encrypter.js 'used ... to encrypt data while uploading'). Transfer hosts are returned at run time. Body inspection is outside these signals.",
+     "proposed_id": "mega-uploading",
+     "citations": [
+      {
+       "url": "https://raw.githubusercontent.com/meganz/sdk/master/src/megaclient.cpp",
+       "accessed": "2026-11-27",
+       "locator": "pendingcs->posturl.append(\"cs?id=\")"
+      },
+      {
+       "url": "https://raw.githubusercontent.com/meganz/webclient/master/README.md",
+       "accessed": "2026-11-27",
+       "locator": "'User Controlled Encryption (UCE)'; 'encrypter.js -- ... encrypt data while uploading'"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "service": "TeamViewer",
+   "parent": "teamviewer",
+   "spec": "research/apps/teamviewer.md",
+   "children": [
+    {
+     "id": "teamviewer-base",
+     "function": "base",
+     "parent": "teamviewer",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[teamviewer] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/teamviewer.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      },
+      {
+       "url": "https://www.teamviewer.com/en/global/support/knowledge-base/teamviewer-remote/troubleshooting/ports-used-by-teamviewer/",
+       "accessed": "2026-11-27",
+       "locator": "'TCP/UDP port 5938' primary; 'TCP port 443' if 5938 is not allowed; 'TCP port 80' last resort; master*/router*.teamviewer.com"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "remote control, file transfer, meeting/voice",
+     "reason": "All run in TeamViewer's own protocol on 5938, or tunnelled over 443/80; the protocol is unpublished (research/apps/teamviewer.md). No host, method or path separates a session's functions.",
+     "proposed_id": "teamviewer-remote-control",
+     "citations": [
+      {
+       "url": "https://www.teamviewer.com/en/global/support/knowledge-base/teamviewer-remote/troubleshooting/ports-used-by-teamviewer/",
+       "accessed": "2026-11-27",
+       "locator": "ports table"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "service": "AnyDesk",
+   "parent": "anydesk",
+   "spec": "research/apps/anydesk.md",
+   "children": [
+    {
+     "id": "anydesk-base",
+     "function": "base",
+     "parent": "anydesk",
+     "status": "cited",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[anydesk] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [
+      {
+       "url": "research/apps/anydesk.md",
+       "accessed": "2026-11-27",
+       "locator": "section 7 (primary sources of the pack's host names) and section 8"
+      },
+      {
+       "url": "https://support.anydesk.com/firewall",
+       "accessed": "2026-11-27",
+       "locator": "'TCP ports: 80, 443, and 6568'; *.net.anydesk.com"
+      }
+     ],
+     "notes": "Fallback child: any matched host name of the parent with no more specific child. Host names are those already in the pack (main 5cb35d2)."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "remote control, file transfer",
+     "reason": "Both run inside the same AnyDesk session protocol on 80/443/6568; AnyDesk publishes ports and names only. No HTTP signal separates them.",
+     "proposed_id": "anydesk-file-transfer",
+     "citations": [
+      {
+       "url": "https://support.anydesk.com/firewall",
+       "accessed": "2026-11-27",
+       "locator": "ports list"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "service": "Reddit",
+   "parent": "reddit",
+   "spec": null,
+   "children": [
+    {
+     "id": "reddit-base",
+     "function": "base",
+     "parent": "reddit",
+     "status": "pack-only",
+     "client_scope": "all",
+     "signals": [
+      {
+       "host": "pack app_domains[reddit] (label-boundary suffix match)",
+       "direction": "none",
+       "websocket": false
+      }
+     ],
+     "citations": [],
+     "notes": "No primary source was readable in this task. Reddit's open-source code on GitHub is archived (2017) and was not used as a source for today's API."
+    }
+   ],
+   "not_separable": [
+    {
+     "function": "posting, uploading media",
+     "reason": "The API reference could not be read. Left out, not inferred.",
+     "proposed_id": "reddit-posting"
+    }
+   ],
+   "source_blocked": [
+    {
+     "url": "https://www.reddit.com/dev/api/",
+     "why": "host not reachable",
+     "needed": "submit and media-upload endpoints (host such as oauth.reddit.com, method, path)"
+    },
+    {
+     "url": "https://support.reddithelp.com/",
+     "why": "host not reachable",
+     "needed": "any official network or firewall page"
+    }
+   ]
+  }
+ ]
+}
