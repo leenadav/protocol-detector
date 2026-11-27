@@ -148,7 +148,13 @@ type Set struct {
 	suffix   map[string][]int // domain -> rule orders, ascending
 	opts     Options
 	foldCase bool // some rule matches its path case-insensitively
+	// nested maps a domain to the catalog service domains strictly under it (with their owners), only while
+	// Load runs: a host_suffixes entry with a foreign owner under it is refused (SEC-CHILD-5).
+	nested map[string][]ownedDomain
 }
+
+// ownedDomain is a server-name catalog service domain and the application that owns it.
+type ownedDomain struct{ domain, owner string }
 
 // Release identifies the child-app component.
 type Release struct {

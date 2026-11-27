@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/content"
@@ -169,7 +170,8 @@ func Load(data []byte, pack *content.Pack, opts Options) (*Set, error) {
 		return nil, invalid("release: %v", err)
 	}
 	s := &Set{Digest: digestOf(data), pack: pack, byName: map[string]*Child{}, exact: map[string][]int{},
-		suffix: map[string][]int{}, opts: normalize(opts)}
+		suffix: map[string][]int{}, opts: normalize(opts), nested: nestedDomains(pack)}
+	defer func() { s.nested = nil }()
 	for key, target := range map[string]*string{"version": &s.Release.Version, "note": &s.Release.Note, "review": &s.Release.Review} {
 		if *target, err = str(rel[key]); err != nil || *target == "" || len(*target) > 512 {
 			return nil, invalid("release %s must be a string of 1..512 bytes", key)
@@ -333,6 +335,29 @@ func (s *Set) addChild(i int, raw json.RawMessage) error {
 	return nil
 }
 
+// nestedDomains indexes every catalog service domain under each of its proper parent domains (label boundaries),
+// in domain order, so a host_suffixes check costs only the domains under that suffix.
+func nestedDomains(pack *content.Pack) map[string][]ownedDomain {
+	out := map[string][]ownedDomain{}
+	for owner, domains := range pack.AppDomains {
+		for _, d := range domains {
+			for position := strings.IndexByte(d, '.'); position >= 0; {
+				parent := d[position+1:]
+				out[parent] = append(out[parent], ownedDomain{d, owner})
+				next := strings.IndexByte(parent, '.')
+				if next < 0 {
+					break
+				}
+				position += next + 1
+			}
+		}
+	}
+	for _, l := range out {
+		sort.Slice(l, func(i, j int) bool { return l[i].domain < l[j].domain })
+	}
+	return out
+}
+
 func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bool) error {
 	doc, err := object(raw, ruleKeys)
 	if err != nil {
@@ -369,6 +394,15 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 	for _, h := range suffixes {
 		if err := check(h); err != nil {
 			return err
+		}
+		// The catalog may give a more specific domain under the suffix to another application: refuse the rule
+		// rather than index it over a host it would never own (SEC-CHILD-5). Classify re-checks the host owner
+		// against the child's owners as well (SEC-CHILD-2), so a catalog changed under a loaded set stays safe.
+		for _, n := range s.nested[h] {
+			if !owners[n.owner] {
+				return fmt.Errorf("host_suffixes '%s' covers '%s' of '%s', which is not '%s' or its depends_on in the "+
+					"server-name catalog", h, n.domain, n.owner, c.Container)
+			}
 		}
 	}
 	functional := false

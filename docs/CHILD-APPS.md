@@ -70,7 +70,11 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
   claimed in the server-name catalog by the container or by an application in the child's `depends_on` (Gmail's API
   is on `googleapis.com`, claimed by `google-base`). A web front or unclaimed host is refused. At match time a rule only fires when the request host's catalog owner
   is the container or a `depends_on` application: a `host_suffixes` rule never fires on a more specific host the
-  catalog gives another application (`maps.googleapis.com` is google-maps', not google-base's).
+  catalog gives another application (`maps.googleapis.com` is google-maps', not google-base's). A `host_suffixes`
+  entry that has a catalog domain of any other application under it is refused at load (SEC-CHILD-5):
+  `googleapis.com` through `google-base` alone is refused, because `maps.`, `play.` and `remotedesktop-pa.` belong
+  to others; name the exact hosts instead, or list those owners in `depends_on`. The match-time owner check stays
+  as defence in depth.
 - **Function conditions** (at least one; all present ones must hold):
   - `methods`: upper-case tokens;
   - `path_prefixes` and `path_patterns`: either list may hit. A pattern is `/`-separated segments: a literal, `*` or
