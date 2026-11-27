@@ -248,7 +248,7 @@ func smb1SessionSetup(data []byte) ([]parsing.Row, string, error) {
 	var rows []parsing.Row
 	if data[9]&0x80 != 0 {
 		status := le(data, 5, 4)
-		if status != 0 && status != 0xC0000016 {
+		if status != 0 && uint32(status) != statusMoreProcessing {
 			return nil, "", parsing.Unsupported("SESSION_SETUP_ANDX response status outside success and more-processing")
 		}
 		if words != 3 && words != 4 {
@@ -337,7 +337,7 @@ var (
 
 const (
 	smb2CapEncryption       = 0x40
-	statusMoreProcessing    = 0xC0000016
+	statusMoreProcessing    = uint32(0xC0000016) // uint32: above the 32-bit int range (GOARCH=386)
 	smb2FlagServerToRedir   = 0x01
 	smb2FlagRelatedOps      = 0x04
 	smb2FlagSigned          = 0x08
@@ -591,7 +591,7 @@ func smb2SessionSetup(data []byte) ([]parsing.Row, string, error) {
 	var rows []parsing.Row
 	var start, length int
 	if response {
-		if status != 0 && status != statusMoreProcessing {
+		if status != 0 && uint32(status) != statusMoreProcessing {
 			return nil, "", parsing.Unsupported("SESSION_SETUP response status outside success and more-processing")
 		}
 		if u16(64) != 9 {
@@ -610,7 +610,7 @@ func smb2SessionSetup(data []byte) ([]parsing.Row, string, error) {
 			return nil, "", parsing.Malformed("SESSION_SETUP response session flags outside MS-SMB2")
 		}
 		session := "authenticated"
-		if status == statusMoreProcessing {
+		if uint32(status) == statusMoreProcessing {
 			session = "continuing"
 		} else {
 			for _, f := range smb2SessionFlags {

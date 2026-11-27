@@ -281,9 +281,9 @@ go-check-race:
 # go-check-386 (PRO-262, ci: go-engine): the protocol parsers' tests on a 32-bit int (GOARCH=386), where a length
 # sum such as pos+length can wrap negative and pass a bounds check (SEC-X509-1); `go test -race` on amd64 cannot see
 # that. Every package under ./internal/protocols/ runs, new ones included, except GO_386_EXCLUDE: packages that do not
-# compile for 386 yet (framed: untyped constants above 2^31 assigned to int). An excluded package that starts to
+# compile for 386 yet (empty since PRO-503 typed framed's constants above 2^31). An excluded package that starts to
 # compile fails the target, so its exclusion is removed as soon as it can be tested. Offline and vendored.
-GO_386_EXCLUDE := framed
+GO_386_EXCLUDE :=
 go-check-386:
 	cd go && GOTOOLCHAIN=$(GO_TOOLCHAIN) GOARCH=386 CGO_ENABLED=0 GOFLAGS=-mod=vendor sh -c '\
 	  set -e; all=$$(go list ./internal/protocols/...); run=""; \
