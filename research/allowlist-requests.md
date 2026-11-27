@@ -94,6 +94,26 @@ approval for the batch. Unblocks `blocked-urls.md` rows 45 to 53 and 55 to 58.
 | `developers.zoom.us` | API | Zoom | row 57 |
 | `support.reddithelp.com` | API | Reddit | row 58 |
 
+## Batch R3 (2026-11-27, PRO-524): vendor API references for child apps wave 1 (not yet requested)
+
+Reason code **API**, as batch R2. Read-only; one approval for the batch. Unblocks `blocked-urls.md` rows 59 to 71.
+
+| Host | Reason | Use | Page |
+|---|---|---|---|
+| `developers.google.com` | API | Google Photos upload (also batch R2) | row 59 |
+| `developer.webex.com` | API | Webex | row 60 |
+| `developer.salesforce.com` | API | Salesforce | row 61 |
+| `developer.servicenow.com` | API | ServiceNow | row 62 |
+| `developer.atlassian.com` | API | Jira, Confluence, Trello | row 63 |
+| `developers.notion.com` | API | Notion | row 64 |
+| `developer.monday.com` | API | monday.com | row 65 |
+| `developers.tiktok.com` | API | TikTok | row 66 |
+| `developers.snap.com`, `help.snapchat.com` | API | Snapchat | row 67 |
+| `dev.twitch.tv`, `help.twitch.tv` | API | Twitch | row 68 |
+| `help.yahoo.com` | API | Yahoo Mail | row 69 |
+| `proton.me` | API | Proton Mail | row 70 |
+| `docs.pcloud.com`, `www.pcloud.com` | API | pCloud | row 71 |
+
 ## Decisions needed (not vendor-owned, so not requested): **resolved 2026-11-20**
 
 Hermes's decisions 1, 2 and 6: the live tools and dependency-mapping pass 2 run on the Hermes server (no proxy). No DoH
