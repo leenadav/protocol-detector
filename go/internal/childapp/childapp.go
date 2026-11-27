@@ -133,6 +133,7 @@ type rule struct {
 	direction    string
 	minBytes     int64
 	websocket    bool
+	foldCase     bool // path literals are lower case; matched against the lower-cased path
 }
 
 // Set is the validated child-app component over one content pack.
@@ -146,6 +147,7 @@ type Set struct {
 	exact    map[string][]int // host -> rule orders, ascending
 	suffix   map[string][]int // domain -> rule orders, ascending
 	opts     Options
+	foldCase bool // some rule matches its path case-insensitively
 }
 
 // Release identifies the child-app component.
@@ -255,7 +257,53 @@ func canonicalPath(p string) (string, bool) {
 	if strings.Contains(p, "//") {
 		return "", false
 	}
-	return p, true
+	return decodeSafe(p), true
+}
+
+// decodeSafe decodes the percent-encoded bytes a server reads as the plain character: RFC 3986 unreserved
+// characters other than '.', and the sub-delimiters, ':' and '@'. So /v1.0/%24batch is /v1.0/$batch and
+// /2/files/%75pload is /2/files/upload (SEC-CHILD-3). '/', '\', '.', '%' and NUL encodings were refused before;
+// any other encoding (UTF-8 names, '?', '#') stays as written, where a placeholder still matches it.
+func decodeSafe(p string) string {
+	i := strings.IndexByte(p, '%')
+	if i < 0 {
+		return p
+	}
+	var b strings.Builder
+	b.Grow(len(p))
+	b.WriteString(p[:i])
+	for ; i < len(p); i++ {
+		if p[i] == '%' && i+2 < len(p) {
+			if c, ok := unhex(p[i+1], p[i+2]); ok && decodable(c) {
+				b.WriteByte(c)
+				i += 2
+				continue
+			}
+		}
+		b.WriteByte(p[i])
+	}
+	return b.String()
+}
+
+func unhex(h, l byte) (byte, bool) {
+	v := func(c byte) (byte, bool) {
+		switch {
+		case c >= '0' && c <= '9':
+			return c - '0', true
+		case c >= 'a' && c <= 'f':
+			return c - 'a' + 10, true
+		case c >= 'A' && c <= 'F':
+			return c - 'A' + 10, true
+		}
+		return 0, false
+	}
+	a, ok1 := v(h)
+	z, ok2 := v(l)
+	return a<<4 | z, ok1 && ok2
+}
+
+func decodable(c byte) bool {
+	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || strings.IndexByte("-_~!$&'()*+,;=:@", c) >= 0
 }
 
 // mediaType is the lower-cased type/subtype without parameters ("" when absent or malformed).
@@ -409,7 +457,8 @@ func parseQuery(target string) (map[string][]string, bool) {
 
 // matches reports whether every condition holds and, if so, the rule's precedence score for this request: the
 // literal bytes of the path condition that hit, then the number of condition kinds.
-func (r *rule) matches(req *Request, path string, view *pathView, ct string, query map[string][]string, headers map[string]bool) (bool, int) {
+func (r *rule) matches(req *Request, path, lower string, view, lowerView *pathView, ct string, query map[string][]string,
+	headers map[string]bool) (bool, int) {
 	if r.methods != nil && !r.methods[req.Method] {
 		return false, 0
 	}
@@ -418,6 +467,9 @@ func (r *rule) matches(req *Request, path string, view *pathView, ct string, que
 	}
 	pathScore := 0
 	if r.pathPrefixes != nil || r.pathPatterns != nil {
+		if r.foldCase {
+			path, view = lower, lowerView
+		}
 		hit := false
 		for _, prefix := range r.pathPrefixes {
 			if strings.HasPrefix(path, prefix) && len(prefix) > pathScore {
@@ -560,6 +612,13 @@ func (s *Set) Classify(req Request) Result {
 		}
 	}
 	view := pathView{path: path}
+	lower, lowerView := path, &view
+	if s.foldCase {
+		lower = strings.ToLower(path) // no copy when the path has no upper case
+		if lower != path {
+			lowerView = &pathView{path: lower} // split at most once more, and only when it differs
+		}
+	}
 	lists := s.candidates(host)
 	heads := make([]int, len(lists))
 	last := -1
@@ -592,7 +651,7 @@ func (s *Set) Classify(req Request) Result {
 			continue
 		}
 		// Precedence: the highest score wins; on a tie the earlier rule (file order) keeps it.
-		if hit, score := r.matches(&req, path, &view, ct, query, headers); hit && (winner == nil || score > winnerScore) {
+		if hit, score := r.matches(&req, path, lower, &view, lowerView, ct, query, headers); hit && (winner == nil || score > winnerScore) {
 			winner, winnerScore = r, score
 		}
 	}
