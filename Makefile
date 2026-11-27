@@ -184,7 +184,7 @@ content:
 # PRO-492: the child-app rules are a reproducible conversion of App Research's cited wave files (docs/CHILD-APPS.md).
 child-apps:
 	$(PYTHON) -B tools/child_apps_wave.py --self-test
-	$(PYTHON) -B tools/child_apps_wave.py migration/fixtures/child-apps/wave-0.json --check
+	$(PYTHON) -B tools/child_apps_wave.py migration/fixtures/child-apps/wave-0.json --evidence migration/fixtures/child-apps/wave-1.json --check
 
 # Migration M0: the per-family capability inventory must match the registry (Go statuses are kept as recorded)
 capabilities:

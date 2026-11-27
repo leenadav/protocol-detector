@@ -1,7 +1,7 @@
 """Convert an App Research child-app wave (research/child-apps/wave-N.json) into engine rules (PRO-492).
 
 Usage:
-    python3 -B tools/child_apps_wave.py WAVE.json --version 2026.11.1 --write
+    python3 -B tools/child_apps_wave.py WAVE.json [--evidence EVIDENCE.json] --version 2026.11.2 --write
         writes go/internal/childapp/childapps.json and docs/child-apps/<wave>-rules.md
     python3 -B tools/child_apps_wave.py WAVE.json --check
         exits 1 when the committed files differ from a fresh conversion (at the committed release version);
@@ -21,6 +21,22 @@ over exactly is either dropped as a broader condition (recorded in the report) o
 - direction is not carried over as a condition: the engine reads it from body sizes, which a proxy often knows only
   after the response, while method and path already name the function. The report lists it per child.
 - query and header_present are carried over as written; anything else in them skips the signal.
+
+--evidence names App Research's SEC-CHILD-3 vendor evidence (the `sec_child_3` items of wave-1.json, PRO-524 for
+PRO-510). Each hardening below applies only when its item is `verified`; it adds the item's citation to the child's
+evidence and a line to the report. All of them widen what a child matches, never narrow it:
+
+- Google media uploads (/upload/ and /resumable/upload/ on googleapis.com): the content-type and uploadType
+  conditions are dropped. Discovery's `accept` is the media part's type, not the request's (a multipart or
+  resumable request does not carry message/* as its Content-Type), and uploadType is a legacy query parameter;
+  the upload path names the function. Gmail drafts.update (PUT) gets its own rule.
+- Drive v2 (still published): the v2 upload (POST, PUT) and download rules beside v3's.
+- Google batch and Graph $batch: a batch child per batch path, since the inner calls are not in the request line.
+- Graph: every /v1.0/ path also as /beta/, matched case-insensitively (path_case_insensitive).
+- Telegram Bot API methods are case-insensitive (path_case_insensitive).
+- Discord: every /api/ path in the unversioned form and as v10, v9, v8, v7 and v6.
+- Dropbox content endpoints: header_present Dropbox-API-Arg and the content type are dropped; whether the argument
+  may also be a URL parameter `arg` is unverified (vendor HTTP docs blocked), so the header is not assumed.
 Python 3.9, standard library only.
 """
 import argparse
@@ -37,6 +53,30 @@ HOST = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)(\.[a-z0-9
 MEDIA = re.compile(r"^[a-z0-9][a-z0-9.+-]*/([a-z0-9][a-z0-9.+-]*|\*)$")
 METHOD = re.compile(r"^[A-Z][A-Z_-]{0,31}$")
 PLACEHOLDER = re.compile(r"\{([^{}/]+)\}")
+GOOGLE_UPLOAD = ("/upload/", "/resumable/upload/")
+DISCORD_VERSIONS = ("", "v10/", "v9/", "v8/", "v7/", "v6/")
+# Batch children (SEC-CHILD-3): (item, name, container, depends_on, service, host, paths). A batch wraps several
+# API calls in one body, so a policy that denies a function child should deny its batch child too.
+BATCH_CHILDREN = [
+    ("google-batch", "gmail-batch", "gmail", ["google-base"], "Gmail", "gmail.googleapis.com", ["/batch"]),
+    ("google-batch", "google-drive-batch", "google-drive", ["google-base"], "Google Drive", "www.googleapis.com",
+     ["/batch/drive/v3", "/batch/drive/v2"]),
+    ("graph-dollar-batch", "ms-base-graph-batch", "ms-base", [], "Microsoft Graph", "graph.microsoft.com",
+     ["/v1.0/$batch", "/beta/$batch"]),
+]
+DRIVE_V2 = {
+    "google-drive-uploading": [
+        {"hosts": ["www.googleapis.com"], "methods": ["POST"],
+         "path_prefixes": ["/upload/drive/v2/files", "/resumable/upload/drive/v2/files"]},
+        {"hosts": ["www.googleapis.com"], "methods": ["PUT"],
+         "path_patterns": ["/upload/drive/v2/files/{fileId}", "/resumable/upload/drive/v2/files/{fileId}"]}],
+    "google-drive-downloading": [
+        {"hosts": ["www.googleapis.com"], "methods": ["GET"], "path_patterns": ["/drive/v2/files/{fileId}"],
+         "query": ["alt=media"]},
+        {"hosts": ["www.googleapis.com"], "methods": ["GET"], "path_patterns": ["/drive/v2/files/{fileId}/export"]}],
+}
+GMAIL_DRAFTS_UPDATE = {"hosts": ["gmail.googleapis.com"], "methods": ["PUT"], "path_patterns": [
+    "/upload/gmail/v1/users/{userId}/drafts/{id}", "/resumable/upload/gmail/v1/users/{userId}/drafts/{id}"]}
 
 
 def catalog(pack):
@@ -184,6 +224,104 @@ def convert(wave, pack, version):
     return component, report
 
 
+def evidence_items(evidence):
+    """item -> citation url of each verified SEC-CHILD-3 item ({} without an evidence file)."""
+    if evidence is None:
+        return {}
+    out = {}
+    for item in evidence.get("sec_child_3", []):
+        if item.get("verified") is True and str(item.get("citation_url", "")).startswith("https://"):
+            out[item["item"]] = item["citation_url"]
+    return out
+
+
+def harden(component, report, evidence):
+    """Apply the SEC-CHILD-3 hardenings whose evidence item is verified (module docstring); returns the items used."""
+    items = evidence_items(evidence)
+    if not items:
+        return []
+    used = set()
+    notes = {name: list(n) for name, _, n in report}
+    outcome = {name: o for name, o, _ in report}
+
+    def cite(child, item, note):
+        used.add(item)
+        if items[item] not in child["evidence"]:
+            child["evidence"] = (child["evidence"] + [items[item]])[:8]
+        line = "SEC-CHILD-3 {}: {}".format(item, note)
+        if line not in notes.setdefault(child["name"], []):
+            notes[child["name"]].append(line)
+
+    for child in component["children"]:
+        extra = []
+        for rule in child["rules"]:
+            hosts = rule["hosts"]
+            paths = rule.get("path_prefixes", []) + rule.get("path_patterns", [])
+            google = all(h.endswith(".googleapis.com") for h in hosts)
+            if "gmail-multipart-resumable" in items and google and paths and all(p.startswith(GOOGLE_UPLOAD) for p in paths):
+                for key in ("content_types", "query"):
+                    if key in rule:
+                        why = ("Discovery accept is the media part's type, not a multipart or resumable request's"
+                               if key == "content_types" else "uploadType is a legacy parameter; the path names the upload")
+                        cite(child, "gmail-multipart-resumable", "{} {} dropped on a media upload path ({})".format(
+                            key, rule.pop(key), why))
+            if hosts == ["graph.microsoft.com"] and ("graph-beta" in items or "graph-case-insensitive" in items):
+                if "graph-beta" in items:
+                    for key in ("path_prefixes", "path_patterns"):
+                        if key in rule:
+                            beta = ["/beta/" + p[len("/v1.0/"):] for p in rule[key] if p.startswith("/v1.0/")]
+                            rule[key] = rule[key] + [p for p in beta if p not in rule[key]]
+                    cite(child, "graph-beta", "every /v1.0/ path also as /beta/")
+                if "graph-case-insensitive" in items:
+                    rule["path_case_insensitive"] = True
+                    cite(child, "graph-case-insensitive", "path matched case-insensitively")
+            if hosts == ["api.telegram.org"] and "telegram-case-insensitive" in items and paths:
+                rule["path_case_insensitive"] = True
+                cite(child, "telegram-case-insensitive", "Bot API method names matched case-insensitively")
+            if hosts == ["discord.com"] and "discord-versions" in items and "path_patterns" in rule:
+                out = []
+                for p in rule["path_patterns"]:
+                    rest = re.sub(r"^/api/(v[0-9]+/)?", "", p) if p.startswith("/api/") else None
+                    for form in ([p] if rest is None else ["/api/" + v + rest for v in DISCORD_VERSIONS]):
+                        if form not in out:
+                            out.append(form)
+                rule["path_patterns"] = out
+                cite(child, "discord-versions", "every /api/ path unversioned and as v10, v9, v8, v7 and v6")
+            if hosts == ["content.dropboxapi.com"] and "dropbox-arg" in items:
+                for key in ("header_present", "content_types"):
+                    if key in rule:
+                        cite(child, "dropbox-arg", "{} {} dropped: the path names the function, and whether the argument "
+                             "may be a URL parameter 'arg' is unverified (blocked-urls row 48)".format(key, rule.pop(key)))
+        if "drive-v2" in items and child["name"] in DRIVE_V2:
+            extra += [dict(r) for r in DRIVE_V2[child["name"]]]
+            cite(child, "drive-v2", "Drive v2 rules beside v3")
+        if "gmail-multipart-resumable" in items and child["name"] == "gmail-uploading":
+            extra.append(dict(GMAIL_DRAFTS_UPDATE))
+            cite(child, "gmail-multipart-resumable", "drafts.update (PUT) on both upload paths")
+        child["rules"] = (child["rules"] + extra)[:32]
+    for item, name, container, depends, service, host, paths in BATCH_CHILDREN:
+        if item not in items:
+            continue
+        rule = {"hosts": [host], "methods": ["POST"], "path_patterns": list(paths)}
+        if item == "graph-dollar-batch":
+            rule["path_case_insensitive"] = True
+        entry = {"name": name, "container": container,
+                 "description": "{} batch: several API calls in one request, inner functions not in the request line "
+                                "(SEC-CHILD-3)".format(service)}
+        if depends:
+            entry["depends_on"] = depends
+        entry["evidence"] = [items[item]]
+        entry["rules"] = [rule]
+        component["children"].append(entry)
+        outcome[name] = "rule"
+        notes[name] = ["SEC-CHILD-3 {}: batch child; deny it beside the function children it could carry".format(item)]
+        used.add(item)
+    report[:] = [(name, outcome[name], notes.get(name, [])) for name in outcome]
+    if used:
+        component["release"]["note"] += "; SEC-CHILD-3 hardenings from App Research's PRO-524 vendor evidence (PRO-510)"
+    return sorted(used)
+
+
 def render_component(component):
     lines = ['{', ' "schema": 1,', ' "release": ' + json.dumps(component["release"], sort_keys=True) + ',', ' "children": [']
     for i, child in enumerate(component["children"]):
@@ -192,15 +330,18 @@ def render_component(component):
     return "\n".join(lines) + "\n"
 
 
-def render_report(wave, report):
+def render_report(wave, report, used=()):
     counts = {}
     for _, outcome, _ in report:
         counts[outcome] = counts.get(outcome, 0) + 1
     out = ["# Child-app rules from {} wave {} (generated)".format(wave.get("task", ""), wave.get("wave", "")), "",
            "Generated by `tools/child_apps_wave.py` from App Research's `research/child-apps/wave-{}.json`; do not edit."
            .format(wave.get("wave", "")), "",
-           "Outcomes: {}.".format(", ".join("{} {}".format(v, k) for k, v in sorted(counts.items()))), "",
-           "| Child | Outcome | Notes |", "|---|---|---|"]
+           "Outcomes: {}.".format(", ".join("{} {}".format(v, k) for k, v in sorted(counts.items()))), ""]
+    if used:
+        out += ["SEC-CHILD-3 hardenings applied from App Research's vendor evidence (PRO-524 for PRO-510): {}. "
+                "Each widens what a child matches; see `tools/child_apps_wave.py`.".format(", ".join(used)), ""]
+    out += ["| Child | Outcome | Notes |", "|---|---|---|"]
     for name, outcome, notes in report:
         out.append("| `{}` | {} | {} |".format(name, outcome, "<br>".join(n.replace("|", "\\|") for n in notes) or "-"))
     return "\n".join(out) + "\n"
@@ -234,6 +375,31 @@ def self_test():
     text = render_component(component)
     assert json.loads(text) == component and text.endswith("}\n")
     assert "| `dropbox-y` | skipped |" in render_report(wave, report)
+    # SEC-CHILD-3 hardenings: only verified items apply, each widens the rule and cites its evidence.
+    hard = {"children": [
+        {"name": "gmail-uploading", "container": "gmail", "evidence": ["https://doc.example/a"], "rules": [
+            {"hosts": ["gmail.googleapis.com"], "methods": ["POST"], "path_prefixes": ["/upload/gmail/v1/users/"],
+             "content_types": ["message/*"], "query": ["uploadType=media"]}]},
+        {"name": "discord-posting", "container": "discord", "evidence": ["https://doc.example/d"], "rules": [
+            {"hosts": ["discord.com"], "methods": ["POST"], "path_patterns": ["/api/v10/channels/{id}/messages"]}]},
+        {"name": "outlook-sending", "container": "outlook-web", "evidence": ["https://doc.example/o"], "rules": [
+            {"hosts": ["graph.microsoft.com"], "methods": ["POST"], "path_patterns": ["/v1.0/me/sendMail"]}]}],
+        "release": {"note": "n"}}
+    rows = [("gmail-uploading", "rule", []), ("discord-posting", "rule", []), ("outlook-sending", "rule", [])]
+    ev = {"sec_child_3": [{"item": i, "verified": True, "citation_url": "https://ev.example/" + i} for i in
+                          ("gmail-multipart-resumable", "discord-versions", "graph-beta", "graph-dollar-batch")]
+          + [{"item": "graph-case-insensitive", "verified": False, "citation_url": None}]}
+    used = harden(hard, rows, ev)
+    assert used == ["discord-versions", "gmail-multipart-resumable", "graph-beta", "graph-dollar-batch"], used
+    gmail, discord, outlook = hard["children"][:3]
+    assert gmail["rules"][0] == {"hosts": ["gmail.googleapis.com"], "methods": ["POST"],
+                                 "path_prefixes": ["/upload/gmail/v1/users/"]}, gmail["rules"]
+    assert gmail["rules"][1]["methods"] == ["PUT"] and "https://ev.example/gmail-multipart-resumable" in gmail["evidence"]
+    assert discord["rules"][0]["path_patterns"] == ["/api/" + v + "channels/{id}/messages" for v in DISCORD_VERSIONS]
+    assert outlook["rules"][0]["path_patterns"] == ["/v1.0/me/sendMail", "/beta/me/sendMail"], outlook["rules"]
+    assert "path_case_insensitive" not in outlook["rules"][0], "an unverified item must not apply"
+    assert [c["name"] for c in hard["children"][3:]] == ["ms-base-graph-batch"] and "SEC-CHILD-3" in hard["release"]["note"]
+    assert [r[0] for r in rows][-1] == "ms-base-graph-batch" and harden({"children": []}, [], None) == []
     print("child_apps_wave self-test: ok")
     return 0
 
@@ -242,6 +408,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("wave", nargs="?")
     parser.add_argument("--version")
+    parser.add_argument("--evidence", help="App Research's SEC-CHILD-3 vendor evidence (wave-1.json)")
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--self-test", action="store_true")
@@ -255,7 +422,10 @@ def main(argv):
     wave = json.loads(Path(args.wave).read_text(encoding="utf-8"))
     pack = json.loads(PACK.read_text(encoding="utf-8"))
     component, report = convert(wave, pack, args.version)
-    outputs = {OUT: render_component(component), DOCS / "wave-{}-rules.md".format(wave.get("wave", "")): render_report(wave, report)}
+    evidence = json.loads(Path(args.evidence).read_text(encoding="utf-8")) if args.evidence else None
+    used = harden(component, report, evidence)
+    outputs = {OUT: render_component(component),
+               DOCS / "wave-{}-rules.md".format(wave.get("wave", "")): render_report(wave, report, used)}
     if args.write:
         DOCS.mkdir(parents=True, exist_ok=True)
         for path, text in outputs.items():
