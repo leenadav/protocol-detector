@@ -1,10 +1,15 @@
 """Reproducible Go release binaries and their SBOM (the release controller's build job, publish-release.yml).
 
 For each target in TARGETS, `go/cmd/protodetect` is built twice, each time with its own empty GOCACHE and
-GOTMPDIR, with CGO_ENABLED=0, -trimpath, -buildvcs=false and -ldflags "-s -w -buildid=", on exactly the pinned
+GOTMPDIR, with CGO_ENABLED=0, -trimpath, -buildvcs=false and -ldflags "-s -w -buildid= -X main.version=<version>",
+on exactly the pinned
 compiler (tools/go_ci.py: the installed Go must be the one go/go.mod builds with, a dependency must be vendored,
 GOFLAGS=-mod=vendor then, and the job runs with GOPROXY=off). The two builds must be byte-identical, or the
 release fails: that is the reproducibility claim, and anyone can repeat it with the same Go and these flags.
+The -X flag stamps the release version into the binary (go/cmd/protodetect's `var version`), so it changes the
+bytes but not the double-build comparison. After the builds, the linux/amd64 binary is run as `protodetect version`
+(the release job runs on linux/amd64) and must report exactly --version, or the release fails: a binary named
+protodetect-<version>-* that reports another version (a fixed const, a renamed variable) must not be published.
 
 The SBOM (CycloneDX 1.5 JSON, dist/protodetect-<version>-go.cdx.json) is generated from the binaries' own build
 information (`go version -m -json`): the main module, every linked module with its version and go.sum hash, and
@@ -16,7 +21,9 @@ only), but a module linked by two targets must be the same version and go.sum ha
 
 Files written into --out (the controller's dist/, which it checksums, attests and on a tag publishes):
     protodetect-<version>-<goos>-<goarch>[.exe]    protodetect-<version>-go.cdx.json
-A commit without go/go.mod or go/cmd/protodetect builds nothing and says so.
+A commit without go/go.mod (no Go engine at all) builds nothing and says so. With go/go.mod present, a missing
+go/cmd/protodetect fails the release, as go_ci.py fails on a partial tree: a renamed or deleted main package must
+not publish a tag without its Go binaries.
 
     build_go_release.py --version X.Y.Z [--out DIR] [--summary FILE]
     build_go_release.py --self-test
@@ -25,6 +32,7 @@ Standard library only; Python 3.9 syntax.
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -38,10 +46,39 @@ import go_ci  # noqa: E402
 
 MAIN = "./cmd/protodetect"
 TARGETS = (("linux", "amd64"), ("linux", "arm64"), ("darwin", "amd64"), ("darwin", "arm64"), ("windows", "amd64"))
-FLAGS = ["-trimpath", "-buildvcs=false", "-ldflags=-s -w -buildid="]
+FLAGS = ["-trimpath", "-buildvcs=false"]
+VERSION_CHECK_TARGET = ("linux", "amd64")   # the release job's runner; this binary is run to check its version
 VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[.-][0-9A-Za-z.]+)?$")
 MODULE_LINE = re.compile(r"^# (\S+) (\S+)")
 GO_SUM = Path("go/go.sum")
+
+
+def build_flags(version):
+    """The go build flags for a release: FLAGS plus -ldflags with the version stamped into main.version. The
+    version has already matched VERSION (no space or quote), so it is one -ldflags word."""
+    return FLAGS + ["-ldflags=-s -w -buildid= -X main.version={}".format(version)]
+
+
+def reported_version_problem(output, version):
+    """None when `protodetect version` output names exactly this version as its second word, else a problem."""
+    words = output.split()
+    if len(words) >= 2 and words[0] == "protodetect" and words[1] == version:
+        return None
+    return "`protodetect version` printed {!r}, not version {}: the binary does not carry the release version (is " \
+           "main.version a var that -X main.version sets?)".format(output.strip()[:200], version)
+
+
+def check_reported_version(binary, version):
+    """Run the built binary's `version` command; None when it reports this version, else a problem."""
+    try:
+        done = subprocess.run([str(binary), "version"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,  # noqa: S603
+                              timeout=60, check=False)
+    except (OSError, subprocess.SubprocessError) as error:
+        return "could not run {} version: {}".format(Path(binary).name, error)
+    output = done.stdout.decode("utf-8", "replace")
+    if done.returncode != 0:
+        return "{} version exited {}: {!r}".format(Path(binary).name, done.returncode, output.strip()[:200])
+    return reported_version_problem(output, version)
 
 
 def sha256(path):
@@ -52,10 +89,10 @@ def sha256(path):
     return digest.hexdigest()
 
 
-def build_once(goos, goarch, out, env):
+def build_once(goos, goarch, out, env, version):
     with tempfile.TemporaryDirectory(prefix="go-release-cache-") as cache, tempfile.TemporaryDirectory(prefix="go-release-tmp-") as tmp:
         build_env = dict(env, CGO_ENABLED="0", GOOS=goos, GOARCH=goarch, GOCACHE=cache, GOTMPDIR=tmp)
-        subprocess.run(["go", "build"] + FLAGS + ["-o", str(out), MAIN], cwd="go", env=build_env, check=True)  # noqa: S603,S607
+        subprocess.run(["go", "build"] + build_flags(version) + ["-o", str(out), MAIN], cwd="go", env=build_env, check=True)  # noqa: S603,S607
 
 
 def vendored_modules(text):
@@ -140,11 +177,26 @@ def linked_union(infos):
     return dict(first, Targets=sorted(infos), Deps=[dict(deps[path], Targets=targets[path]) for path in sorted(deps)])
 
 
+def tree_state(root="."):
+    """("skip", why) without go/go.mod, ("fail", why) with go/go.mod but no main package, else ("build", "")."""
+    root = Path(root)
+    if not (root / "go" / "go.mod").is_file():
+        return "skip", "No go/go.mod on this commit: no Go binary to build."
+    if not (root / "go" / MAIN).is_dir():
+        return "fail", ("go/go.mod is present but go/{} is not: the Go binaries cannot be built, and a release without "
+                        "them must not pass (renamed or deleted main package?)".format(MAIN[2:]))
+    return "build", ""
+
+
 def run(version, out, summary):
     title = "### Go release binaries"
-    if not Path("go/go.mod").is_file() or not Path("go", MAIN).is_dir():
-        go_ci.summarise(summary, [title, "", "No go/go.mod or go/cmd/protodetect on this commit: no Go binary to build."])
+    state, why = tree_state()
+    if state == "skip":
+        go_ci.summarise(summary, [title, "", why])
         return 0
+    if state == "fail":
+        go_ci.summarise(summary, [title, "", "- FAILED: " + why])
+        return 1
     tree, problems = go_ci.toolchain_problems()
     if problems:
         go_ci.summarise(summary, [title, ""] + ["- FAILED: " + problem for problem in problems])
@@ -153,17 +205,24 @@ def run(version, out, summary):
     out = Path(out).resolve()   # absolute: the builds run with cwd go/, so a relative path would land in go/
     out.mkdir(parents=True, exist_ok=True)
     lines, infos, failed = [title, "", "| file | sha256 | reproducible |", "|---|---|---|"], {}, False
+    version_line = "- FAILED: no {}/{} target was built, so no binary's version was checked".format(*VERSION_CHECK_TARGET)
     with tempfile.TemporaryDirectory(prefix="go-release-second-") as second:
         for goos, goarch in TARGETS:
             name = "protodetect-{}-{}-{}{}".format(version, goos, goarch, ".exe" if goos == "windows" else "")
             first, again = out / name, Path(second, name)
-            build_once(goos, goarch, first, env)
-            build_once(goos, goarch, again, env)
+            build_once(goos, goarch, first, env, version)
+            build_once(goos, goarch, again, env, version)
             same = sha256(first) == sha256(again)
             failed |= not same
             lines.append("| `{}` | `{}` | {} |".format(name, sha256(first), "yes" if same else "NO: the second build differs"))
             raw = subprocess.run(["go", "version", "-m", "-json", str(first)], stdout=subprocess.PIPE, check=True).stdout  # noqa: S603,S607
             infos["{}/{}".format(goos, goarch)] = json.loads(raw.decode("utf-8"))
+            if (goos, goarch) == VERSION_CHECK_TARGET:
+                version_line = check_reported_version(first, version)
+                version_line = "- FAILED: " + version_line if version_line else "`{} version` reports {}.".format(
+                    name, version)
+    lines += ["", version_line]
+    failed |= version_line.startswith("- FAILED")
     vendored = vendored_modules(go_ci.read(go_ci.VENDOR))
     infos = with_sums(infos, go_sums(go_ci.read(GO_SUM)))
     found = module_problems(infos, vendored)
@@ -178,6 +237,24 @@ def run(version, out, summary):
         ", GOFLAGS=-mod=vendor" if tree.get("vendored") else "")]
     go_ci.summarise(summary, lines)
     return 1 if failed else 0
+
+
+class _env(object):
+    """Set environment variables for the duration of a with block (self-test only)."""
+    def __init__(self, **values):
+        self.values, self.saved = values, {}
+
+    def __enter__(self):
+        for key, value in self.values.items():
+            self.saved[key] = os.environ.get(key)
+            os.environ[key] = value
+
+    def __exit__(self, *exc):
+        for key, value in self.saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 def self_test():
@@ -219,19 +296,47 @@ def self_test():
     assert any("no go.sum hash" in problem and "x/crypto" in problem
                for problem in module_problems(with_sums(unsummed, sums), vendored))
     assert with_sums({"a": info}, {})["a"] == info                           # a recorded Sum is kept
+    flags = build_flags("1.2.3")
+    assert flags[:2] == FLAGS and flags[2] == "-ldflags=-s -w -buildid= -X main.version=1.2.3", flags
+    assert VERSION_CHECK_TARGET in TARGETS
+    stamped = "protodetect 1.2.3 (go backend; experimental families: tls; no production use)\n"
+    assert reported_version_problem(stamped, "1.2.3") is None
+    for wrong in (stamped.replace("1.2.3", "0.0.0-m4"), stamped.replace("1.2.3", "1.2.30"), "", "1.2.3\n",
+                  "protodetect\n", "other 1.2.3\n"):
+        assert reported_version_problem(wrong, "1.2.3"), wrong          # a fixed const, a prefix, junk: all fail
     for good in ("0.66.0", "1.0.0-rc.1"):
         assert VERSION.match(good), good
     for bad in ("v0.66.0", "0.66", "1.0.0;rm", "../1.0.0"):
         assert not VERSION.match(bad), bad
     root = Path(tempfile.mkdtemp(prefix="build_go_release_selftest_"))
     try:
+        assert tree_state(root)[0] == "skip"                                  # no Go engine on the commit at all
+        (root / "go").mkdir()
+        (root / "go" / "go.mod").write_text("module example.invalid/go\n", encoding="utf-8")
+        state, why = tree_state(root)
+        assert state == "fail" and "cmd/protodetect" in why, (state, why)    # go.mod without the main package
+        (root / "go" / "cmd" / "protodetekt").mkdir(parents=True)            # a renamed main package still fails
+        assert tree_state(root)[0] == "fail"
+        (root / "go" / "cmd" / "protodetect").mkdir()
+        assert tree_state(root) == ("build", "")
         (root / "a").write_bytes(b"same")
         (root / "b").write_bytes(b"same")
         (root / "c").write_bytes(b"diff")
         assert sha256(root / "a") == sha256(root / "b") != sha256(root / "c")
+        if sys.platform != "win32":                                           # run a stand-in binary end to end
+            fake = root / "protodetect"
+            fake.write_text("#!/bin/sh\necho \"protodetect $PD_VERSION (go backend)\"\nexit $PD_EXIT\n", encoding="utf-8")
+            fake.chmod(0o755)
+            for shown, code, ok in (("1.2.3", 0, True), ("0.0.0-m4", 0, False), ("1.2.3", 3, False)):
+                with _env(PD_VERSION=shown, PD_EXIT=str(code)):
+                    problem = check_reported_version(fake, "1.2.3")
+                assert (problem is None) == ok, (shown, code, problem)
+            assert "could not run" in check_reported_version(root / "missing", "1.2.3")
     finally:
         shutil.rmtree(str(root), ignore_errors=True)
-    print("build_go_release self-test: ok (SBOM shape and reproducibility, per-target module union and go:targets, version and hash skew, go.sum hashes, vendor cross-check, version names)")
+    print("build_go_release self-test: ok (SBOM shape and reproducibility, per-target module union and go:targets, "
+          "version and hash skew, go.sum hashes, vendor cross-check, version names, missing main package fails, "
+          "no go.mod skips, -X main.version flag, reported version check)")
     return 0
 
 
