@@ -188,3 +188,42 @@ func TestPolicyOwnerKeyedRulesHoldOnChild(t *testing.T) {
 		}
 	}
 }
+
+// TestPolicyOwnerRuleOrderOnChild pins the documented ordering consequence of SEC-CHILD-7 (docs/CHILD-APPS.md):
+// first match wins across both identities, so allow apps:[ms-base] placed before deny apps:[outlook-sending]
+// allows Graph sendMail, and the reverse order denies it. A child-specific rule must go before a broader owner rule.
+func TestPolicyOwnerRuleOrderOnChild(t *testing.T) {
+	s := embeddedSet(t)
+	sendMail := Request{Host: "graph.microsoft.com", Method: "POST", Path: "/v1.0/me/sendMail"}
+	owner := `{"name": "owner", "action": "allow", "match": {"apps": ["ms-base"]}}`
+	child := `{"name": "child", "action": "deny", "match": {"apps": ["outlook-sending"]}}`
+	for _, c := range []struct {
+		rules      string
+		wantAction string
+		wantRule   string
+	}{
+		{owner + ", " + child, "allow", "owner"},
+		{child + ", " + owner, "deny", "child"},
+	} {
+		// The default (deny) could also produce a deny, so the matching rule name is checked as well as the action.
+		doc := []byte(`{"version": 1, "default": "deny", "rules": [` + c.rules + `]}`)
+		pol, err := policy.FromJSONWithChildren(doc, pack(t), s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res := s.Classify(sendMail)
+		v := s.Verdict(res)
+		if v == nil {
+			t.Fatalf("%+v: no verdict", sendMail)
+		}
+		got := pol.Evaluate(v, "tcp", 443, true, nil, "")
+		rule := "<default>"
+		if got.Rule != nil {
+			rule = *got.Rule
+		}
+		if got.Action != c.wantAction || rule != c.wantRule {
+			t.Errorf("rules [%s] (app %s, owner %s): %s by %s, want %s by %s", c.rules, res.App, res.HostOwner,
+				got.Action, rule, c.wantAction, c.wantRule)
+		}
+	}
+}
