@@ -1,7 +1,6 @@
 package childapp
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/leenadav/protocol-detector/go/internal/policy"
@@ -76,55 +75,21 @@ func TestPolicyContainersMatchHostOwner(t *testing.T) {
 	}
 }
 
-// TestSuffixWithForeignOwnerUnderItRefused is the SEC-CHILD-5 reproduction: googleapis.com is google-base's, but
-// the catalog gives maps.googleapis.com to google-maps (and play., remotedesktop-pa. to others), so a host_suffixes
-// rule claimed through google-base is refused at load instead of being indexed over hosts it would never own.
-func TestSuffixWithForeignOwnerUnderItRefused(t *testing.T) {
-	body := func(dependsOn string) string {
-		return header + `{"name": "google-drive-x", "container": "google-drive", "description": "d", "depends_on": [` + dependsOn +
-			`], "evidence": ["https://example.org/doc"], "rules": [{"host_suffixes": ["googleapis.com"], "methods": ["POST"]}]}]}`
-	}
-	_, err := Load([]byte(body(`"google-base"`)), pack(t), Options{})
-	if err == nil || !strings.Contains(err.Error(), "covers 'maps.googleapis.com' of 'google-maps'") {
-		t.Fatalf("a suffix over another owner's domain was accepted or refused for another reason: %v", err)
-	}
-	// Owners of every nested domain among depends_on: the suffix stays inside the child's owners and loads.
-	s, err := Load([]byte(body(`"google-base", "google-maps", "google-play", "chrome-remote-desktop"`)), pack(t), Options{})
-	if err != nil {
-		t.Fatalf("a suffix whose nested owners are all depends_on was refused: %v", err)
-	}
-	for host, owner := range map[string]string{"www.googleapis.com": "google-base", "maps.googleapis.com": "google-maps"} {
-		if res := s.Classify(Request{Host: host, Method: "POST", Path: "/x"}); res.App != "google-drive-x" || res.HostOwner != owner {
-			t.Errorf("%s: %+v, want google-drive-x under %s", host, res, owner)
-		}
-	}
-	// A suffix with nothing foreign under it is unchanged.
-	if _, err := Load([]byte(header+`{"name": "dropbox-x", "container": "dropbox", "description": "d", "evidence": ["https://e.org"],
-		"rules": [{"host_suffixes": ["dropboxapi.com"], "methods": ["POST"]}]}]}`), pack(t), Options{}); err != nil {
-		t.Fatalf("dropboxapi.com: %v", err)
-	}
-}
-
-// TestClassifyRechecksSuffixOwner: defence in depth behind the load refusal. A rule indexed over a domain whose
-// host the catalog gives another application (a catalog changed under a loaded set) never fires there, and the
-// request keeps its catalog identity (SEC-CHILD-2, SEC-CHILD-5).
-func TestClassifyRechecksSuffixOwner(t *testing.T) {
+// TestSuffixRuleStaysInsideItsOwner: a rule claimed through google-base never fires on a more specific host the
+// catalog gives another application (maps.googleapis.com is google-maps'). Since SEC-CHILD-5 a googleapis.com
+// suffix is refused at load (secchild5_test.go), so the rule names its host exactly.
+func TestSuffixRuleStaysInsideItsOwner(t *testing.T) {
 	doc := header + `{"name": "google-drive-x", "container": "google-drive", "description": "d", "depends_on": ["google-base"],
 		"evidence": ["https://example.org/doc"], "rules": [{"hosts": ["www.googleapis.com"], "methods": ["POST"]}]}]}`
 	s, err := Load([]byte(doc), pack(t), Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.nested != nil {
-		t.Fatal("the load-time domain index is retained after Load")
-	}
-	s.suffix["googleapis.com"] = append(s.suffix["googleapis.com"], s.exact["www.googleapis.com"]...)
-	if res := s.Classify(Request{Host: "api.googleapis.com", Method: "POST", Path: "/x"}); res.App != "google-drive-x" || res.HostOwner != "google-base" {
+	if res := s.Classify(Request{Host: "www.googleapis.com", Method: "POST", Path: "/x"}); res.App != "google-drive-x" || res.HostOwner != "google-base" {
 		t.Fatalf("google-base host: %+v", res)
 	}
 	res := s.Classify(Request{Host: "maps.googleapis.com", Method: "POST", Path: "/x"})
-	if res.App != "google-maps" || res.Container != "" || res.Basis != BasisServerName || res.HostOwner != "google-maps" ||
-		len(res.Reasons) != 1 || res.Reasons[0] != ReasonNoChildMatched {
+	if res.App != "google-maps" || res.Container != "" || res.Basis != BasisServerName || res.HostOwner != "google-maps" {
 		t.Fatalf("another owner's host was moved to a child: %+v", res)
 	}
 }

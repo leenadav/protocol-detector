@@ -198,12 +198,22 @@ jobs:
         with:
           go-version: "1.27.4"
           cache: false
-      - name: Secret scan (gitleaks 8.30.1, full history, inline allows ignored)
+      - name: Secret scan (gitleaks 8.30.1, history scope by event, inline allows ignored)
         # tools/scanners/go.mod and go.sum pin gitleaks and every dependency (checked against the Go
         # checksum database; rule 16 locks go.mod). Only those two files are copied to RUNNER_TEMP and
         # built there, read-only. --ignore-gitleaks-allow makes gitleaks itself ignore inline allow
         # comments in every commit it scans (item 21); .gitleaks.toml (rule 16) is the only allowlist.
+        # Scope by event (PRO-539; rule 15 pins it, tools/check_gitleaks_allowlist.py proves it):
+        #   pull_request  --log-opts=HEAD: every commit the pull request merge commit reaches, so the
+        #                 pull request's own commits and main's history, but no other fetched branch
+        #                 (a leak on one lane's branch no longer fails every other pull request);
+        #   push to main, schedule, workflow_dispatch  empty --log-opts: gitleaks' default, the full
+        #                 history of every fetched ref (`--full-history --all`), as before PRO-539.
+        # Every branch is scanned nightly by .github/workflows/secret-scan.yml (--log-opts=--all).
+        # The choice is a literal-only expression, not an `if:` or shell conditional, because no
+        # repository code may run before the scanner (rule 15).
         env:
+          GITLEAKS_LOG_OPTS: ${{ github.event_name == 'pull_request' && 'HEAD' || '' }}
           GOPROXY: https://proxy.golang.org
           GOSUMDB: sum.golang.org
           GOTOOLCHAIN: local
@@ -218,7 +228,8 @@ jobs:
           cd "$RUNNER_TEMP/scanners"
           GOBIN="$RUNNER_TEMP/bin" go install github.com/zricethezav/gitleaks/v8
           cd "$GITHUB_WORKSPACE"
-          "$RUNNER_TEMP/bin/gitleaks" git --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "secret scan scope: event $GITHUB_EVENT_NAME, --log-opts='$GITLEAKS_LOG_OPTS' (empty: every fetched ref)" | tee -a "$GITHUB_STEP_SUMMARY"
+          "$RUNNER_TEMP/bin/gitleaks" git --log-opts="$GITLEAKS_LOG_OPTS" --ignore-gitleaks-allow --redact --no-banner --exit-code 1 . 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
       - name: The gitleaks allowlists stay narrow (tools/check_gitleaks_allowlist.py, the pinned gitleaks)
         # After the scan, so no repository code runs before the scanner (rule 15). A CNAME chain is allowed only in
         # research/live-results-*.tsv, and keys, tokens and the same chain elsewhere must still be reported.

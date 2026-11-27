@@ -68,13 +68,12 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
   to the service's official API reference) is required.
 - **Hosts:** each rule needs `hosts` (exact) or `host_suffixes` (the domain and its subdomains). Every host must be
   claimed in the server-name catalog by the container or by an application in the child's `depends_on` (Gmail's API
-  is on `googleapis.com`, claimed by `google-base`). A web front or unclaimed host is refused. At match time a rule only fires when the request host's catalog owner
+  is on `googleapis.com`, claimed by `google-base`). A web front or unclaimed host is refused. A `host_suffixes` entry is also refused when
+  the catalog gives a more specific domain under it to an application that is neither the container nor a `depends_on`
+  (`anthropic.com`, claimed by `anthropic-claude`, covers `api.anthropic.com`, which is `anthropic-api`'s): name the
+  exact hosts instead, or add that application to `depends_on` (SEC-CHILD-5). At match time a rule only fires when the request host's catalog owner
   is the container or a `depends_on` application: a `host_suffixes` rule never fires on a more specific host the
-  catalog gives another application (`maps.googleapis.com` is google-maps', not google-base's). A `host_suffixes`
-  entry that has a catalog domain of any other application under it is refused at load (SEC-CHILD-5):
-  `googleapis.com` through `google-base` alone is refused, because `maps.`, `play.` and `remotedesktop-pa.` belong
-  to others; name the exact hosts instead, or list those owners in `depends_on`. The match-time owner check stays
-  as defence in depth.
+  catalog gives another application (`maps.googleapis.com` is google-maps', not google-base's).
 - **Function conditions** (at least one; all present ones must hold):
   - `methods`: upper-case tokens;
   - `path_prefixes` and `path_patterns`: either list may hit. A pattern is `/`-separated segments: a literal, `*` or
@@ -96,7 +95,8 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
   pins the most literal bytes, then the one with more condition kinds; on a tie the earlier rule in the file. So
   `POST /upload/gmail/v1/users/me/messages/send` is `gmail-sending` (a pattern), not `gmail-uploading` (a prefix).
 - **Load limits:** 4 MiB, 4,096 children, 32 rules per child, 16,384 rules, 32 entries per list, 256 bytes per entry,
-  32 pattern segments. Keys are exact and unique; anything else refuses the whole file.
+  32 pattern segments, 256 path patterns indexed under one host or host suffix (SEC-CHILD-4). Keys are exact and
+  unique; anything else refuses the whole file.
 - **Base children:** research's `<parent>-base` is the parent itself here: `app=<parent>`, `container` empty.
 
 ## Paths are matched only in canonical form
@@ -116,6 +116,12 @@ Rules are indexed by host, so a request only meets the rules of its own host and
 (default 4,096) or a method or content type over 32 or 256 bytes is not matched. Hitting any of these is reported in
 `limit` (`child_rule_evaluations`, `child_path_bytes`, `child_field_bytes`) with reason `work_limit` or
 `field_too_long`, and the verdict then names the parent only, never a child.
+
+Path work is linear in the path once per request, never per pattern (SEC-CHILD-4): the path is checked for dot
+segments without splitting and split at most once, only when a rule with a pattern is reached and into at most 33
+parts (a case-folded rule on a path with upper case splits the lower-cased path once more). Each pattern compares
+the segment count first, so a 4 KiB path of 2,048 segments against the 256 patterns a host may hold costs about
+10 µs and under 1 KB (`BenchmarkClassifyPatternCapLongPath`; it was 8.9 ms and 8.5 MB).
 
 ## Where the rules come from
 

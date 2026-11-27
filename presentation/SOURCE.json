@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "7a82293896cd167cb9cb7dc3ff71ee243fbee96b",
+  "commit": "a346993c170bc98ea5be9f8d753db16d88e1d432",
   "branch": "claude/quirky-goodall-36hlwi",
-  "build_digest": "0b8bf3afacf1fda968448e4cfbfc9447059018484a1230480b44148bff1369df",
+  "build_digest": "b78454e1912817bca6e33e3d05f2fb5f74feec6e5e6f2b6978790bac3aad7100",
   "components": {
     "engine": {
       "root": "go",
@@ -160,12 +160,12 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "200d3d6cbc35e98ff3505ceb95b440095713d5948b799ecd96dd668e4e34bf96"
+      "sha256": "6b7a2e2f5b94198f89d04839c2e15829cfffe85b15341f60fa3401d8d3f3a790"
     },
     {
       "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "1b54cf6399b520c215394d524809be303509d0e415b67d740e4de6d997a3bc82"
+      "sha256": "6cd8c373c16ea7419bf33afa33e741144d2796b2b3338c0d605994db6de1a572"
     },
     {
       "path": "go/internal/clock/clock.go",

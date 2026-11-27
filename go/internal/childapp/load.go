@@ -22,7 +22,10 @@ const (
 	MaxListEntries    = 32
 	MaxEntryBytes     = 256
 	MaxPatternSegment = 32
-	MaxEvidence       = 8
+	// MaxPatternsPerHost caps the path patterns indexed under one host or host suffix (SEC-CHILD-4): with the
+	// per-request rule ceiling it bounds pattern work per request to a few hundred comparisons of one split path.
+	MaxPatternsPerHost = 256
+	MaxEvidence        = 8
 )
 
 //go:embed childapps.json
@@ -171,7 +174,6 @@ func Load(data []byte, pack *content.Pack, opts Options) (*Set, error) {
 	}
 	s := &Set{Digest: digestOf(data), pack: pack, byName: map[string]*Child{}, exact: map[string][]int{},
 		suffix: map[string][]int{}, opts: normalize(opts), nested: nestedDomains(pack)}
-	defer func() { s.nested = nil }()
 	for key, target := range map[string]*string{"version": &s.Release.Version, "note": &s.Release.Note, "review": &s.Release.Review} {
 		if *target, err = str(rel[key]); err != nil || *target == "" || len(*target) > 512 {
 			return nil, invalid("release %s must be a string of 1..512 bytes", key)
@@ -192,11 +194,23 @@ func Load(data []byte, pack *content.Pack, opts Options) (*Set, error) {
 			return nil, err
 		}
 	}
+	s.nested = nil // needed only while loading
 	for host, l := range s.exact {
 		s.exact[host] = sortedUnique(l)
 	}
 	for host, l := range s.suffix {
 		s.suffix[host] = sortedUnique(l)
+	}
+	for _, index := range []map[string][]int{s.exact, s.suffix} {
+		for host, l := range index {
+			n := 0
+			for _, order := range l {
+				n += len(s.rules[order].pathPatterns)
+			}
+			if n > MaxPatternsPerHost {
+				return nil, invalid("host %s has %d path patterns, more than %d", host, n, MaxPatternsPerHost)
+			}
+		}
 	}
 	return s, nil
 }
@@ -335,29 +349,6 @@ func (s *Set) addChild(i int, raw json.RawMessage) error {
 	return nil
 }
 
-// nestedDomains indexes every catalog service domain under each of its proper parent domains (label boundaries),
-// in domain order, so a host_suffixes check costs only the domains under that suffix.
-func nestedDomains(pack *content.Pack) map[string][]ownedDomain {
-	out := map[string][]ownedDomain{}
-	for owner, domains := range pack.AppDomains {
-		for _, d := range domains {
-			for position := strings.IndexByte(d, '.'); position >= 0; {
-				parent := d[position+1:]
-				out[parent] = append(out[parent], ownedDomain{d, owner})
-				next := strings.IndexByte(parent, '.')
-				if next < 0 {
-					break
-				}
-				position += next + 1
-			}
-		}
-	}
-	for _, l := range out {
-		sort.Slice(l, func(i, j int) bool { return l[i].domain < l[j].domain })
-	}
-	return out
-}
-
 func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bool) error {
 	doc, err := object(raw, ruleKeys)
 	if err != nil {
@@ -395,13 +386,12 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 		if err := check(h); err != nil {
 			return err
 		}
-		// The catalog may give a more specific domain under the suffix to another application: refuse the rule
-		// rather than index it over a host it would never own (SEC-CHILD-5). Classify re-checks the host owner
-		// against the child's owners as well (SEC-CHILD-2), so a catalog changed under a loaded set stays safe.
-		for _, n := range s.nested[h] {
-			if !owners[n.owner] {
-				return fmt.Errorf("host_suffixes '%s' covers '%s' of '%s', which is not '%s' or its depends_on in the "+
-					"server-name catalog", h, n.domain, n.owner, c.Container)
+		// The suffix's own owner is not enough: a more specific catalog domain under it can belong to another
+		// application, and a suffix rule must not be written over that application's hosts (SEC-CHILD-5).
+		for _, d := range s.nested[h] {
+			if !owners[d.owner] {
+				return fmt.Errorf("host suffix '%s' covers '%s', which the server-name catalog gives '%s': name exact hosts, or add '%s' to depends_on",
+					h, d.domain, d.owner, d.owner)
 			}
 		}
 	}
@@ -689,4 +679,35 @@ func validQueryPart(s string) bool {
 		}
 	}
 	return true
+}
+
+// nestedDomain is a server-name catalog domain and the application that owns it.
+type nestedDomain struct{ domain, owner string }
+
+// nestedDomains maps each parent domain of a catalog service domain to the catalog domains strictly under it,
+// sorted, so the loader checks a host_suffixes entry against every owner it would cover in one lookup.
+func nestedDomains(pack *content.Pack) map[string][]nestedDomain {
+	out := map[string][]nestedDomain{}
+	for owner, domains := range pack.AppDomains {
+		for _, d := range domains {
+			for rest := d; ; {
+				dot := strings.IndexByte(rest, '.')
+				if dot < 0 {
+					break
+				}
+				rest = rest[dot+1:]
+				out[rest] = append(out[rest], nestedDomain{d, owner})
+			}
+		}
+	}
+	for parent, l := range out {
+		sort.Slice(l, func(i, j int) bool {
+			if l[i].domain != l[j].domain {
+				return l[i].domain < l[j].domain
+			}
+			return l[i].owner < l[j].owner
+		})
+		out[parent] = l
+	}
+	return out
 }
