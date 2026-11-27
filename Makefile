@@ -89,7 +89,8 @@ workflow-policy:
 
 # Every security requirement names tests that exist (requirements) and pass when run (requirements-run, which
 # needs the pinned Go and go/bin/protodetect for the Python tests: make go-build): SECURITY-REQUIREMENTS.md,
-# PRO-403, PRO-546.
+# PRO-403, PRO-546. Rows that do not parse, duplicates and an id set that differs from
+# tools/security_requirements.lock.json fail too (PRO-545); PRO-568 holds both fixes in one tool.
 requirements:
 	$(PYTHON) -B tools/check_security_requirements.py --self-test
 	$(PYTHON) -B tools/check_security_requirements.py
