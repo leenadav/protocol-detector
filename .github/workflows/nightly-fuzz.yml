@@ -1,10 +1,12 @@
 # Extended seeded fuzzing beyond the unit-test budget. Findings are regressions in
 # bounded parsing (crash, unbounded work, status outside the documented set).
-# Two jobs (PRO-403: the Python mutation fuzz went with the Python reference engine): every Go fuzz
+# Three jobs (PRO-403: the Python mutation fuzz went with the Python reference engine): every Go fuzz
 # target for minutes instead of the per-push gate's seconds (tools/go_fuzz_long.py; failing inputs are uploaded);
-# and the randomized opening properties, Go only (make property-long, PRO-401: it replaced the
+# the randomized opening properties, Go only (make property-long, PRO-401: it replaced the
 # randomized Python-vs-Go parity run when the Python reference was removed; the rapid failfiles of a
-# failing run, which reproduce it, are uploaded).
+# failing run, which reproduce it, are uploaded); and mutation testing of the Go parser packages
+# with gremlins against migration/mutation/baseline.json (make mutation, PRO-176; its results are
+# uploaded on every run as trend data).
 # None of them is a required check, so a nightly failure never blocks a pull request.
 # GitHub runs `schedule` only from the default branch's copy of this file, so a change here
 # takes effect nightly once it is on main; before that, run it with workflow_dispatch on
@@ -147,3 +149,78 @@ jobs:
             property-long.txt
           if-no-files-found: ignore
           retention-days: 14
+
+  mutation:
+    # make mutation (migration/mutation/mutation.py, PRO-126/PRO-176): gremlins mutates each Go parser package
+    # (arithmetic, comparison boundaries, negated conditions) and runs that package's tests against every covered
+    # mutant. The job fails only when a package's efficacy (killed / (killed + lived)) falls more than 5 points
+    # below migration/mutation/baseline.json, or a baseline package has no result. The 5 points are
+    # mutation.py's TOLERANCE, a placeholder until Research Lab's stability check (PRO-173) recommends a value.
+    # The one step with module-proxy access builds gremlins v0.6.0 (Apache-2.0; its dependencies are MIT,
+    # BSD-3-Clause or Apache-2.0) from a RUNNER_TEMP copy of its pin module, and fills the module cache from a
+    # copy of go/go.mod and go/go.sum (gremlins runs `go mod download` before it measures coverage), every hash
+    # checked against go.sum and the checksum database, before any repository code runs. Everything after it is
+    # offline: GOPROXY=off, the pinned compiler, and the engine built from go/vendor (mutation.py sets -mod=vendor).
+    name: Go mutation testing (gremlins, against the baseline)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Harden runner egress
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: "1.27.4"
+          cache: false
+      - name: Build gremlins v0.6.0 from its pin module and fill the module cache (the only networked step)
+        env:
+          GOPROXY: https://proxy.golang.org
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: |
+          mkdir -p "$RUNNER_TEMP/mutation/gremlins" "$RUNNER_TEMP/mutation/engine-modules"
+          cp migration/mutation/gremlins/go.mod migration/mutation/gremlins/go.sum migration/mutation/gremlins/tools.go "$RUNNER_TEMP/mutation/gremlins/"
+          cp go/go.mod go/go.sum "$RUNNER_TEMP/mutation/engine-modules/"
+          cd "$RUNNER_TEMP/mutation/gremlins"
+          GOBIN="$RUNNER_TEMP/bin" go install github.com/go-gremlins/gremlins/cmd/gremlins
+          cd "$RUNNER_TEMP/mutation/engine-modules"
+          go mod download
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - name: Mutation testing of the Go parsers against the baseline (make mutation)
+        # The ci Go jobs' environment: no module or toolchain download (the cache filled above, the vendored
+        # tree, the pinned compiler). MUTATION_BIN makes make run the binary built above instead of installing one.
+        env:
+          MUTATION_BIN: ${{ runner.temp }}/bin/gremlins
+          GOPROXY: "off"
+          GOSUMDB: sum.golang.org
+          GOTOOLCHAIN: local
+          GOFLAGS: "-mod=readonly"
+          GOWORK: "off"
+          GONOSUMDB: ""
+          GOPRIVATE: ""
+          GOINSECURE: ""
+        run: make mutation PYTHON=python MUTATION_BIN="$MUTATION_BIN" MUTATION_ARGS="--summary $GITHUB_STEP_SUMMARY"
+      - name: Upload the mutation results (every run, for the efficacy trend)
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-results
+          path: |
+            build/mutation/*.json
+            build/mutation/*.log
+          if-no-files-found: warn
+          retention-days: 90

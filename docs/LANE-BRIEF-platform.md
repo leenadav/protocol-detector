@@ -51,8 +51,15 @@ their decisions, the policy locks, and the release controller.
   go-check-parity`). `make go-check` still runs the four parts in order. `tools/go_fuzz_smoke.py --check-matrix`
   (workflow-lint, `make workflow-policy`) fails a matrix that drops a shard; a listed target that no test defines
   fails. Steps 3 (tool-decided docs-only fast path) and 4 (GOMODCACHE cache saved on `main` only) follow as their own PRs.
-- **PRO-194 finding 2** (`build_go_release.py` sets and checks `main.version`): local `5324543`, unpushed, waits on
-  Engine's PRO-195.
+- **PRO-194** (`build_go_release.py`), on branch `claude/determined-mayer-cyjpa0` from `main` `23bbc0c`. Finding 1 is
+  the cherry-pick `305f8ef` of `695bb09`: the release fails when `go/go.mod` exists and `go/cmd/protodetect` does
+  not. Finding 2 adds `-X main.version=<version>` and requires the linux/amd64 binary's `protodetect version` to
+  report exactly that version (`docs/RELEASING.md`). The local `5324543` was lost with its container and was
+  rewritten here. **Merge order:** Engine's PR #143 (PRO-195, `var version`) first, then merge `main` into this
+  branch. Until then the publish-release dry run fails, correctly, because `main` still has `const version`.
+  #143 merged; `83ad798` (PRO-478) merged `main` in. The release build then failed on two launcher tests: the
+  launchers default to the Go engine and the job never built `go/bin/protodetect`. It now runs `go_ci.py build`
+  before the gate, as `ci.yml` does; the docs test count was refreshed to 909.
 
 - `main` = `2a33183`. PRO-42, PRO-59 and PRO-31 merged: #33 (`d2e7e9a`), #34 (`c402073`), #35 (`a6b096a`), #37 (`0d32281`), #38 (`51b5e94`), #39 (`0ef7349`);
   #41 and #54 (PRO-73) too. #56 (the brief through PRO-103) and #66 (gitleaks allowlist for the r5 CNAME false positive, PRO-145) are merged.
@@ -178,7 +185,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | PRO-200 skills: `.claude/skills/` holds 7 MIT skills copied from obra/superpowers 7.0.2 (`22f0b46`: systematic-debugging, test-driven-development, verification-before-completion, receiving-code-review) and samber/cc-skills-golang 2.0.1 (`d68d80a`: golang-testing 1.4.0, golang-performance 1.3.2, golang-error-handling 1.3.1); provenance in `.claude/skills/THIRD_PARTY.md`. Repo-declared plugins do not load in cloud sessions (smoke on `1542a34`); Trail of Bits (CC-BY-SA) not taken | Hermes's review, then Lee |
 | Gitleaks hex HTTP/1 allowlist scoped (PRO-183/PRO-184, the gitleaks SEC-CI-1): branch `claude/cicd-gitleaks-hex-scope`, base main. Own `[[allowlists]]` entry, AND of path `^go/.*_test\.go$` and the hex regex; `check_gitleaks_allowlist.py` proves a hex request with a cookie still flags in .py, .json and non-test .go. `claude/go-migration` keeps its own repo-wide copy until it merges main | Hermes's review, then Lee |
 | Bump `migration/mutation/gremlins/go.mod` (x/sys ≥ 0.44.0, x/text ≥ 0.41.0); then drop its 3 OSV entries before 2026-12-06 | Engine |
-| Nightly mutation job (PRO-176): gremlins built in isolation, run with `GOPROXY=off` and `MUTATION_BIN`, artifact always uploaded | A Hermes task; Engine's `MUTATION_BIN` is in `e9b0ef0` (PR #72) |
+| Nightly mutation job (PRO-176): #155, branch `claude/platform-PRO-176-nightly-mutation`, the `mutation` job of `nightly-fuzz.yml` (gremlins and the module cache from one isolated networked step, then `make mutation` offline with `MUTATION_BIN`, results uploaded every run; policy `check_mutation_build`). The 5-point threshold is a placeholder in Engine's `mutation.py`. tlsx and textroute measure nothing today: their tests read `../../../../migration/fixtures/cases.json`, absent from gremlins' copy of `go/`, so every mutant counts as killed | Hermes's review, then Lee; Engine for the tlsx/textroute fixture path (asked on PRO-176) and the PRO-173 `TOLERANCE` |
 | 32-bit Go tests (PRO-71 → PRO-262): `make go-check-386` (part of `make go-check`) runs `go test` with `GOARCH=386` on every `./internal/protocols/...` package except `GO_386_EXCLUDE`, as the `go-engine` job's third step (`go_ci.py go --part 386`). Branch `claude/platform-PRO-262-go-386`. Today 6 packages test, 2 have no tests, `framed` is excluded; an excluded package that compiles fails the target | Hermes's review, then Lee; Engine to make `framed` (5 constant overflows of `int`) build on 386, then drop it from `GO_386_EXCLUDE` |
 
 ## 6. Frozen SHAs awaiting Codex
@@ -189,7 +196,13 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **The packet:** `3d9a40e`, `0a01368`, `58a1c0d`.
 - **Merged, not yet Codex-reviewed:** #33 `851eddb`, #34 `a179db6`, #35 `d3faff8`..`12a56ae`, #37 `7d04266`, #38 `7c33b1a`, #39 `37b3c84`.
 - **PRO-480 (#154):** `8e13f57a1303fca696db674da6414b833c4ad544` (strict docs counts on a tag only, ledgers refresh) and `031f23635834f4a42fa226b4adf8589c5ed2c7d8` (Go binary before the release gate).
+<<<<<<< HEAD
 - **PRO-546 (SEC-PYRM-2, stacked on #174):** see `migration/notes/PRO-546.md` for the frozen SHA.
+=======
+- **PRO-194:** `305f8ef` (finding 1, cherry-pick of `695bb09`) and the finding 2 commit on
+  `claude/determined-mayer-cyjpa0`.
+- **PRO-176 (#155):** `6df38e72bfa96111fd68510bf2e5be782e456ff3` (nightly mutation job, policy `check_mutation_build`) and `6e5292ab4d9499cd5cce43813d43c0eee2ebae34` (notes: tlsx/textroute not measured).
+>>>>>>> origin/main
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
@@ -204,6 +217,9 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Release gate needs the Go binary (PRO-478):** since PRO-402 `protodetect.py analyze` runs only the Go binary
   and exits 2 without it. Any job that runs `unittest discover` must first run `tools/go_ci.py build` (offline,
   vendored), as the ci test jobs do; `publish-release.yml` did not, and two launcher tests failed `2 != 0`.
+- **gremlins needs the module cache:** `gremlins unleash` always runs `go mod download` before coverage, which fails
+  under `GOPROXY=off` even with a vendored tree. Fill the cache in the isolated networked step from a RUNNER_TEMP
+  copy of go/go.mod and go.sum (PRO-176).
 - **Stale checkout:** a restarted container may check out an old branch (`claude/appid-engine`). Run
   `git fetch` and work on `claude/cicd-next` at `origin/main` first.
 - **Masked failures:** `cmd | tail` hides the exit status. Use `set -o pipefail` and check `make check`'s status
