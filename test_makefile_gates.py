@@ -1,7 +1,7 @@
 """The Makefile gates never mask a failure (Codex checkpoint finding on stage 6).
 
-`presentation-check` must propagate the presentation suite's exit status when the dependency is present and
-skip, with a message, only when it is absent; `presentation-test` must accept an interpreter path relative to
+`presentation-check` must propagate the presentation suite's exit status (PRO-403: it has no optional dependency left
+to skip on); `presentation-test` must accept an interpreter path relative to
 the repository root although it changes into presentation/.
 """
 import os
@@ -30,24 +30,19 @@ def run(args, env=None):
 
 @unittest.skipIf(MAKE is None, "make is not installed")
 class PresentationGateTests(unittest.TestCase):
-    def test_failing_suite_fails_the_check_and_missing_dependency_skips(self):
+    def test_failing_suite_fails_the_check(self):
+        # PRO-403: the suite has no optional dependency left, so there is nothing to skip: a failing suite and a
+        # submake that cannot run both fail presentation-check.
         with tempfile.TemporaryDirectory(dir=str(ROOT)) as directory:
             relative = os.path.relpath(directory, ROOT)
-            # An interpreter that has the dependency and whose test run fails.
-            shim(directory, "py-fail", 'case "$*" in *"import cryptography"*) exit 0;; esac\necho "suite ran in $(pwd)"; exit 7\n')
+            shim(directory, "py-fail", 'echo "suite ran in $(pwd)"; exit 7\n')
             result = run(["presentation-check", "PYTHON=%s/py-fail" % relative])
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("suite ran in", result.stdout)
             self.assertNotIn("skipped", result.stdout)
-            # A submake that cannot run (the Codex reproduction): still a failure, never "skipped".
             result = run(["presentation-check", "PYTHON=%s/py-fail" % relative, "MAKE=false"])
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertNotIn("skipped", result.stdout)
-            # Without the dependency the check skips, says so, and exits 0.
-            shim(directory, "py-none", 'case "$*" in *"import cryptography"*) exit 1;; esac\nexit 0\n')
-            result = run(["presentation-check", "PYTHON=%s/py-none" % relative])
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("skipped", result.stdout)
+            self.assertNotIn("suite ran in", result.stdout)
 
     def test_relative_interpreter_path_survives_the_directory_change(self):
         with tempfile.TemporaryDirectory(dir=str(ROOT)) as directory:

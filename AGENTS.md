@@ -1,8 +1,12 @@
 # Protocol detector engineering and review guidance
 
-This project is a Python 3.9-compatible, IPv4-only passive protocol classifier.
+This project is an IPv4-only passive protocol classifier. The engine is the Go module in `go/`, the only
+engine: the Python reference engine was removed in PRO-403 (Lee, 2026-11-25), and its last state is the tag
+`python-final` (`5cb35d2`). Its answers live on as frozen fixtures (`migration/fixtures/`) that the Go parity
+gates replay. What Python remains is repository tooling (`tools/`, `migration/`, Python 3.9 syntax, standard
+library only), the root launchers and `presentation/launch.py`.
 Read PROTOCOLS.md and ARCHITECTURE.md before reviewing coverage claims.
-Run `python3 -B -m unittest discover -q` from the repository root.
+Run `make check` and `make go-check` from the repository root.
 Do not capture external or user traffic. Live smoke tests are opt-in and local
 synthetic IPv4 loopback only. Ordinary tests need no capture privileges.
 
@@ -10,7 +14,7 @@ synthetic IPv4 loopback only. Ordinary tests need no capture privileges.
 
 `REVIEW.md` at the repository root is the single source of truth for reviewing a pull request here. Read it in
 full before any review, automatic or not: it holds the review priorities, the three passes (bugs, security,
-compliance with the task and these rules), the Code Review Rules (parsers, content packs, the Python reference,
+compliance with the task and these rules), the Code Review Rules (parsers, content packs, the frozen answers,
 CI), what counts as Important (P0/P1) or Nit (at most 5), and what not to report. The Codex automatic pull-request
 review reports Important (P0/P1) findings only. `REVIEW-SCOPE.md` gives the current release's review focus.
 
@@ -35,11 +39,11 @@ review reports Important (P0/P1) findings only. `REVIEW-SCOPE.md` gives the curr
 This is initial-message inspection, not a complete TCP stack or full-session
 protocol validator. Profiles intentionally exclude features listed in PROTOCOLS.md.
 Do not report those exclusions alone as bugs. Report contradictions between the
-implementation and its stated contracts. The Python-to-Go migration is in scope
-(explicitly authorized by Lee; issues #2 and #7, 2026-11-14): Python stays the
-reference and its product behaviour is preserved until validated migration gates
-are met, and the Go engine is judged against it (`make go-check`, `make parity-go`,
-the CI `go-engine` job). IPv6 transport remains out of scope. Proxy integration
+implementation and its stated contracts. The Python-to-Go migration is complete:
+Go is the only engine, and it is judged against the Python reference's frozen
+answers (`make go-check`, `make parity-go`, the CI `go-engine` and `go-parity`
+jobs); the reference itself is history under the tag `python-final` (PRO-403).
+IPv6 transport remains out of scope. Proxy integration
 (Culvert) is in scope only as the Culvert Integration lane's assigned work. A
 default-backend switch, a merge or a deployment stays out of scope without Lee's
 decision. Benchmarks report local CPU work, not production SWG end-to-end latency.
@@ -94,8 +98,8 @@ authorization for anything else.
   restrictions and authorizes no merge, deployment or permission change.
   Independent work continues while the request is open.
 - Evaluate each finding against the documented profile, fix justified ones
-  with regression tests, run the full gate (`make check`, the second Python
-  interpreter, fuzz, security requirements, behaviour diff), push, and request
+  with regression tests, run the full gate (`make check`, `make go-check`, the
+  Go fuzz smoke, `make requirements-run`), push, and request
   the next round with the new exact SHAs. At most three rounds per task; a
   result with no actionable findings closes the task's loop.
 - Lanes receive work as Paperclip tasks and work through their queue with no

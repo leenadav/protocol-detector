@@ -1,13 +1,66 @@
-"""D09: the independent-corpus evaluation harness scores labelled flows and refuses unprovenanced input."""
+"""D09: the independent-corpus evaluation harness scores labelled flows and refuses unprovenanced input.
+
+The harness drives the Go binary (go/bin/protodetect, built by `make test`'s go-build prerequisite); PRO-403 moved it
+off the removed Python engine. The captures are built here from fixed bytes (the DNS query and the empty-extension
+ClientHello the reference's fixtures used, python-final protocol_fixtures).
+"""
 import hashlib
 import json
 import os
+import socket
+import struct
+import sys
 import tempfile
 import unittest
+from pathlib import Path
 
-from protocol_adapters.make_sample_pcap import frame, pcap_bytes, udp_frame
-from protocol_adapters.protocol_fixtures import DNS, client_hello_with
-from tools import evaluate_corpus
+sys.path.insert(0, str(Path(__file__).resolve().parent / "tools"))
+import evaluate_corpus  # noqa: E402
+
+DNS = bytes.fromhex("12340100000100000000000003777777076578616d706c6503636f6d0000010001")
+CLIENT_HELLO = bytes.fromhex("16030300330100002f0303" + "00" * 32 + "00" + "000613011302c02f01000000")
+ETHERNET = bytes.fromhex("0200000000020200000000010800")
+
+
+def checksum(data):
+    if len(data) % 2:
+        data += b"\x00"
+    total = sum(struct.unpack("!%dH" % (len(data) // 2), data))
+    while total >> 16:
+        total = (total & 0xffff) + (total >> 16)
+    return ~total & 0xffff
+
+
+def ipv4(protocol, source, destination, body):
+    src, dst = socket.inet_aton(source[0]), socket.inet_aton(destination[0])
+    header = struct.pack("!BBHHHBBH4s4s", 0x45, 0, 20 + len(body), 1, 0x4000, 64, protocol, 0, src, dst)
+    header = header[:10] + struct.pack("!H", checksum(header)) + header[12:]
+    return (ETHERNET + header + body).ljust(60, b"\x00")
+
+
+def frame(source, destination, sequence, ack, flags, payload=b""):
+    src, dst = socket.inet_aton(source[0]), socket.inet_aton(destination[0])
+    tcp = struct.pack("!HHIIBBHHH", source[1], destination[1], sequence, ack, 5 << 4, flags, 65535, 0, 0) + payload
+    tcp = tcp[:16] + struct.pack("!H", checksum(src + dst + struct.pack("!BBH", 0, 6, len(tcp)) + tcp)) + tcp[18:]
+    return ipv4(6, source, destination, tcp)
+
+
+def udp_frame(source, destination, payload):
+    src, dst = socket.inet_aton(source[0]), socket.inet_aton(destination[0])
+    udp = struct.pack("!4H", source[1], destination[1], 8 + len(payload), 0) + payload
+    value = checksum(src + dst + struct.pack("!BBH", 0, 17, len(udp)) + udp) or 65535
+    return ipv4(17, source, destination, udp[:6] + struct.pack("!H", value) + udp[8:])
+
+
+def pcap_bytes(frames):
+    data = struct.pack("<IHHIIII", 0xa1b2c3d4, 2, 4, 0, 0, 65535, 1)
+    for index, packet in enumerate(frames):
+        data += struct.pack("<IIII", 1700000000 + index, 0, len(packet), len(packet)) + packet
+    return data
+
+
+def client_hello_with(_extensions):
+    return CLIENT_HELLO
 
 HTTP_CLIENT, HTTP_SERVER = ("192.0.2.10", 52000), ("198.51.100.20", 80)
 TLS_CLIENT, TLS_SERVER = ("192.0.2.11", 52001), ("198.51.100.21", 443)

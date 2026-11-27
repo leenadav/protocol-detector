@@ -1,4 +1,19 @@
-# Stream/datagram engine v0.36 — engine and observation contracts
+# Stream/datagram engine — engine and observation contracts
+
+## Implementation (PRO-403)
+
+These contracts were written for the Python reference engine and are implemented by the Go engine in `go/`, the
+only engine since PRO-403 (Lee, 2026-11-25). The Python reference (`protocol_engine/`, `protocol_adapters/`, the
+root scripts and their tests) was removed; its last state is the tag `python-final` (`5cb35d2`). Names below such as
+`Inspector`, `DatagramInspector`, `Config`, `RuleIndex` and `Analyzer` are the reference's; their Go counterparts are
+in `go/detector` (the embeddable facade), `go/internal/engine` (inspectors and dispatch), `go/internal/reassembly`,
+`go/internal/analyzer` and `go/internal/session`, mapped package by package in
+[docs/GO-ARCHITECTURE.md](docs/GO-ARCHITECTURE.md). The reference's answers are frozen in `migration/fixtures/`, and
+every Go parity gate (`make go-check-parity`) still replays them; the security requirements that state these
+contracts are verified by Go tests (SECURITY-REQUIREMENTS.md, `make requirements-run`). Where Go deliberately differs
+(approved divergences such as SEC-INSP-1's shift nesting cap), `migration/STATUS.md` records it. Version labels in
+the section titles (v0.6.1 … v0.36) are the reference releases that introduced each contract.
+
 
 ## Ownership
 
