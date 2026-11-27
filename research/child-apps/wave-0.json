@@ -15,7 +15,8 @@
     "surface=api: documented vendor API endpoint (scripts, integrations). The first-party web UI's own request paths are not documented and must not be assumed equal.",
     "host_sni lists names as the source spells them; a '*.' or '{...}' form is a pattern, not a literal.",
     "transport is set for non-HTTP signals (ports, UDP media); those are invisible to an HTTP rule and UDP is off the Phase 1 observed path.",
-    "Hosts and paths are client assertions seen by a decrypting proxy, not authenticated identity."
+    "Hosts and paths are client assertions seen by a decrypting proxy, not authenticated identity.",
+    "citation_also (optional) lists further official sources for the same row. Rows citing raw.githubusercontent.com cite the vendor's own published spec or SDK repository (Box, Discord, X, Mega), used where the vendor's documentation site was not reachable; the sources are named in each note."
   ],
   "services": [
     {
@@ -567,9 +568,9 @@
     {
       "service": "Box",
       "parent_app_id": "box",
-      "separability": "blocked",
-      "not_separable": null,
-      "web_ui_note": null,
+      "separability": "partial",
+      "not_separable": "Sharing (create a shared link) is PUT /2.0/files/{file_id} with a shared_link body (put_files_id#add_shared_link); the same method and path rename or move a file, so only the body separates it.",
+      "web_ui_note": "Rules come from Box's official OpenAPI spec (API clients); the box.com web UI's request paths are not published.",
       "children": [
         {
           "child_id": "box-base",
@@ -592,38 +593,62 @@
         {
           "child_id": "box-uploading",
           "function": "file upload",
-          "verified": false,
-          "surface": null,
+          "verified": true,
+          "surface": "api",
           "signals": {
-            "host_sni": null,
-            "http_method": null,
-            "path_pattern": null,
-            "content_type": null,
-            "direction": null,
+            "host_sni": [
+              "upload.box.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/api/2.0/files/content | /api/2.0/files/{file_id}/content",
+            "content_type": "multipart/form-data",
+            "direction": "upload",
             "websocket": null,
             "transport": null
           },
-          "citation_url": null,
-          "citation_page_date": null,
-          "notes": "UNVERIFIED: developer.box.com not readable."
+          "citation_url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+          "citation_page_date": "info.version 2024.0",
+          "notes": "Box's official OpenAPI spec (Apache-2.0): post_files_content and post_files_id_content, servers https://upload.box.com/api/2.0, requestBody multipart/form-data."
         },
         {
           "child_id": "box-downloading",
           "function": "file download",
-          "verified": false,
-          "surface": null,
+          "verified": true,
+          "surface": "api",
           "signals": {
-            "host_sni": null,
-            "http_method": null,
-            "path_pattern": null,
+            "host_sni": [
+              "api.box.com"
+            ],
+            "http_method": "GET",
+            "path_pattern": "/2.0/files/{file_id}/content",
             "content_type": null,
-            "direction": null,
+            "direction": "download",
             "websocket": null,
             "transport": null
           },
-          "citation_url": null,
-          "citation_page_date": null,
-          "notes": "UNVERIFIED: developer.box.com not readable."
+          "citation_url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+          "citation_page_date": "info.version 2024.0",
+          "notes": "get_files_id_content on https://api.box.com/2.0; response 302: 'Location header for the file on dl.boxcloud.com', which 'is not persistent' (dl.boxcloud.com is under boxcloud.com, already in app_domains[box])."
+        },
+        {
+          "child_id": "box-uploading-session",
+          "function": "chunked upload session",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "upload.box.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/api/2.0/files/upload_sessions | /api/2.0/files/{file_id}/upload_sessions",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/box/box-openapi/main/openapi.json",
+          "citation_page_date": "info.version 2024.0",
+          "notes": "post_files_upload_sessions and post_files_id_upload_sessions on https://upload.box.com/api/2.0. The parts then go by PUT, application/octet-stream, to https://{box-upload-server}/api/2.0/files/upload_sessions/{id}: a server variable, so that host is not listed."
         }
       ],
       "sources_blocked": [
@@ -1079,9 +1104,9 @@
     {
       "service": "Discord",
       "parent_app_id": "discord",
-      "separability": "blocked",
-      "not_separable": null,
-      "web_ui_note": null,
+      "separability": "partial",
+      "not_separable": "Voice and video: UDP media to a server named at run time, end-to-end encrypted (DAVE). See discord-voice-video.",
+      "web_ui_note": "Rules are Discord's documented API (bots, webhooks); the discord.com client's own requests are not documented.",
       "children": [
         {
           "child_id": "discord-base",
@@ -1117,25 +1142,70 @@
           },
           "citation_url": null,
           "citation_page_date": null,
-          "notes": "UNVERIFIED: no readable source."
+          "notes": "Not separable by HTTP signals: 'a separate UDP-based connection for voice data', and DMs, voice channels and Go Live are moving to end-to-end encryption (DAVE) (https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/topics/voice-connections.mdx). Kept unverified: no host is published."
         },
         {
           "child_id": "discord-uploading",
           "function": "attachment upload",
-          "verified": false,
-          "surface": null,
+          "verified": true,
+          "surface": "api",
           "signals": {
-            "host_sni": null,
-            "http_method": null,
-            "path_pattern": null,
-            "content_type": null,
-            "direction": null,
+            "host_sni": [
+              "discord.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/api/v10/channels/{channel_id}/messages | /api/v10/webhooks/{webhook_id}/{webhook_token}",
+            "content_type": "multipart/form-data",
+            "direction": "upload",
             "websocket": null,
             "transport": null
           },
-          "citation_url": null,
+          "citation_url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx",
           "citation_page_date": null,
-          "notes": "UNVERIFIED: no readable source."
+          "citation_also": [
+            "https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json"
+          ],
+          "notes": "Official developer docs source: base URL 'https://discord.com/api', version in the path 'https://discord.com/api/v{version_number}'; 'Endpoints that support file uploads use a multipart/form-data request body'. Same path as discord-posting: the content type separates the upload."
+        },
+        {
+          "child_id": "discord-posting",
+          "function": "message post",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "discord.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/api/v10/channels/{channel_id}/messages | /api/v10/webhooks/{webhook_id}/{webhook_token}",
+            "content_type": "application/json",
+            "direction": "upload",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json",
+          "citation_page_date": "spec version 10",
+          "notes": "Discord's official OpenAPI spec (MIT): servers https://discord.com/api/v10; create_message and execute_webhook accept application/json, application/x-www-form-urlencoded or multipart/form-data. The webhook token is a credential: match the shape, never log it."
+        },
+        {
+          "child_id": "discord-downloading",
+          "function": "attachment download",
+          "verified": true,
+          "surface": "api",
+          "signals": {
+            "host_sni": [
+              "cdn.discordapp.com"
+            ],
+            "http_method": "GET",
+            "path_pattern": "/attachments/",
+            "content_type": null,
+            "direction": "download",
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/discord/discord-api-docs/main/developers/reference.mdx",
+          "citation_page_date": null,
+          "notes": "Same page: CDN base 'https://cdn.discordapp.com/' and the example 'https://cdn.discordapp.com/attachments/<channel>/<attachment>/my_image.png?ex=...'. The query (ex, is, hm) is a signed token: never logged."
         }
       ],
       "sources_blocked": [
@@ -1291,9 +1361,9 @@
     {
       "service": "X / Twitter",
       "parent_app_id": "twitter",
-      "separability": "blocked",
+      "separability": "partial",
       "not_separable": null,
-      "web_ui_note": null,
+      "web_ui_note": "Rules are the X API v2 as its official SDK calls it; x.com's web client paths are not published.",
       "children": [
         {
           "child_id": "twitter-base",
@@ -1316,38 +1386,48 @@
         {
           "child_id": "twitter-posting",
           "function": "post",
-          "verified": false,
-          "surface": null,
+          "verified": true,
+          "surface": "api",
           "signals": {
-            "host_sni": null,
-            "http_method": null,
-            "path_pattern": null,
-            "content_type": null,
-            "direction": null,
+            "host_sni": [
+              "api.x.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/2/tweets",
+            "content_type": "application/json",
+            "direction": "upload",
             "websocket": null,
             "transport": null
           },
-          "citation_url": null,
+          "citation_url": "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/client.py",
           "citation_page_date": null,
-          "notes": "UNVERIFIED: developer.x.com not readable."
+          "citation_also": [
+            "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/posts/client.py"
+          ],
+          "notes": "X's official SDK (xdevplatform/xdk-python, MIT): client.py 'base_url: str = \"https://api.x.com\"'; posts/client.py create: base_url + \"/2/tweets\", Content-Type application/json, session.post."
         },
         {
           "child_id": "twitter-uploading",
           "function": "media upload",
-          "verified": false,
-          "surface": null,
+          "verified": true,
+          "surface": "api",
           "signals": {
-            "host_sni": null,
-            "http_method": null,
-            "path_pattern": null,
-            "content_type": null,
-            "direction": null,
+            "host_sni": [
+              "api.x.com"
+            ],
+            "http_method": "POST",
+            "path_pattern": "/2/media/upload/initialize | /2/media/upload/{id}/append | /2/media/upload/{id}/finalize",
+            "content_type": "application/json",
+            "direction": "upload",
             "websocket": null,
             "transport": null
           },
-          "citation_url": null,
+          "citation_url": "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/client.py",
           "citation_page_date": null,
-          "notes": "UNVERIFIED: developer.x.com not readable."
+          "citation_also": [
+            "https://raw.githubusercontent.com/xdevplatform/xdk-python/main/xdk/media/client.py"
+          ],
+          "notes": "Host from client.py base_url; paths from media/client.py (initialize_upload, append_upload, finalize_upload: base_url + \"/2/media/upload/...\", Content-Type application/json, session.post). docs.x.com was not readable, so a multipart variant is not ruled out."
         }
       ],
       "sources_blocked": [
@@ -2132,8 +2212,8 @@
     {
       "service": "Mega",
       "parent_app_id": "mega",
-      "separability": "blocked",
-      "not_separable": "Expected not separable (Mega advertises client-side encryption) but no Mega page could be read: UNVERIFIED.",
+      "separability": "not-separable",
+      "not_separable": "Every client command is a request to the API host's /cs endpoint with the command in the JSON body, transfer hosts are returned at run time, and file data is encrypted on the client: 'User Controlled Encryption (UCE), and it happens automatically'; encrypter.js is 'used ... to encrypt data while uploading' (https://raw.githubusercontent.com/meganz/webclient/master/README.md). No host, method or path separates upload, download or sharing.",
       "web_ui_note": null,
       "children": [
         {
@@ -2170,7 +2250,27 @@
           },
           "citation_url": null,
           "citation_page_date": null,
-          "notes": "UNVERIFIED: no readable source."
+          "notes": "UNVERIFIED as a rule: not separable (see the service's not_separable, now cited)."
+        },
+        {
+          "child_id": "mega-api",
+          "function": "Mega API (any operation)",
+          "verified": true,
+          "surface": "client",
+          "signals": {
+            "host_sni": [
+              "g.api.mega.co.nz"
+            ],
+            "http_method": null,
+            "path_pattern": "/cs",
+            "content_type": null,
+            "direction": null,
+            "websocket": null,
+            "transport": null
+          },
+          "citation_url": "https://raw.githubusercontent.com/meganz/sdk/master/src/megaclient.cpp",
+          "citation_page_date": null,
+          "notes": "Mega's official SDK (meganz/sdk): g_APIURL_default = \"https://g.api.mega.co.nz/\"; requests go to posturl.append(\"cs?id=\"). The command (upload, download, share) is inside the JSON body, so this child names the API, not a function."
         }
       ],
       "sources_blocked": [

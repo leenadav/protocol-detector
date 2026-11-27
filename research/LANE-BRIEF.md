@@ -45,8 +45,10 @@ and content-pack patches for the Engine lane.
   `hermes/research-data-pro168` `f721a8c`) are nine specs and batch Q (PRO-169); rows 34, 35, 37, 39 and 41 stay BLOCKED.
   Batch Q's 128 unverified names (new ones and existing ones no round has checked) wait on live round 8 (`live-hosts-r8.txt`).
 - Child apps (PRO-492 App-ID model): wave 0 for 30 services already in the pack is in `research/child-apps/`
-  (PRO-495, 2026-11-27): 99 proposed children, 53 with an official citation; seven services fully blocked until
-  allowlist batch R2 (`allowlist-requests.md`, vendor API references; rows 45 to 54 of `blocked-urls.md`). Later
+  (PRO-495, 2026-11-27): 103 proposed children, 62 with an official citation (Box, Discord, X and Mega from the vendors'
+  own spec and SDK repositories, PRO-501); three services fully blocked (WhatsApp, Pastebin, Reddit) until allowlist
+  batch R2 (`allowlist-requests.md`; rows 45 to 58 of `blocked-urls.md`). `tools/check_child_apps.py` checks the
+  file (parents in the pack, null unverified rows, cited verified rows, the md counts). Later
   waves for new services come from Research Lab's PRO-491 list. PROTOCOL and ENGINE-FIELD items are Go only.
 - Branches: since 2026-11-23 each task gets its own branch from `main` (`claude/app-research-<PRO-n>-<slug>`, one PR).
   PRO-169's branch `claude/app-research-PRO-169-rows30-44-specs` merged `claude/app-research` (`8dcdadf`) first, because
@@ -90,7 +92,7 @@ python3 -B -m unittest discover -q
 ```bash
 python3 -B -m unittest discover -s research/tools -q
 ```
-(under 1 s; expect `OK`, 3 tests: the lane's own tool tests, which the root discovery does not collect because
+(under 1 s; expect `OK`, 5 tests: the lane's own tool tests, which the root discovery does not collect because
 `research/` is not a package.)
 
 ```bash

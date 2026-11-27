@@ -76,7 +76,7 @@ signing in, for dependency mapping (item 2); **FEED** = vendor machine-readable 
 ## Batch R2 (2026-11-27, PRO-495): vendor API references for child apps (not yet requested)
 
 Reason code **API** = vendor API reference read for child-app signals (method, path, content type). Read-only; one
-approval for the batch. Unblocks `blocked-urls.md` rows 45 to 53.
+approval for the batch. Unblocks `blocked-urls.md` rows 45 to 53 and 55 to 58.
 
 | Host | Reason | Use | Page |
 |---|---|---|---|
@@ -89,6 +89,10 @@ approval for the batch. Unblocks `blocked-urls.md` rows 45 to 53.
 | `pastebin.com` | API | Pastebin | row 53 |
 | `www.reddit.com` | API | Reddit | row 53 |
 | `mega.io` | API | Mega | row 53 |
+| `developer.wetransfer.com` | API | WeTransfer | row 55 |
+| `docs.slack.dev` | API | Slack file download | row 56 (also row 50) |
+| `developers.zoom.us` | API | Zoom | row 57 |
+| `support.reddithelp.com` | API | Reddit | row 58 |
 
 ## Decisions needed (not vendor-owned, so not requested): **resolved 2026-11-20**
 

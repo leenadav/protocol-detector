@@ -17,14 +17,21 @@ yet, so nothing here could be cross-linked; none of these 30 should be repeated 
   The first-party web clients' internal request paths are not published by any vendor read here, so a rule built
   from `surface: api` rows will not match the browser UI. That is not a gap this lane can close from primary
   sources.
-- Blocked pages are listed per service (`sources_blocked`) and in `../blocked-urls.md` rows 45 to 54; the hosts
+- Blocked pages are listed per service (`sources_blocked`) and in `../blocked-urls.md` rows 45 to 58; the hosts
   that would unblock them are batch R2 in `../allowlist-requests.md`.
+- **Vendor spec and SDK repositories** (follow-up, Hermes's decision PRO-501): where a vendor's documentation site was
+  not reachable, Box, Discord, X and Mega rows cite the vendor's own published OpenAPI spec or SDK source on
+  `raw.githubusercontent.com` (`box/box-openapi`, `discord/discord-api-spec` and `discord/discord-api-docs`,
+  `xdevplatform/xdk-python`, `meganz/sdk` and `meganz/webclient`). Each such row names the file and the line content;
+  `citation_also` lists a second source for the same row. Their documentation-site rows stay open (49, 51, 52, 53).
+- `../tools/check_child_apps.py` checks this file: parents in the pack, unique ids, unverified rows fully null,
+  verified rows cited, and the counts below.
 
 ## Result
 
-30 services, 99 proposed children, **53 verified with an official citation** (36 distinct pages); 46 unverified.
-7 services are fully blocked (Box, WhatsApp, Discord, X, Pastebin, Mega, Reddit), 4 are not separable by these
-signals (Telegram, iCloud, TeamViewer, AnyDesk), 5 separate by host only, 14 partly by method and path.
+30 services, 103 proposed children, **62 verified with an official citation** (43 distinct pages); 41 unverified.
+3 services are fully blocked (WhatsApp, Pastebin, Reddit), 5 are not separable by these signals (Telegram, iCloud,
+Mega, TeamViewer, AnyDesk), 5 separate by host only, 17 partly by method and path.
 
 | # | Service | Parent | Verified children | Unverified children | Verified | Separability |
 |---|---|---|---|---|---|---|
@@ -34,17 +41,17 @@ signals (Telegram, iCloud, TeamViewer, AnyDesk), 5 separate by host only, 14 par
 | 4 | Google Docs | `google-drive` | `google-docs-base` | `google-docs-editing`, `google-docs-downloading` | 1/3 | host-only |
 | 5 | OneDrive | `ms-onedrive` | `ms-onedrive-uploading`, `ms-onedrive-uploading-session`, `ms-onedrive-downloading` | `ms-onedrive-base` | 3/4 | partial |
 | 6 | Dropbox | `dropbox` | `dropbox-base`, `dropbox-downloading` | `dropbox-uploading` | 2/3 | partial |
-| 7 | Box | `box` | - | `box-base`, `box-uploading`, `box-downloading` | 0/3 | blocked |
+| 7 | Box | `box` | `box-uploading`, `box-uploading-session`, `box-downloading` | `box-base` | 3/4 | partial |
 | 8 | WeTransfer | `wetransfer` | `wetransfer-base`, `wetransfer-file-transfer` | `wetransfer-uploading` | 2/3 | host-only |
 | 9 | Slack | `slack` | `slack-base`, `slack-messaging` | `slack-uploading`, `slack-downloading` | 2/4 | partial |
 | 10 | Microsoft Teams | `ms-teams` | `ms-teams-base`, `ms-teams-voice-video`, `ms-teams-posting` | `ms-teams-file-transfer` | 3/4 | partial |
 | 11 | Zoom | `zoom` | `zoom-base`, `zoom-voice-video` | `zoom-file-transfer` | 2/3 | partial |
 | 12 | WhatsApp Web | `whatsapp` | - | `whatsapp-base`, `whatsapp-file-transfer` | 0/2 | blocked |
 | 13 | Telegram Web | `telegram` | `telegram-web-base` | `telegram-file-transfer` | 1/2 | not-separable |
-| 14 | Discord | `discord` | - | `discord-base`, `discord-voice-video`, `discord-uploading` | 0/3 | blocked |
+| 14 | Discord | `discord` | `discord-posting`, `discord-uploading`, `discord-downloading` | `discord-base`, `discord-voice-video` | 3/5 | partial |
 | 15 | Facebook | `facebook` | `facebook-posting`, `facebook-uploading` | `facebook-base` | 2/3 | partial |
 | 16 | Instagram | `instagram` | `instagram-posting`, `instagram-uploading` | `instagram-base` | 2/3 | partial |
-| 17 | X / Twitter | `twitter` | - | `twitter-base`, `twitter-posting`, `twitter-uploading` | 0/3 | blocked |
+| 17 | X / Twitter | `twitter` | `twitter-posting`, `twitter-uploading` | `twitter-base` | 2/3 | partial |
 | 18 | LinkedIn | `linkedin` | `linkedin-posting`, `linkedin-uploading`, `linkedin-messaging` | `linkedin-base` | 3/4 | partial |
 | 19 | YouTube | `youtube` | `youtube-base` | `youtube-uploading`, `youtube-posting` | 1/3 | host-only |
 | 20 | ChatGPT | `openai-chatgpt` | `openai-chatgpt-base`, `openai-chatgpt-messaging`, `openai-chatgpt-uploading`, `openai-chatgpt-voice`, `openai-platform-uploading`, `openai-platform-realtime` | - | 6/6 | partial |
@@ -54,7 +61,7 @@ signals (Telegram, iCloud, TeamViewer, AnyDesk), 5 separate by host only, 14 par
 | 24 | GitHub | `github` | `github-git-transport`, `github-uploading`, `github-downloading`, `github-release-uploading`, `github-posting` | `github-base` | 5/6 | partial |
 | 25 | Pastebin | `pastebin` | - | `pastebin-base`, `pastebin-posting` | 0/2 | blocked |
 | 26 | iCloud | `icloud` | `icloud-base`, `icloud-iwork` | `icloud-file-transfer` | 2/3 | not-separable |
-| 27 | Mega | `mega` | - | `mega-base`, `mega-file-transfer` | 0/2 | blocked |
+| 27 | Mega | `mega` | `mega-api` | `mega-base`, `mega-file-transfer` | 1/3 | not-separable |
 | 28 | TeamViewer | `teamviewer` | `teamviewer-remote-control` | `teamviewer-file-transfer` | 1/2 | not-separable |
 | 29 | AnyDesk | `anydesk` | `anydesk-remote-control` | `anydesk-file-transfer` | 1/2 | not-separable |
 | 30 | Reddit | `reddit` | - | `reddit-base`, `reddit-posting`, `reddit-uploading` | 0/3 | blocked |
@@ -68,7 +75,14 @@ signals (Telegram, iCloud, TeamViewer, AnyDesk), 5 separate by host only, 14 par
 - **iCloud**: hosts carry no published upload/download split; with Advanced Data Protection the data is end-to-end
   encrypted (`support.apple.com/en-us/102651`).
 - **Microsoft Copilot**: Microsoft publishes no per-feature names.
-- **WhatsApp**, **Mega**: expected end-to-end or client-side encrypted, but no page could be read: `UNVERIFIED`.
+- **Mega**: every command goes to `g.api.mega.co.nz/cs` with the command in the JSON body, transfer hosts come at run
+  time, and data is encrypted on the client ("User Controlled Encryption (UCE)", `meganz/webclient` README). Only
+  the API itself is separable (`mega-api`).
+- **Discord voice and video**: UDP media to a run-time server, moving to end-to-end encryption (DAVE,
+  `developers/topics/voice-connections.mdx`).
+- **Box sharing**: `PUT /2.0/files/{file_id}` with a `shared_link` body; the same method and path rename or move a
+  file, so only the body separates it.
+- **WhatsApp**: expected end-to-end encrypted, but no page could be read: `UNVERIFIED`.
 
 ## Findings for Engine (ENGINE-FIELD, Go only)
 
@@ -84,3 +98,13 @@ signals (Telegram, iCloud, TeamViewer, AnyDesk), 5 separate by host only, 14 par
    preauthenticated URL. Match the documented POST/GET, and treat the follow-up host as an example only.
 4. **NAME-BASED candidate**: `youtubei.googleapis.com` and `youtube.googleapis.com` are YouTube hosts per Google's
    Restricted Mode page but resolve to `google-base` today.
+
+## Sample check of the follow-up rows (PRO-501)
+
+`random.seed(1); random.sample(rows, min(20, len(rows)))` over the 9 verified rows added for Box, Discord, X and Mega,
+so all 9 were checked. Each row's citation (and `citation_also`) was fetched again on 2026-11-27 and every host, literal
+path segment and content type of the row was searched for in it: **9/9 matched**. Two Discord rows matched only after
+joining the spec's server (`https://discord.com/api/v10`) with its path keys (`/channels/{channel_id}/messages`,
+`/webhooks/{webhook_id}/{webhook_token}`), which the check confirmed separately. The check found one error before
+the rows were committed: the webhook path lacked `/v10` (fixed). No row uses a shared-hosting or tenant domain; Box's
+upload-session `PUT` host is a server variable (`{box-upload-server}`) and is therefore left out of `host_sni`.
