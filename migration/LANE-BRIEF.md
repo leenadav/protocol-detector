@@ -227,6 +227,8 @@ SEC-QUIC-1 budget (PRO-122, against `main` `23bbc0c`, PR #145): `79cf9dd58e33e36
 documentation commit after it.
 PRO-448 (PR #148, against `main` `23bbc0c`): `81b331d` (fix and tests), `0c51e26` (the pro448 self-test fix), and `b45979c` (PRO-459: main merged in, keeping both the pro448 reference model and the SEC-SESS-1 pins in `analyze_diff.py`), and `dcd932b` (PRO-460: the 9 SEC-SESS-1 analyze pins refreshed for the PRO-448 counters, and limits_test.go set to the half-open budget), and `790b81f` (PRO-460 again: main `6c6d4dd` merged in after #127; `analyze_diff.py` keeps main's golden replay and loads the pro448 model only for a recording run, and `migration/fixtures/golden/analyze.json.gz` is re-recorded with that model: 300 captures, 0 mismatched; then main `359b444`, PR #145, merged in with no code conflict), with the documentation commits after them.
 
+SR-59 key-log tests (PRO-547, SEC-PYRM-3, PR #190, against `main` `cc1566d`): `348a8866ab844e43b8e785974af53f631bd81a14` (FIFO, device and owner tests, the `getuid` seam), `540b016a7bb178418b8545e65843691181fb07c2` (errcheck fix in the test that the Go lint job flagged) and the documentation and merge commits after them.
+
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
 ## 7. Pitfalls learned
