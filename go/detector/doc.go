@@ -44,4 +44,11 @@
 // application attribution, no TLS fingerprints or certificates, and no host-opened shift phases. The
 // family that identified the stream's first message decides the profile check; a phase a parser opens
 // itself (for example after an HTTP upgrade) is reported inside the same observation.
+//
+// Applications (PRO-492). Separately from flows, AppClassifier maps the metadata a decrypting proxy sees of one
+// HTTP request (server name, Host, method, path, content type, size direction, WebSocket upgrade) to the
+// content pack's application and, when a child-app rule matches, its child application per function
+// (AppVerdict.App = dropbox-uploading, AppVerdict.Container = dropbox). Rules are data
+// (go/internal/childapp/childapps.json), the work per request is capped, and a ceiling is reported in
+// AppVerdict.Limit, never silently.
 package detector
