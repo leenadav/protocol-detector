@@ -53,11 +53,16 @@ Every verdict carries `child_status`:
 | `undetermined` | a child rule of the host could apply, but the request was refused (`path_not_canonical`), capped (any `limit`) or ambiguous (`request_ambiguous`): the verdict names the host's catalog owner and no child |
 | `not_applicable` | no catalog application, so no child can be named |
 
-A deny entry for a child alone fails open on `undetermined`. Pair it with a `child_status` rule for the owners the
-child's hosts may have, its container and its `depends_on` (Gmail's API hosts belong to `google-base`):
+A `deny` entry that names a child in `apps` or `containers` also holds for an `undetermined` verdict of an
+application the child's hosts may belong to, its container or one of its `depends_on` (Gmail's API hosts belong to
+`google-base`; SEC-CHILD-8). So the plain `no-uploads` rule above denies a Gmail or Dropbox upload sent with a
+repeated `uploadType`, a `//` or `./` segment, or a path over 4,096 bytes, with no extra rule. The widening is for
+`deny` only: an `allow` or `alert` entry naming a child matches that child alone, so an undetermined request never
+gains an allow. Every other condition of the rule still applies, so an explicit `child_status` narrows it:
+`{"apps": ["gmail-uploading"], "child_status": ["matched"]}` denies only the decided upload. A rule for the owners'
+other undetermined requests is still written the same way:
 
 ```json
-{"name": "no-gmail-upload", "action": "deny", "match": {"apps": ["gmail-uploading"]}},
 {"name": "no-unknown-gmail-function", "action": "deny", "match": {"apps": ["gmail", "google-base"], "child_status": ["undetermined"]}}
 ```
 

@@ -176,3 +176,73 @@ func TestSecChild1PolicyDeniesUndetermined(t *testing.T) {
 		t.Fatal("unknown child_status accepted")
 	}
 }
+
+// TestSecChild8PlainChildDenyFailsClosed: a plain "deny <child>" (the policy of docs/CHILD-APPS.md, with no
+// child_status rule) also denies an undetermined verdict of the child's container or depends_on, as
+// AppClassifier.MayBe does; allow and alert entries for a child stay exact, and a definite other function of the
+// same host is still allowed.
+func TestSecChild8PlainChildDenyFailsClosed(t *testing.T) {
+	s := embeddedSet(t)
+	p := pack(t)
+	doc := []byte(`{"version": 1, "default": "allow", "rules": [
+		{"name": "no-uploads", "action": "deny", "match": {"apps": ["dropbox-uploading", "gmail-uploading"]}},
+		{"name": "watch-dropbox", "action": "alert", "match": {"containers": ["dropbox"]}}]}`)
+	pol, err := policy.FromJSONWithChildren(doc, p, s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dropbox := func(path string) Request {
+		return Request{Host: "content.dropboxapi.com", Method: "POST", Path: path, ContentType: "application/octet-stream",
+			HeaderNames: []string{"Dropbox-API-Arg"}}
+	}
+	for _, c := range []struct {
+		name string
+		req  Request
+		want string
+	}{
+		{"canonical gmail upload", gmailReq(gmailUpload+"?uploadType=media", "message/rfc822"), "deny"},
+		{"repeated uploadType", gmailReq(gmailUpload+"?uploadType=media&uploadType=media", "message/rfc822"), "deny"},
+		{"// segment", gmailReq("/upload//gmail/v1/users/me/messages?uploadType=media", "message/rfc822"), "deny"},
+		{"./ segment", gmailReq("/upload/./gmail/v1/users/me/messages?uploadType=media", "message/rfc822"), "deny"},
+		{"oversized path", gmailReq(gmailUpload+"/"+strings.Repeat("a", DefaultMaxPathBytes), "message/rfc822"), "deny"},
+		{"oversized content type", gmailReq(gmailUpload+"?uploadType=media", strings.Repeat("m", maxContentTypeBytes+1)), "deny"},
+		{"gmail profile read", Request{Host: "gmail.googleapis.com", Method: "GET", Path: "/gmail/v1/users/me/profile"}, "allow"},
+		{"canonical dropbox upload", dropbox("/2/files/upload"), "deny"},
+		{"dropbox // segment", dropbox("/2//files/upload"), "deny"},
+		{"dropbox oversized path", dropbox("/2/files/upload/" + strings.Repeat("a", DefaultMaxPathBytes)), "deny"},
+	} {
+		res := s.Classify(c.req)
+		if got := pol.Evaluate(s.Verdict(res), "tcp", 443, true, nil, ""); got.Action != c.want {
+			t.Errorf("%s: %s, want %s (app %s, status %s, reasons %v)", c.name, got.Action, c.want, res.App, res.ChildStatus, res.Reasons)
+		}
+	}
+	// Only a deny widens: an allow or alert entry naming a child never matches an undetermined parent.
+	for _, action := range []string{"allow", "alert"} {
+		doc := []byte(`{"version": 1, "default": "deny", "rules": [
+			{"name": "only-uploads", "action": "` + action + `", "match": {"apps": ["gmail-uploading"]}}]}`)
+		pol, err := policy.FromJSONWithChildren(doc, p, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		v := s.Verdict(s.Classify(gmailReq("/upload//gmail/v1/users/me/messages?uploadType=media", "message/rfc822")))
+		if got := pol.Evaluate(v, "tcp", 443, true, nil, ""); got.Action != "deny" || got.Rule != nil {
+			t.Errorf("%s entry for a child matched an undetermined verdict: %+v", action, got)
+		}
+	}
+	// containers naming a child is the same entry as apps naming it; an explicit child_status still narrows.
+	for _, c := range []struct {
+		match, want string
+	}{
+		{`{"containers": ["gmail-uploading"]}`, "deny"},
+		{`{"apps": ["gmail-uploading"], "child_status": ["matched"]}`, "allow"},
+	} {
+		pol, err := policy.FromJSONWithChildren([]byte(`{"rules": [{"name": "r", "action": "deny", "match": `+c.match+`}]}`), p, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		v := s.Verdict(s.Classify(gmailReq(gmailUpload+"?uploadType=media&uploadType=media", "message/rfc822")))
+		if got := pol.Evaluate(v, "tcp", 443, true, nil, ""); got.Action != c.want {
+			t.Errorf("%s: %s, want %s", c.match, got.Action, c.want)
+		}
+	}
+}

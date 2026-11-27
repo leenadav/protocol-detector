@@ -42,7 +42,7 @@ type HTTPRequest struct {
 // application) or "undetermined". "undetermined" is fail closed: a child rule of the host could apply but the
 // request was refused, capped or ambiguous, so App is the parent and the child is unknown. A caller that denies a
 // child must also deny "undetermined" for its container (AppClassifier.MayBe does both); Matches alone would fail
-// open.
+// open. A policy of internal/policy.FromJSONWithChildren does this for every deny that names a child (SEC-CHILD-8).
 type AppVerdict struct {
 	App          string   `json:"app"`
 	Container    string   `json:"container"`

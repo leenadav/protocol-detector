@@ -182,6 +182,20 @@ func (s *Set) Has(name string) bool {
 	return ok
 }
 
+// Owners lists the applications the named child's hosts may belong to: its container, then its depends_on in
+// file order; nil when name is not a child. A policy deny on the child also holds for an undetermined verdict of
+// one of them (SEC-CHILD-8), the same test as AppClassifier.MayBe.
+func (s *Set) Owners(name string) []string {
+	if s == nil {
+		return nil
+	}
+	c := s.byName[name]
+	if c == nil {
+		return nil
+	}
+	return append([]string{c.Container}, c.DependsOn...)
+}
+
 // WithOptions returns a copy of the set with other work bounds; the rule data is shared and immutable.
 func (s *Set) WithOptions(o Options) *Set {
 	c := *s

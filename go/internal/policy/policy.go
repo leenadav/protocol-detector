@@ -95,9 +95,14 @@ type Rule struct {
 	ApplicationDefault bool
 	apps, containers, childStatus, categories, subcategories, technologies, characteristics, risks,
 	portUsage, transports, encryption, shiftedFrom map[string]bool
-	serverPorts      map[string]*portTable
-	predicates       map[string]map[string]bool
-	riskMin, riskMax int // 0: absent
+	// appsUndetermined and containersUndetermined (SEC-CHILD-8): the owners of the children a deny rule names in
+	// apps or containers. A verdict naming one of them with child_status undetermined satisfies that condition,
+	// as AppClassifier.MayBe does, so a plain "deny <child>" fails closed. nil for allow and alert rules and on
+	// the reference path.
+	appsUndetermined, containersUndetermined map[string]bool
+	serverPorts                              map[string]*portTable
+	predicates                               map[string]map[string]bool
+	riskMin, riskMax                         int // 0: absent
 }
 
 // Policy is the parsed document.
@@ -266,8 +271,13 @@ func ports(value interface{}) (map[string]*portTable, *Error) {
 }
 
 // Children names the child applications (internal/childapp) a policy may name; nil keeps the reference's
-// vocabulary, where "containers" is an unknown key and child names are unknown applications.
-type Children interface{ Has(name string) bool }
+// vocabulary, where "containers" is an unknown key and child names are unknown applications. Owners is the
+// applications a child's hosts may belong to (its container and depends_on); a deny on the child also holds for an
+// undetermined verdict of one of them (SEC-CHILD-8).
+type Children interface {
+	Has(name string) bool
+	Owners(name string) []string
+}
 
 func newRule(document interface{}, index int, pack *content.Pack, children Children) (*Rule, *Error) {
 	doc, ok := document.(map[string]interface{})
@@ -376,6 +386,10 @@ func newRule(document interface{}, index int, pack *content.Pack, children Child
 	if err != nil {
 		return nil, err
 	}
+	if action == "deny" && children != nil {
+		r.appsUndetermined = childOwners(r.apps, children)
+		r.containersUndetermined = childOwners(r.containers, children)
+	}
 	for _, bound := range []struct {
 		key    string
 		target *int
@@ -394,6 +408,29 @@ func newRule(document interface{}, index int, pack *content.Pack, children Child
 	return r, nil
 }
 
+// childOwners is the union of Owners over the children in names; nil when names holds no child.
+func childOwners(names map[string]bool, children Children) map[string]bool {
+	var owners map[string]bool
+	for name := range names {
+		if !children.Has(name) {
+			continue
+		}
+		for _, owner := range children.Owners(name) {
+			if owners == nil {
+				owners = map[string]bool{}
+			}
+			owners[owner] = true
+		}
+	}
+	return owners
+}
+
+// undetermined reports whether v is an undetermined child-app verdict naming one of owners: the request may be
+// one of the children whose owners these are (SEC-CHILD-8).
+func undetermined(v *appid.Verdict, owners map[string]bool) bool {
+	return owners != nil && v.ChildStatus == appid.ChildUndetermined && owners[v.App]
+}
+
 func anyIn(set map[string]bool, values []string) bool {
 	for _, v := range values {
 		if set[v] {
@@ -407,14 +444,14 @@ func anyIn(set map[string]bool, values []string) bool {
 // evaluated against context; skipPredicates is the reference's "would match if its evidence requirements were
 // met" probe.
 func (r *Rule) matches(v *appid.Verdict, portUsageValue, transport string, serverPort int, hasPort bool, context map[string]string, skipPredicates bool) bool {
-	if r.apps != nil && !r.apps[v.App] {
+	if r.apps != nil && !r.apps[v.App] && !undetermined(v, r.appsUndetermined) {
 		return false
 	}
 	// containers holds for the named application itself, for every child whose container it is, and for every
 	// child matched on a host it owns in the catalog (graph.microsoft.com is ms-base's, so containers:[ms-base]
 	// covers outlook-sending there; SEC-CHILD-2).
 	if r.containers != nil && !r.containers[v.App] && (v.BaseApp == nil || !r.containers[*v.BaseApp]) &&
-		(v.HostOwner == nil || !r.containers[*v.HostOwner]) {
+		(v.HostOwner == nil || !r.containers[*v.HostOwner]) && !undetermined(v, r.containersUndetermined) {
 		return false
 	}
 	// child_status holds for a child-app verdict with one of the listed statuses; other verdicts carry none.
