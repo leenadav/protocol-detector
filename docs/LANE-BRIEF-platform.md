@@ -182,7 +182,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | PRO-347: the nightly `ledgers` workflow is read-only (strict check, refresh patch as an artifact). Opening the docs-only refresh pull request from it needs `contents: write` + `pull-requests: write` (rule 5 forbids both outside the release controller), the repository setting that lets Actions create pull requests, and a token whose pull requests trigger ci (`GITHUB_TOKEN` ones start no workflow). Until then Deputy applies the patch | Lee's decision (SSDLC item 43) |
 | PRO-480: branch `claude/platform-PRO-480-release-dryrun-counts` refreshes the generated ledgers (895 → 909) and runs `check_docs_counts.py --strict` in `publish-release.yml` for a tag only (policy `check_release_docs_counts`); the release build job also builds the Go binary before its gate (PRO-402 made `analyze` Go-only). After it merges: merge `main` into #149 (`claude/determined-mayer-cyjpa0`, PRO-194) and refresh Dependabot #151 (PRO-478) | Hermes's review, then Lee; PRO-194 and PRO-478 owners for the refresh |
 | PRO-268: branch `claude/platform-PRO-268-benchstat` adds the `go-bench` ci job (`tools/go_bench.py`, benchstat from `tools/golint/benchstat`): hot-path Go benchmarks at the PR head against the merge base, +10 % sec/op at p < 0.05 or more allocs/op fails (SSDLC item 44). First real CI run (`f16f75a` against `765feee`): 2 min 58 s, no hot-path regression; changing `HOT` or a threshold is a reviewed change to the tool | Hermes's review, then Lee |
-| PRO-545 (SEC-PYRM-1): #178, branch `claude/platform-PRO-545-sr-gate`. The requirements gate fails on any `SR` row that does not parse, on duplicate ids and on an id set that differs from `tools/security_requirements.lock.json` (`--write-lock`, `--retire SR-n`); SR-58..SR-63 were duplicated on `main` and the newer six are now SR-70..SR-75. SEC-PYRM-2 (references grepped, not run) and SEC-PYRM-4 (`go test -json` outcome) are separate tasks | Hermes's review, then Lee |
+| PRO-545 (SEC-PYRM-1): #178, branch `claude/platform-PRO-545-sr-gate`. The requirements gate fails on any `SR` row that does not parse, on duplicate ids and on an id set that differs from `tools/security_requirements.lock.json` (`--write-lock`, `--retire SR-n`); SR-58..SR-63 were duplicated on `main` and the newer six are now SR-70..SR-75. SEC-PYRM-10 follow-up: every `|` line must be the header, a separator or a strict row, so a missing leading pipe or a Cyrillic/fullwidth id fails (self-test 27 cases). SEC-PYRM-2 (references grepped, not run) and SEC-PYRM-4 (`go test -json` outcome) are separate tasks; #181/PRO-568 must take this follow-up too | Hermes's review, then Lee |
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
@@ -224,6 +224,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **PRO-270:** `7863692f382c39c5da592493e8047cfb3d68963d` (Dependabot security-only).
 - **PRO-503:** `9b7e79aecdca5a40717bd35d289b42d0503ed0e6` (framed builds and tests on GOARCH=386; `GO_386_EXCLUDE` empty; RESP length wrap on 386). Fix round: `23458ef6fa27d71e6b5d67489b20f299752440f4` (gosec G115: `bits32` int64 widening instead of `uint32`).
 - **PRO-545 (#178):** `81ec7b37071711d59aa1a869dd1dbc1a86a68544` (SR gate: unparsable rows, duplicates, pinned id set; SR-70..SR-75 renumbered).
+  Fix round (SEC-PYRM-10): `b80580f544278e5ffd4b1c2b11c771532ed3fa5d` (rows without a leading pipe, look-alike ids).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
@@ -236,7 +237,9 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **A gate that filters by regex drops what it cannot match (PRO-545):** the requirements gate kept only rows
   matching ROW, so free text, prose after the backtick or a duplicate id passed silently, and six ids were already
   duplicated on `main`. Select candidate rows loosely, parse them strictly, and fail on every candidate that does
-  not parse; pin the id set in a lock so a deletion is a reviewed diff.
+  not parse; pin the id set in a lock so a deletion is a reviewed diff. The loose selector must itself be total
+  (SEC-PYRM-10): `^\s*\|\s*sr` still skipped a row without its leading pipe or with a Cyrillic `Ѕ`, so select by
+  structure (every line holding `|`), not by the content you expect, and match ids in ASCII only.
 
 - **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
   `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
