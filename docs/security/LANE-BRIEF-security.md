@@ -30,4 +30,4 @@ the marker is removed in the same change, and the plain assertion passes.
 
 | Task | Branch | SHA |
 |---|---|---|
-| PRO-497 | `claude/security-PRO-497-a14` | see the PR (head of the branch at review request) |
+| PRO-497 | `claude/security-PRO-497-a14` | `962396d27761c38c5eac13eefe4cb4b4db06ea93` (report and reproducers) |
