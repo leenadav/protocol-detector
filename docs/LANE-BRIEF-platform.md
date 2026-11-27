@@ -29,6 +29,10 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-24, after PRO-262 and PRO-202 step 3)
 
+- **PRO-270 (Dependabot, 2026-11-27):** security updates only. Every `dependabot.yml` entry has
+  `open-pull-requests-limit: 0`, one `applies-to: security-updates` group per ecosystem and the prefix
+  `deps(security)`; Go covers go/, go/oracle, tools/scanners, tools/golint/* and gremlins. Nothing opens until Lee
+  enables Dependabot security updates in the settings. Review steps: SSDLC.md "Dependabot security update PRs".
 - **PRO-402 (Python removal 2/3, PR B):** #125, branch `claude/platform-PRO-402-demo-go-serve`, merged with `main`
   after PR A (#127). PR A made `protodetect serve` interpreter-free; this PR removes the Python backend selection
   that was left: `serve` has no `--python`, `presentation/launch.py` and `protodetect.py analyze|live|serve` run the
@@ -204,6 +208,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **PRO-187 (A12 P3 hardening):** `fcdf0523e6dc56c9c61326149f6070e5bd39c35b` (CLI removal is breaking, apidiff fails
   closed, gosec keyed by function under `internal/protocols/` and `internal/decrypt/`, baseline and scanner lock
   re-keyed) and `c5add9e329ce474af9b5eda9109ffea129593616` (apidiff stderr summary).
+- **PRO-270:** `7863692f382c39c5da592493e8047cfb3d68963d` (Dependabot security-only).
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
