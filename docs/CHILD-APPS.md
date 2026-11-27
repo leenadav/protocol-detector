@@ -115,9 +115,10 @@ Rules are indexed by host, so a request only meets the rules of its own host and
 `field_too_long`, and the verdict then names the parent only, never a child.
 
 Path work is linear in the path once per request, never per pattern (SEC-CHILD-4): the path is checked for dot
-segments without splitting, split at most once (only when a rule with a pattern is reached, into at most 33 parts),
-and each pattern first compares the segment count, so a 4 KiB path of 2,048 segments against the 256 patterns a host
-may hold costs about 10 µs and under 1 KB (`BenchmarkClassifyPatternCapLongPath`; it was 8.4 ms and 8.5 MB).
+segments without splitting and split at most once, only when a rule with a pattern is reached and into at most 33
+parts (a case-folded rule on a path with upper case splits the lower-cased path once more). Each pattern compares
+the segment count first, so a 4 KiB path of 2,048 segments against the 256 patterns a host may hold costs about
+10 µs and under 1 KB (`BenchmarkClassifyPatternCapLongPath`; it was 8.9 ms and 8.5 MB).
 
 ## Where the rules come from
 
