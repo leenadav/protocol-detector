@@ -1,6 +1,6 @@
 # Pages this lane cannot read: for Hermes to open and relay
 
-Updated 2026-11-24 (rows 30 to 33, 36, 38, 40 and 42 to 44 resolved, PRO-169; 34, 35, 37, 39 and 41 stay BLOCKED). This lane does not bypass bot challenges, sign-ins or other access
+Updated 2026-11-27 (rows 45 to 58 added by PRO-495, child apps wave 0; Box, Discord, X and Mega rows 49 and 51 to 53 are now partly answered from the vendors' spec and SDK repositories, the documentation pages stay open; rows 30 to 33, 36, 38, 40 and 42 to 44 resolved, PRO-169; 34, 35, 37, 39 and 41 stay BLOCKED). This lane does not bypass bot challenges, sign-ins or other access
 controls. For each page, please open the exact URL in a normal browser and relay the parts named below as text
 (domain names, ports and the page's own date). The relayed text is cited as "read by Hermes, relayed".
 
@@ -22,6 +22,20 @@ controls. For each page, please open the exact URL in a normal browser and relay
 | 37 | LastPass | `https://support.lastpass.com/help/whitelisting-and-firewall-configuration-for-logmein-products` | Research Lab, PRO-168, 2026-11-22: still blocked: the server sends an incomplete TLS certificate chain (no read with verification off without Lee's approval; a browser relay is the alternative) | BLOCKED |
 | 39 | Dialpad | `https://help.dialpad.com/docs/network-setup-recommendations` | Research Lab, PRO-168, 2026-11-22: still blocked: 403 | BLOCKED |
 | 41 | Dashlane | `https://support.dashlane.com/hc/articles/27983351888786` | Research Lab, PRO-168, 2026-11-22: still blocked: 403 | BLOCKED |
+| 45 | Gmail API | `https://developers.google.com/workspace/gmail/api/guides/uploads` | PRO-495, 2026-11-27: host not allowed | which operations use `/upload/gmail`; method and content type (child-apps wave 0) |
+| 46 | Google Drive API | `https://developers.google.com/workspace/drive/api/guides/manage-uploads` and `.../manage-downloads` | PRO-495: host not allowed | upload and download/export endpoints: host, method, path |
+| 47 | YouTube Data API | `https://developers.google.com/youtube/v3/guides/uploading_a_video` | PRO-495: host not allowed | upload endpoint: host, method, path |
+| 48 | Dropbox HTTP API | `https://www.dropbox.com/developers/documentation/http/documentation` | PRO-495: host not allowed | upload and download endpoints (`content.dropboxapi.com` paths) |
+| 49 | Box | `https://support.box.com/hc/en-us/articles/33552262497683-Configuring-A-Firewall-For-Box-Applications-and-Services` and `https://developer.box.com/reference/post-files-content/` | PRO-495: 403 bot protection; host not allowed | firewall hosts; upload host and path |
+| 50 | Slack Web API | `https://docs.slack.dev/reference/methods/files.getUploadURLExternal` | PRO-495: host not allowed | file upload flow: hosts, methods, paths |
+| 51 | Discord | `https://support.discord.com/hc/en-us/articles/115001310031` and `https://discord.com/developers/docs/reference#uploading-files` | PRO-495: 403; host not allowed | network hosts; attachment upload |
+| 52 | X | `https://docs.x.com/x-api/media/upload-media` | PRO-495: host not allowed | post and media upload endpoints |
+| 53 | Pastebin, Reddit, Mega | `https://pastebin.com/doc_api`, `https://www.reddit.com/dev/api/`, `https://mega.io/developers` | PRO-495: hosts not allowed | paste/post/upload endpoints; Mega's encryption statement |
+| 54 | WhatsApp | `https://faq.whatsapp.com/820124435853543` (row 3 also open) | PRO-495: renders empty (JavaScript-only) | end-to-end encryption statement for WhatsApp Web |
+| 55 | WeTransfer developer API | `https://developer.wetransfer.com/` | PRO-495: host not allowed | request paths for creating and downloading a transfer (`wetransfer-uploading`) |
+| 56 | Slack file download | `https://docs.slack.dev/messaging/working-with-files` | PRO-495: host not allowed | the download URL form (`url_private`, `files.slack.com` path) for `slack-downloading` |
+| 57 | Zoom developer API | `https://developers.zoom.us/docs/api/` | PRO-495: host not allowed | chat file upload and recording download endpoints (`zoom-file-transfer`) |
+| 58 | Reddit help | `https://support.reddithelp.com/` | PRO-495: host not allowed | any official network or firewall page (`reddit-base`) |
 
 Rows 12 to 18 were read by Research Lab from the Hermes server on 2026-11-20 (PRO-29) and are resolved below. Rows 30 to 44 were read by Research Lab on 2026-11-22 (PRO-168): ten are resolved below (PRO-169); rows 34, 35, 37, 39 and 41 stay BLOCKED above.
 

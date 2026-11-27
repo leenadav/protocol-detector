@@ -340,7 +340,7 @@ Keep a results table: proposed value, baseline, candidate, decision.
 
 None of these are needed for the lab; all are needed before proposing changes to KidCarmi/Culvert:
 - **License and contribution terms** (#1).
-- **A Culvert ADR** covering:
+- **A Culvert ADR** (draft, PRO-496: `docs/integration/adr/ADR-DRAFT-protodetect-in-process.md`) covering:
   - the in-process engine;
   - alignment with ADR-0002, 0003, 0011 and 0042;
   - the log block (`schema_version`, enum package, redaction);
