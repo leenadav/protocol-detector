@@ -66,6 +66,15 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
       attributed. It is the same after 2 and after 30 minutes.
     - goroutines −14%: two keep-alive connections close about 85 s after start, with or without load.
   - Thresholds unchanged. A re-run needs the documented revision in the report first.
+- **Endurance re-run (PRO-564, 2026-11-27):** `lab/culvert/ENDURANCE-RERUN.md`. Revision 1, written into the
+  manifest before the run (Hermes, candidate 1): 60 s of warm-up with the same mix, then the baseline at least
+  120 s after start. Thresholds, mix and rates are unchanged, and traffic logging stays on. **P1 to P5 all pass.**
+  - P1: 25 vs 25 goroutines; live heap 10.30 vs 11.02 MB (−6.5%), within from 5 s on.
+  - P2: largest slope 0.51%/min.
+  - P3 to P5: 0 panics; 0 active, reserved or retained bytes after load; the intended content release in every
+    pd block.
+  - The median baseline holds about 0.75 MB caused by the orchestrator's own feed query. P1 also passes against
+    the first baseline sample (+0.4%).
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
 - **Lab:**
@@ -86,6 +95,12 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
     within noise; every request classified. Within PRO-504's proposed per-request row (≤ 24, ≤ 1.5 KB), outside
     ADR-0011's 1 per session. Top costs: `strings.Split`/`ToLower` in the library, H2 stack growth from
     `normalizeHost`, the lab hook's header-name append. Baseline for PRO-514. `docs/integration/CHILDAPP-LOAD.md`.
+  - **Drift check on Culvert `main` `a0aecf8` (PRO-578, 2026-11-27):** `lab/culvert/DRIFT-a0aecf8.md`. Both
+    patches (5 commits, 33 hunks) apply to `a0aecf8` exactly, 397 commits past `ef94311`, because no upstream commit
+    touches a patched file. `lab/culvert/culvert-lab-a0aecf8.patch` holds the same changed lines on the new base
+    (local `lab/protocol-detector-a0aecf8`, `3d3769b4`). `-race`: 209 root tests (198 unmodified, plus 11 `TestLab`).
+    Smoke: 74 of 74 checks, 0 cells different from `ef94311`. Plan section 3 facts hold; its line numbers are
+    stale (the edits are proposed in the report, not applied).
 - **Load test (PRO-269, 2026-11-24):** `docs/integration/LOAD-TEST.md`. vegeta v12.12.0, a test tool only, against
   A, B and D on `ef94311`, HTTPS (observed) and HTTP (control), at 100/300/600/1,000 req/s, three rounds, one
   connection per request. Observe minus off: p50 +5 to +113 µs, p95 +84 to +424 µs, p99 within noise;
@@ -214,12 +229,18 @@ Culvert's allocation gates need `-tags benchgate`.
   detector code), `4f0c20f` (the CodeQL fixes: files and responses closed) and the brief commits that record them, on
   `claude/culvert-PRO-516-childapp-load`, stacked on
   `claude/culvert-PRO-504-childapp-lab` `9a4226b`.
+- **Queued for Codex (PRO-578):** the drift-check commit (adds `lab/culvert/DRIFT-a0aecf8.md`,
+  `lab/culvert/culvert-lab-a0aecf8.patch` and `lab/culvert/results-a0aecf8/`; lab and docs only) and the brief
+  commit that records it, on `claude/culvert-PRO-578-drift`; SHAs in `migration/notes/PRO-578.md`.
 - **Queued for Codex (PRO-269):** `e91e1b5` (the load test: lab tools, results and docs only, no detector code)
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
   The second run, `69434b8` and `1f3e94f` on `claude/vigilant-sagan-i3rlse` (PR leenadav/protocol-detector#120),
   and the merge of `main` that moves its tools to `lab/culvert/tools/loadsplit/` (lab tooling and docs only).
 - **Queued for Codex (PRO-540):** `fd0c122` on `claude/culvert-PRO-540-endurance`, the endurance run, and the commit
   that records it (lab tools, results and docs only; no detector code).
+- **Queued for Codex (PRO-564):** `4fe99b7` (revision 1 in the manifest and `run.py`, pushed before the run) and
+  the results commit on `claude/culvert-PRO-564-endurance-rerun` (stacked on PRO-540; lab tools, results and docs
+  only; no detector code).
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 

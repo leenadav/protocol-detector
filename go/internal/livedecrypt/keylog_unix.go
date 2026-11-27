@@ -20,6 +20,9 @@ type KeyLog struct {
 	consumed hash.Hash // SHA-256 of the bytes before offset: a rewrite in place is a truncation
 }
 
+// getuid is the calling user's id; a test replaces it to check that another user's file is refused (SR-59).
+var getuid = syscall.Getuid
+
 // OpenKeyLog opens a regular file owned by the calling user, without following a symbolic link.
 func OpenKeyLog(path string) (*KeyLog, error) {
 	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_NONBLOCK|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0)
@@ -27,7 +30,7 @@ func OpenKeyLog(path string) (*KeyLog, error) {
 		return nil, keyLogError("Key log could not be opened.")
 	}
 	var info syscall.Stat_t
-	if err := syscall.Fstat(fd, &info); err != nil || info.Mode&syscall.S_IFMT != syscall.S_IFREG || int(info.Uid) != syscall.Getuid() {
+	if err := syscall.Fstat(fd, &info); err != nil || info.Mode&syscall.S_IFMT != syscall.S_IFREG || int(info.Uid) != getuid() {
 		_ = syscall.Close(fd)
 		return nil, keyLogError("Choose a regular key-log file owned by your user.")
 	}
