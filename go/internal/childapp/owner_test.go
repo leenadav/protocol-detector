@@ -133,3 +133,97 @@ func TestChildRiskNeverBelowOwner(t *testing.T) {
 		}
 	}
 }
+
+// TestPolicyOwnerKeyedRulesHoldOnChild is the SEC-CHILD-7 reproduction: a child match keeps every rule keyed on its
+// host owner's identity. Graph sendMail is outlook-sending (collaboration/email) on ms-base's host
+// (general-internet/internet-utility, pervasive), so deny apps:[ms-base], subcategories:[internet-utility] or
+// characteristics:[pervasive] must still deny it, as each did before child apps existed.
+func TestPolicyOwnerKeyedRulesHoldOnChild(t *testing.T) {
+	s := embeddedSet(t)
+	sendMail := Request{Host: "graph.microsoft.com", Method: "POST", Path: "/v1.0/me/sendMail"}
+	gmailSend := Request{Host: "gmail.googleapis.com", Method: "POST", Path: "/gmail/v1/users/me/messages/send"}
+	driveUpload := Request{Host: "www.googleapis.com", Method: "POST", Path: "/upload/drive/v3/files?uploadType=media",
+		ContentType: "application/octet-stream", RequestBodyBytes: 4096, ResponseBodyBytes: 10}
+	dropboxUpload := Request{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload",
+		ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}}
+	mailWeb := Request{Host: "mail.google.com", Method: "GET", Path: "/"}
+	for _, c := range []struct {
+		match string
+		req   Request
+		want  string
+	}{
+		{`{"apps": ["ms-base"]}`, sendMail, "deny"},
+		{`{"apps": ["google-base"]}`, gmailSend, "deny"},
+		{`{"apps": ["google-base"]}`, driveUpload, "deny"},
+		{`{"apps": ["dropbox"]}`, dropboxUpload, "deny"}, // the container owns the host: apps:[dropbox] keeps uploads
+		{`{"subcategories": ["internet-utility"]}`, sendMail, "deny"},
+		{`{"categories": ["general-internet"]}`, gmailSend, "deny"},
+		{`{"technologies": ["client-server"]}`, sendMail, "deny"},
+		{`{"characteristics": ["pervasive"]}`, sendMail, "deny"},
+		{`{"characteristics": ["pervasive"]}`, driveUpload, "deny"},
+		// The owner's identity and the child's combine: a child characteristic with the owner's subcategory.
+		{`{"subcategories": ["internet-utility"], "characteristics": ["transfers-files"]}`, sendMail, "deny"},
+		// The child's own identity still matches.
+		{`{"apps": ["outlook-sending"]}`, sendMail, "deny"},
+		{`{"subcategories": ["email"]}`, sendMail, "deny"},
+		// Never wider than the two identities: another owner's name, or no owner at all.
+		{`{"apps": ["google-base"]}`, sendMail, "allow"},
+		{`{"apps": ["ms-base"]}`, mailWeb, "allow"},
+		{`{"subcategories": ["internet-utility"]}`, mailWeb, "allow"},
+		{`{"characteristics": ["pervasive"]}`, dropboxUpload, "allow"},
+	} {
+		doc := []byte(`{"version": 1, "default": "allow", "rules": [{"name": "r", "action": "deny", "match": ` + c.match + `}]}`)
+		pol, err := policy.FromJSONWithChildren(doc, pack(t), s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res := s.Classify(c.req)
+		v := s.Verdict(res)
+		if v == nil {
+			t.Fatalf("%+v: no verdict", c.req)
+		}
+		if got := pol.Evaluate(v, "tcp", 443, true, nil, ""); got.Action != c.want {
+			t.Errorf("%s on %s %s (app %s, owner %s): %s, want %s", c.match, c.req.Host, c.req.Path, res.App, res.HostOwner,
+				got.Action, c.want)
+		}
+	}
+}
+
+// TestPolicyOwnerRuleOrderOnChild pins the documented ordering consequence of SEC-CHILD-7 (docs/CHILD-APPS.md):
+// first match wins across both identities, so allow apps:[ms-base] placed before deny apps:[outlook-sending]
+// allows Graph sendMail, and the reverse order denies it. A child-specific rule must go before a broader owner rule.
+func TestPolicyOwnerRuleOrderOnChild(t *testing.T) {
+	s := embeddedSet(t)
+	sendMail := Request{Host: "graph.microsoft.com", Method: "POST", Path: "/v1.0/me/sendMail"}
+	owner := `{"name": "owner", "action": "allow", "match": {"apps": ["ms-base"]}}`
+	child := `{"name": "child", "action": "deny", "match": {"apps": ["outlook-sending"]}}`
+	for _, c := range []struct {
+		rules      string
+		wantAction string
+		wantRule   string
+	}{
+		{owner + ", " + child, "allow", "owner"},
+		{child + ", " + owner, "deny", "child"},
+	} {
+		// The default (deny) could also produce a deny, so the matching rule name is checked as well as the action.
+		doc := []byte(`{"version": 1, "default": "deny", "rules": [` + c.rules + `]}`)
+		pol, err := policy.FromJSONWithChildren(doc, pack(t), s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res := s.Classify(sendMail)
+		v := s.Verdict(res)
+		if v == nil {
+			t.Fatalf("%+v: no verdict", sendMail)
+		}
+		got := pol.Evaluate(v, "tcp", 443, true, nil, "")
+		rule := "<default>"
+		if got.Rule != nil {
+			rule = *got.Rule
+		}
+		if got.Action != c.wantAction || rule != c.wantRule {
+			t.Errorf("rules [%s] (app %s, owner %s): %s by %s, want %s by %s", c.rules, res.App, res.HostOwner,
+				got.Action, rule, c.wantAction, c.wantRule)
+		}
+	}
+}

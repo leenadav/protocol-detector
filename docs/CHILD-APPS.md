@@ -31,7 +31,13 @@ key `containers`, which holds for the named application itself, for each of its 
 on a host it owns in the server-name catalog (`AppVerdict.host_owner`; SEC-CHILD-2). A child never moves a request
 out from under its host's owner: `deny containers:[ms-base]` still denies Graph `sendMail` (outlook-sending, container
 outlook-web, host owner ms-base), and `containers:[google-base]` Gmail send and Drive uploads on `googleapis.com`.
-`AppVerdict.Matches` holds for the same three names:
+Every other rule keyed on the host owner's identity also holds on its children (SEC-CHILD-7): a child on a host
+another application owns is evaluated as itself and as that owner (the owner's name, category, subcategory and
+technology, both characteristic sets, the higher risk), and a rule applies when either identity satisfies it. So
+`deny apps:[ms-base]`, `subcategories:[internet-utility]` or `characteristics:[pervasive]` still denies Graph
+`sendMail`, and `apps:[dropbox]` still denies `dropbox-uploading` on `content.dropboxapi.com`, as before child apps
+existed. The first matching rule decides, so a child-specific rule goes before a broader owner rule
+(`allow apps:[ms-base]` first allows `outlook-sending` too). `AppVerdict.Matches` holds for the same three names:
 
 ```json
 {"version": 1, "default": "allow", "rules": [
