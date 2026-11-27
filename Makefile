@@ -152,6 +152,7 @@ workflow-policy:
 	$(PYTHON) -B tools/check_workflow_policy.py
 
 requirements:
+	$(PYTHON) -B tools/check_security_requirements.py --self-test
 	$(PYTHON) -B tools/check_security_requirements.py
 
 fuzz:

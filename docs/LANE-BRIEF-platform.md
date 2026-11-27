@@ -17,8 +17,9 @@ their decisions, the policy locks, and the release controller.
   - CI tools in `tools/`: `check_workflow_policy.py`, `check_workflow_yaml.py`, `check_action_pins.py`,
     `check_pin_drift.py`, `check_go_drift.py`, `go_ci.py`, `content_gate.py`, `merge_readiness.py`,
     `go_fuzz_long.py`, `perf_history.py`, `build_go_release.py`, `release_provenance.py`, `codeql_gate.py`,
-    the release checks and the SBOM checks.
-  - The locks `tools/workflows.lock.json` and `tools/scanner_config.lock.json`, and `tools/scanners/`.
+    `check_security_requirements.py`, the release checks and the SBOM checks.
+  - The locks `tools/workflows.lock.json`, `tools/scanner_config.lock.json` and `tools/security_requirements.lock.json`
+    (the pinned SR id set; rows of `SECURITY-REQUIREMENTS.md` belong to the lane that adds them), and `tools/scanners/`.
   - The `Makefile`'s CI targets.
   - `SSDLC.md`, `docs/RELEASING.md`, `docs/review-packet/` and this file.
   - Mailbox issue #7.
@@ -146,7 +147,7 @@ its own notes file, and the section is refreshed after merge.
 | `python3 -B tools/check_workflow_policy.py --write-workflow-lock` | Regenerates the lock; run after any workflow edit | — |
 | `actionlint`, `zizmor --persona pedantic`, `tools/check_workflow_yaml.py` | Workflow lint via `make workflow-lint`; needs the hash-pinned dev toolchain (`pip install --require-hashes -r requirements-dev.txt` in a venv) and actionlint 1.7.7 | ~30 s |
 | CPython 3.9: `python3.9 -B -m unittest discover -q` | Second-interpreter tests | ~1 min |
-| `make fuzz PYTHON=python3`, `python3 -B tools/check_security_requirements.py` | Fuzz and security requirements | ~20 s |
+| `make fuzz PYTHON=python3`, `make requirements PYTHON=python3` | Fuzz; security requirements (self-test, then every `SR` row parses, no duplicate, id set equals the lock) | ~20 s |
 | Hosted: push the branch; ci, codeql and supply-chain-drift run | | ~15 min |
 | Hosted, new workflow | Dispatch with the GitHub `run_workflow` tool | |
 
@@ -160,6 +161,7 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 | Codex review of `docs/review-packet/` (7 chunks: Tier 1 1,350 lines, Tier 2 893) | QA Reviewer (Codex), currently paused |
 | PRO-347: the nightly `ledgers` workflow is read-only (strict check, refresh patch as an artifact). Opening the docs-only refresh pull request from it needs `contents: write` + `pull-requests: write` (rule 5 forbids both outside the release controller), the repository setting that lets Actions create pull requests, and a token whose pull requests trigger ci (`GITHUB_TOKEN` ones start no workflow). Until then Deputy applies the patch | Lee's decision (SSDLC item 43) |
 | PRO-480: branch `claude/platform-PRO-480-release-dryrun-counts` refreshes the generated ledgers (895 → 909) and runs `check_docs_counts.py --strict` in `publish-release.yml` for a tag only (policy `check_release_docs_counts`); the release build job also builds the Go binary before its gate (PRO-402 made `analyze` Go-only). After it merges: merge `main` into #149 (`claude/determined-mayer-cyjpa0`, PRO-194) and refresh Dependabot #151 (PRO-478) | Hermes's review, then Lee; PRO-194 and PRO-478 owners for the refresh |
+| PRO-545 (SEC-PYRM-1): branch `claude/platform-PRO-545-sr-gate`. The requirements gate fails on any `SR` row that does not parse, on duplicate ids and on an id set that differs from `tools/security_requirements.lock.json` (`--write-lock`, `--retire SR-n`); SR-58..SR-63 were duplicated on `main` and the newer six are now SR-70..SR-75. SEC-PYRM-2 (references grepped, not run) and SEC-PYRM-4 (`go test -json` outcome) are separate tasks | Hermes's review, then Lee |
 | Delete probe branches `claude/cicd-go-probe`, `-go-minimum-probe`, `-content-probe`, `-engine-probe` | Lee, after the Codex review |
 | `claude/go-migration` → `main` merge (its `ci.yml` hunks resolve to `main`'s; CI is ready, probe `407bfcc` was green) | Engine lane and Lee |
 | First real tag release (attest and publish steps have never run) | Lee |
@@ -192,6 +194,11 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
+
+- **A gate that filters by regex drops what it cannot match (PRO-545):** the requirements gate kept only rows
+  matching ROW, so free text, prose after the backtick or a duplicate id passed silently, and six ids were already
+  duplicated on `main`. Select candidate rows loosely, parse them strictly, and fail on every candidate that does
+  not parse; pin the id set in a lock so a deletion is a reviewed diff.
 
 - **Strict checks in release dry runs (PRO-478):** a generated count lags every pull request by design, so a
   `--strict` check in `publish-release.yml` must be gated on `REF_TYPE = tag`, as the ledgers step is. An
