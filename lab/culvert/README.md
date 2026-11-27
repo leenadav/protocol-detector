@@ -60,6 +60,23 @@ Results, in `results-ef94311/`:
   different. No scenario asserts a host that differs from the CONNECT destination, so no record carries the new
   signal; the unit tests cover it.
 
+## Child applications on the decrypted path (PRO-504, 2026-11-27)
+
+`culvert-lab-ef94311-childapp.patch` (1 commit) applies after `culvert-lab-ef94311.patch`. The local branch is
+`lab/childapp-ef94311`, head `88d2c0a4`. With `CULVERT_LAB_CHILDAPP=real`, every decrypted request of an
+inspected tunnel (HTTP/1.1 and HTTP/2) is classified by the detector's `AppClassifier`. The tunnel's distinct
+verdicts (app, container, basis, limit, reasons, count) ride a log-only `TUNNEL_CLOSED` entry as the nested
+`pd` block, using the `internal/pdobs` closed vocabularies. The block carries no host, path or header value.
+Visibility only. Off is the default and adds 0 allocations and no entry. It needs the detector from engine PR
+#163 (`claude/engine-PRO-492-child-apps`) in `go.work`. Design, tests and cost per request are in
+`docs/integration/CHILDAPP-LAB.md`; raw benchmark output is in `results-childapp/bench.txt`.
+
+```sh
+git -C culvert checkout -b lab/childapp-ef94311 ef9431189490f7f85bb32d6fe7e7b6b8be5b0844
+git -C culvert am lab/culvert/culvert-lab-ef94311.patch lab/culvert/culvert-lab-ef94311-childapp.patch
+cd culvert && GOWORK=/path/to/go.work go test -race -run 'TestLab' . ./internal/pdobs ./internal/protodetect
+```
+
 ## Load test with vegeta (PRO-269, 2026-11-24)
 
 `tools/loadtest.py` sends sustained HTTPS (CONNECT, observed) and HTTP (forward proxy, the control) load with
