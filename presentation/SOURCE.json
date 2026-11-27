@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "7a82293896cd167cb9cb7dc3ff71ee243fbee96b",
+  "commit": "64b990a77a4843766e0a1b2dc07579c649f4e0fb",
   "branch": "claude/engine-PRO-596-tls-bench-baseline",
-  "build_digest": "60123027a42d02a12db0ad47791076e9985f38097d7ba690411056a5cda3b0dd",
+  "build_digest": "d9078385955edd5d64479903cce521fa73d0a45f36d9bd113e621483664221ce",
   "components": {
     "engine": {
       "root": "go",
@@ -160,12 +160,12 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "780d84f4bc25ecda93d6ea12e529b21244528485670e3b6cc96cf0c4c326cf45"
+      "sha256": "6b7a2e2f5b94198f89d04839c2e15829cfffe85b15341f60fa3401d8d3f3a790"
     },
     {
       "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "7eb298aedb2db290d7cc98bc6a02af1d6eeffaeecd794fa884c15761610c7e6c"
+      "sha256": "6cd8c373c16ea7419bf33afa33e741144d2796b2b3338c0d605994db6de1a572"
     },
     {
       "path": "go/internal/clock/clock.go",

@@ -144,8 +144,9 @@ type Set struct {
 	children []*Child
 	byName   map[string]*Child
 	rules    []*rule
-	exact    map[string][]int // host -> rule orders, ascending
-	suffix   map[string][]int // domain -> rule orders, ascending
+	exact    map[string][]int          // host -> rule orders, ascending
+	suffix   map[string][]int          // domain -> rule orders, ascending
+	nested   map[string][]nestedDomain // while loading: parent domain -> catalog domains under it (SEC-CHILD-5)
 	opts     Options
 	foldCase bool // some rule matches its path case-insensitively
 }
@@ -250,10 +251,9 @@ func canonicalPath(p string) (string, bool) {
 	if p == "/" {
 		return p, true
 	}
-	for _, seg := range strings.Split(p[1:], "/") {
-		if seg == "." || seg == ".." {
-			return "", false
-		}
+	// p starts with '/', so a dot segment is a "/." or "/.." followed by '/' or the end; no split (SEC-CHILD-4).
+	if strings.Contains(p, "/./") || strings.Contains(p, "/../") || strings.HasSuffix(p, "/.") || strings.HasSuffix(p, "/..") {
+		return "", false
 	}
 	if strings.Contains(p, "//") {
 		return "", false
@@ -367,31 +367,61 @@ func matchTemplate(lits []string, seg string) bool {
 	return end-pos >= 1
 }
 
-func matchPattern(pattern []segment, path string) bool {
-	segments := strings.Split(strings.TrimPrefix(path, "/"), "/")
-	for i, p := range pattern {
-		if p.kind == segRest { // validated: only last
-			return true
-		}
-		if i >= len(segments) {
+// pathSegments is a request path split once per request (SEC-CHILD-4): n counts every segment, and segs holds at
+// most MaxPatternSegment+1 of them (the last one keeps the unsplit rest), which is all a pattern can read.
+type pathSegments struct {
+	n    int
+	segs []string
+}
+
+func splitPath(path string) pathSegments {
+	t := strings.TrimPrefix(path, "/")
+	return pathSegments{n: strings.Count(t, "/") + 1, segs: strings.SplitN(t, "/", MaxPatternSegment+1)}
+}
+
+// pathView splits the path on the first pattern condition only, so a request that meets no pattern never splits.
+type pathView struct {
+	path  string
+	split bool
+	segs  pathSegments
+}
+
+func (v *pathView) segments() *pathSegments {
+	if !v.split {
+		v.segs, v.split = splitPath(v.path), true
+	}
+	return &v.segs
+}
+
+// matchPattern matches a compiled pattern against a split path. The segment count is checked first: a pattern
+// without a final '**' needs exactly len(pattern) segments, one with it at least len(pattern)-1.
+func matchPattern(pattern []segment, ps *pathSegments) bool {
+	fixed := len(pattern)
+	if pattern[fixed-1].kind == segRest { // validated: only last
+		fixed--
+		if ps.n < fixed {
 			return false
 		}
+	} else if ps.n != fixed {
+		return false
+	}
+	for i, p := range pattern[:fixed] { // fixed <= MaxPatternSegment, so segs[i] is a whole segment
 		switch p.kind {
 		case segAny:
-			if segments[i] == "" {
+			if ps.segs[i] == "" {
 				return false
 			}
 		case segLiteral:
-			if p.lits[0] != segments[i] {
+			if p.lits[0] != ps.segs[i] {
 				return false
 			}
 		case segTemplate:
-			if !matchTemplate(p.lits, segments[i]) {
+			if !matchTemplate(p.lits, ps.segs[i]) {
 				return false
 			}
 		}
 	}
-	return len(segments) == len(pattern)
+	return true
 }
 
 // queryCond requires one query parameter: present with one of values, or with any non-empty value when values is
@@ -428,7 +458,8 @@ func parseQuery(target string) (map[string][]string, bool) {
 
 // matches reports whether every condition holds and, if so, the rule's precedence score for this request: the
 // literal bytes of the path condition that hit, then the number of condition kinds.
-func (r *rule) matches(req *Request, path, lower, ct string, query map[string][]string, headers map[string]bool) (bool, int) {
+func (r *rule) matches(req *Request, path, lower string, view, lowerView *pathView, ct string, query map[string][]string,
+	headers map[string]bool) (bool, int) {
 	if r.methods != nil && !r.methods[req.Method] {
 		return false, 0
 	}
@@ -438,7 +469,7 @@ func (r *rule) matches(req *Request, path, lower, ct string, query map[string][]
 	pathScore := 0
 	if r.pathPrefixes != nil || r.pathPatterns != nil {
 		if r.foldCase {
-			path = lower
+			path, view = lower, lowerView
 		}
 		hit := false
 		for _, prefix := range r.pathPrefixes {
@@ -447,7 +478,7 @@ func (r *rule) matches(req *Request, path, lower, ct string, query map[string][]
 			}
 		}
 		for _, pattern := range r.pathPatterns {
-			if matchPattern(pattern, path) {
+			if matchPattern(pattern, view.segments()) {
 				hit = true
 				if n := literalBytes(pattern); n > pathScore {
 					pathScore = n
@@ -581,9 +612,13 @@ func (s *Set) Classify(req Request) Result {
 			headers[strings.ToLower(h)] = true
 		}
 	}
-	lower := path
+	view := pathView{path: path}
+	lower, lowerView := path, &view
 	if s.foldCase {
 		lower = strings.ToLower(path) // no copy when the path has no upper case
+		if lower != path {
+			lowerView = &pathView{path: lower} // split at most once more, and only when it differs
+		}
 	}
 	lists := s.candidates(host)
 	heads := make([]int, len(lists))
@@ -617,7 +652,7 @@ func (s *Set) Classify(req Request) Result {
 			continue
 		}
 		// Precedence: the highest score wins; on a tie the earlier rule (file order) keeps it.
-		if hit, score := r.matches(&req, path, lower, ct, query, headers); hit && (winner == nil || score > winnerScore) {
+		if hit, score := r.matches(&req, path, lower, &view, lowerView, ct, query, headers); hit && (winner == nil || score > winnerScore) {
 			winner, winnerScore = r, score
 		}
 	}
