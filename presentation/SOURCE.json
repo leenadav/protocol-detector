@@ -1,7 +1,7 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "ca261ab9fbf9da697cccaf6f3b8d81fe2a9c1eab",
+  "commit": "06515ba41a3dbea864baa4a257e90e9de92d04ca",
   "branch": "claude/vigilant-maxwell-gub33g",
   "build_digest": "7c6003a418be1c9fa2274fce98571287a5cfd4c6e346d6132c73aec89959ddec",
   "components": {
