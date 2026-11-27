@@ -13,7 +13,7 @@ import (
 // compiled into the detection path. golang.org/x/crypto stays a requirement of go/go.mod, used only by key-log
 // decryption (internal/decrypt); the rule is checked here on the import graph, not on the require lines.
 var detectionPath = []string{"./internal/engine/...", "./internal/analyzer/...", "./internal/session/...",
-	"./internal/reassembly/...", "./internal/protocols/...", "./internal/content/...", "./internal/appid/...",
+	"./internal/reassembly/...", "./internal/protocols/...", "./internal/content/...", "./internal/appid/...", "./internal/childapp/...",
 	"./internal/contracts/..."}
 
 const module = "github.com/leenadav/protocol-detector/go/"
