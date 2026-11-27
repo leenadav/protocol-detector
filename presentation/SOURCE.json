@@ -1,14 +1,14 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "9c553118d8192d4476eb968ed26fd19d6b5e62aa",
-  "branch": "claude/vigilant-maxwell-gub33g",
-  "build_digest": "b3c5a0a3a986493872576c81ae31c38843bc049244ebf58bd6fc668956cfc44f",
+  "commit": "2f517abd28ce403d348e27aa4c52e26df98c28ca",
+  "branch": "claude/engine-PRO-596-tls-perf",
+  "build_digest": "982eb0032d8b663f27e0242e921c170b363d89a35f77b6538899b80036eb8b9e",
   "components": {
     "engine": {
       "root": "go",
       "version": "0.66.0",
-      "files": 136
+      "files": 137
     },
     "launchers": {
       "root": ".",
@@ -85,7 +85,7 @@
     {
       "path": "go/detector/detector.go",
       "component": "engine",
-      "sha256": "7bfa413d4f058fbc197a6f1648cce5e49fcf7d3d88e761989dedc935a1f64042"
+      "sha256": "15b0cc96fcfc59867d9980339712ff80e5720c7e75278b722ec03cc29ceaea20"
     },
     {
       "path": "go/detector/doc.go",
@@ -210,7 +210,12 @@
     {
       "path": "go/internal/engine/inspector.go",
       "component": "engine",
-      "sha256": "6666c3f7f3282103b5336e039ae07cd93fc230bbae7a9f00b3a9f9c12bebf841"
+      "sha256": "b139ae8c05f484ae7f501b0aa2f89b38f78a13ee37d2f35bcd9c707dc754c1b6"
+    },
+    {
+      "path": "go/internal/engine/sourcelabel.go",
+      "component": "engine",
+      "sha256": "f5e31567f9150d305c2d65af39bdc8891ab9f3c30bb7e6f81b23c2aaf1da8895"
     },
     {
       "path": "go/internal/errs/errs.go",
@@ -360,7 +365,7 @@
     {
       "path": "go/internal/parsing/credit.go",
       "component": "engine",
-      "sha256": "b5913d3c466f17cad3e65a2d1b02dedcb328b88e882f9281f9fdf8ce6148bdea"
+      "sha256": "9011b579260be61f07ab8367c534d74e306c837e484f7bc3a4f7eaaf02988e76"
     },
     {
       "path": "go/internal/parsing/parsing.go",
@@ -585,7 +590,7 @@
     {
       "path": "go/internal/protocols/tlsx/tls.go",
       "component": "engine",
-      "sha256": "d06949e2484670b2e5c8ead8d8ec4c24c3a755166c9b1632b1fee8a8f9a038e5"
+      "sha256": "b28bdc8aa8ccff551c8423defeb5e29e46e8ac75d37ab2aa252284cb1dd3e8d3"
     },
     {
       "path": "go/internal/protocols/x509x/x509.go",
