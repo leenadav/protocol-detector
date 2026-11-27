@@ -91,7 +91,7 @@ push to `main`:
 | ci | `presentation with Node and a real browser (no test may skip)` | the presentation suite with Node 22.22.0 and the lock-pinned Playwright 1.64.1 with Chromium, zero skips allowed; the installed whole-product check (`tools/installed_check.py`) |
 | ci | `behaviour diff against the previous commit` | `tools/compare_engine.py` against the parent (and the pull request base) |
 | ci | `per-commit mutation smoke (second seed, python 3.9)` | second-seed mutation diff and a 100-mutation fuzz pass |
-| ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) over the full history with inline allows ignored; then `tools/check_gitleaks_allowlist.py` with that gitleaks: a DNS CNAME chain is allowed only in `research/live-results-*.tsv`, and keys, tokens and the same chain in any other file are still reported |
+| ci | `static analysis (ruff, bandit, secrets)` | ruff, bandit, and gitleaks 8.30.1 (built from the Go module proxy, verified against the Go checksum database) with inline allows ignored, over the pull request merge commit's history on a pull request (`--log-opts=HEAD`) and the full history of every fetched ref on every other event (PRO-539); then `tools/check_gitleaks_allowlist.py` with that gitleaks: a DNS CNAME chain is allowed only in `research/live-results-*.tsv`, and keys, tokens and the same chain in any other file are still reported |
 | ci | `supply chain (SBOM, licence, pins)` | action pins, CycloneDX SBOM of the development toolchain, zero-runtime-dependency contract |
 | ci | `package build (sdist, wheel, clean install)` | build, `tools/check_wheel.py` (engine and adapter packages, only the `decryption` extra), wheel smoke under 3.13 and 3.9, the complete-product SBOM checked by `tools/check_product_sbom.py` |
 | ci | `workflow lint (actionlint, zizmor)` | actionlint with shellcheck, then the zizmor security audit (pedantic persona, offline audits, any finding fails) over every workflow |
@@ -115,7 +115,9 @@ push to `main`:
 
 Not required checks, by design: `ledgers.yml` (the nightly strict ledger check and refresh patch, item 43), `nightly-fuzz` (the Python mutation fuzz, every Go fuzz target
 for minutes and the Go mutation testing, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
-into main, item 31) are scheduled and never run on a pull request. Nor is `scorecard` (weekly OpenSSF
+into main, item 31) and `secret-scan` (the nightly gitleaks scan of every branch, `--log-opts=--all`, PRO-539: a finding
+fails the run and the step summary says so; rule 15 pins the job whole, `tools/check_gitleaks_allowlist.py` checks
+the scope and proves it with the real gitleaks) are scheduled and never run on a pull request. Nor is `scorecard` (weekly OpenSSF
 Scorecard, item 42), which runs only on the schedule or by hand.
 
 Do not mark the `supply-chain-drift` jobs required: that workflow is path
@@ -198,8 +200,12 @@ second run beside its pull request's (PRO-202). On a pull request the checkout i
 GitHub's synthetic merge commit, so two jobs behave differently from a push:
 the behaviour diff checks out the pull request head and compares it with its
 own parent, then also with the pull request base when that base carries the
-engine (the whole change as one report). The secret scan reads the full
-history of the checkout itself, so it needs no pull-request permission. Both are
+engine (the whole change as one report). The secret scan reads the history
+of the checkout itself, so it needs no pull-request permission; its scope is by event (PRO-539): a pull
+request scans `--log-opts=HEAD`, every commit the merge commit reaches (the pull request's own and main's,
+no other fetched branch, so one lane's leak no longer fails every other pull request); a push to `main`,
+the schedule and a dispatch keep gitleaks' default, the full history of every fetched ref; and
+`secret-scan.yml` scans every branch nightly (`--log-opts=--all`). Both are
 configured in ci.yml; a red pull-request run with a green push run on the same commit is a
 workflow defect, never an engine finding.
 Docs-only fast path (PRO-202 step 3): the heavy Go jobs (`go-engine`, `go-fuzz-smoke`, `go-parity`,

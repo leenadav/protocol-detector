@@ -30,6 +30,12 @@ their decisions, the policy locks, and the release controller.
 
 ## 2. Current state (2026-11-24, after PRO-262 and PRO-202 step 3)
 
+- **PRO-539 (secret scan scope, 2026-11-27):** a pull request's `static-analysis` gitleaks run scans
+  `--log-opts=HEAD` (the merge commit's history: its own commits and main's, no other branch); a push to main, the
+  schedule and a dispatch keep gitleaks' default (every fetched ref); `.github/workflows/secret-scan.yml` scans every
+  branch nightly (`--log-opts=--all`, 01:41 UTC, failure summary step, not a required check). Rule 15 pins both
+  (`GITLEAKS_SCOPE`, `SECRET_SCAN_STEPS`); `tools/check_gitleaks_allowlist.py` checks the scope and proves it with the
+  real gitleaks. `.gitleaks.toml` and the allowlists are unchanged.
 - **PRO-270 (Dependabot, 2026-11-27):** security updates only. Every `dependabot.yml` entry has
   `open-pull-requests-limit: 0`, one `applies-to: security-updates` group per ecosystem and the prefix
   `deps(security)`; Go covers go/, go/oracle, tools/scanners, tools/golint/* and gremlins. Nothing opens until Lee
@@ -231,6 +237,12 @@ pinned one through `GOTOOLCHAIN=go1.27.4 go env GOROOT`.
 - **Rules:** do not rewrite these. Fix rounds are reviewed as the fix diff only.
 
 ## 7. Pitfalls learned
+
+- **gitleaks `--log-opts` replaces its defaults (PRO-539):** with an empty value gitleaks runs
+  `git log -p -U0 --full-history --all --diff-filter=tuxdb`; any value runs `git log -p -U0 <value>` only. So the push
+  scope is the empty value (identical to before), not `--all`. A pull request checkout is the merge commit, so `HEAD`
+  covers main's history too. The nightly run is the only scan of other branches: a red `secret-scan` run is a leak to
+  report on the board, never something to allowlist.
 
 - **Line numbers of Go sources (PRO-187):** gosec counts `\n` only; Python's `str.splitlines()` also splits on form
   feed and U+2028, so a source with one of them shifts every later line. `go_lint.enclosing_function` uses
