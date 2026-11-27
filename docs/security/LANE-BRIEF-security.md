@@ -9,12 +9,19 @@ next to this file, with the reproducing test when there is one.
 | Task | Document | Base | State |
 |---|---|---|---|
 | PRO-477 limits and counters | `LIMITS-AUDIT-PRO-477.md` | `main` `6c6d4dd` | 10 gaps (SEC-LIM-1..10), skip-marked reproducers; fix tasks asked of Engine |
+| PRO-523 A17, open CI and supply-chain PRs #149, #155, #157, #158, #159 | `A17-ci-prs.md` | `main` `5cb35d2`, PR heads `ca5d53a`, `3834660`, `c4d6fd0`, `e68f1f8`, `54d7d2b` | P0 0, P1 0, P2 0, P3 2 (SEC-CI-A17-1 on #157, SEC-CI-A17-2 on #159); fix tasks asked of Platform & CI |
 
 ## Fix verification
 
 | ID | Fixed by | Verdict |
 |---|---|---|
 | SEC-LIM-1..10 | pending | NOT FIXED (reproducers skip with the id) |
+| SEC-CI-A17-1 | pending (Platform & CI, `tools/go_bench.py` on #157) | NOT FIXED |
+| SEC-CI-A17-2 | pending (Platform & CI, `.github/dependabot.yml` on #159 or #157) | NOT FIXED |
 
 A fix is verified when its `TestLimitGap*` test fails with "now reports its limit", the marker is removed in
 the same change, and the plain assertion passes.
+
+A17 fixes are verified against their diff: SEC-CI-A17-1 needs negative self-tests in `tools/go_bench.py` for a hot
+benchmark gone at head and for unparsed benchstat output; SEC-CI-A17-2 needs `/tools/golint/benchstat` in the gomod
+`directories:` and, for the rule, a workflow-policy negative test with a go.mod missing from that list.
