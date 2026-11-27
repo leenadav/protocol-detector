@@ -193,8 +193,8 @@ Culvert's allocation gates need `-tags benchgate`.
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
   The second run, `69434b8` and `1f3e94f` on `claude/vigilant-sagan-i3rlse` (PR leenadav/protocol-detector#120),
   and the merge of `main` that moves its tools to `lab/culvert/tools/loadsplit/` (lab tooling and docs only).
-- **Queued for Codex (PRO-540):** the endurance commit on `claude/culvert-PRO-540-endurance` (lab tools, results
-  and docs only; no detector code). Its SHA is in `migration/notes/PRO-540.md`.
+- **Queued for Codex (PRO-540):** `fd0c122` on `claude/culvert-PRO-540-endurance`, the endurance run, and the commit
+  that records it (lab tools, results and docs only; no detector code).
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
