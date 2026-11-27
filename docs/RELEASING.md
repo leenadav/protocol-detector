@@ -23,8 +23,18 @@ The Go binaries are reproducible. `tools/build_go_release.py` builds each target
 differ. Each build uses its own empty `GOCACHE`. The build environment is:
 
 - the pinned Go (1.27.4, `GOTOOLCHAIN=local`);
-- `CGO_ENABLED=0`, `-trimpath`, `-buildvcs=false`, `-ldflags "-s -w -buildid="`;
+- `CGO_ENABLED=0`, `-trimpath`, `-buildvcs=false`, `-ldflags "-s -w -buildid= -X main.version=<version>"`;
 - `GOPROXY=off`, with the committed vendor tree (`GOFLAGS=-mod=vendor`).
+
+`-X main.version=<version>` stamps the release version (already checked against `VERSION`) into
+`go/cmd/protodetect`'s `var version`. It changes the bytes, but both builds get the same flag, so the
+double-build comparison still holds. After building, the tool runs the linux/amd64 binary as
+`protodetect version`. The release fails unless the second word of the output is exactly the release version. So
+a binary named `protodetect-<version>-*` that reports some other version cannot be published. That covers a
+`const version`, which `-X` silently ignores, and a renamed variable.
+
+A commit without `go/go.mod` builds no Go binary and says so. If `go/go.mod` is present and `go/cmd/protodetect`
+is missing (a renamed or deleted main package), the release fails instead of publishing a tag with no Go binaries.
 
 The SBOM is built from the binaries' own embedded build information. Every module they link must be listed in
 `go/vendor/modules.txt`. The SBOM has no timestamp and a serial number derived from its content, so it is
@@ -92,7 +102,7 @@ To check reproducibility, build the binary yourself and compare it with the rele
 
 ```
 cd go && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOFLAGS=-mod=vendor \
-  go build -trimpath -buildvcs=false -ldflags="-s -w -buildid=" -o protodetect ./cmd/protodetect
+  go build -trimpath -buildvcs=false -ldflags="-s -w -buildid= -X main.version=<version>" -o protodetect ./cmd/protodetect
 ```
 
 Use Go 1.27.4 at the tagged commit. The result must match the published file byte for byte.
@@ -101,7 +111,5 @@ Use Go 1.27.4 at the tagged commit. The result must match the published file byt
 
 - **No real tag has been run.** The tag-only steps (attest, verify, publish) are pinned by policy and were last
   exercised in review, not in a real release.
-- **Version reporting:** the Go binary prints the engine's own `version` constant (`go/cmd/protodetect`). Release
-  file names carry the release version.
 - **No separate detached signature:** there are no cosign or GPG signatures beyond the Sigstore attestations.
   A long-lived signing key would be a new secret, which is Lee's decision.

@@ -113,8 +113,8 @@ push to `main`:
 | ci | `security requirements gate` | every SR row names an existing test |
 | ci | `ledgers (generated sections not hand-edited, notes well-formed)` | `tools/build_ledgers.py --self-test` and `--check`: every `migration/notes/PRO-<n>.md` parses, and every generated section (lane-brief and STATUS recent work, README/REVIEW-SCOPE test counts) is exactly what its notes render to, possibly lagging behind this pull request's own note; a hand edit fails with the command that rebuilds them (item 43) |
 
-Not required checks, by design: `ledgers.yml` (the nightly strict ledger check and refresh patch, item 43), `nightly-fuzz` (the Python mutation fuzz and every Go fuzz target
-for minutes, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
+Not required checks, by design: `ledgers.yml` (the nightly strict ledger check and refresh patch, item 43), `nightly-fuzz` (the Python mutation fuzz, every Go fuzz target
+for minutes and the Go mutation testing, item 29) and `merge-readiness` (a daily report-only trial merge of claude/go-migration
 into main, item 31) are scheduled and never run on a pull request. Nor is `scorecard` (weekly OpenSSF
 Scorecard, item 42), which runs only on the schedule or by hand.
 
@@ -730,6 +730,16 @@ PROTOCOLS.md (commit 0252b07) once Actions runs, an engine-lane change.
    the ci Go jobs (pinned 1.27.4, `GOPROXY=off`, vendor aware). `contents: read`, harden-runner,
    no credential kept, timeouts 60 and 130 minutes. The schedule runs from main's copy only; the
    file exists on main, so `workflow_dispatch` runs the branch's version before the merge.
+   PRO-176 adds `mutation`: gremlins v0.6.0 (Apache-2.0; dependencies MIT, BSD-3-Clause, Apache-2.0)
+   runs `make mutation` on the Go parser packages and fails when a package's efficacy falls more
+   than 5 points below `migration/mutation/baseline.json` (mutation.py's TOLERANCE, a placeholder
+   until Research Lab's stability check, PRO-173). Its one networked step builds gremlins from a
+   RUNNER_TEMP copy of `migration/mutation/gremlins` and fills the module cache from a copy of
+   go/go.mod and go.sum (gremlins always runs `go mod download`), hashes checked against go.sum
+   and the checksum database, before any repository code; `make mutation` then runs with
+   `GOPROXY=off` and `MUTATION_BIN`. 30 minutes, `contents: read`; `build/mutation/*.json` and the
+   logs are uploaded on every run (90 days, the efficacy trend). Policy `check_mutation_build`
+   pins the job's first four steps, its permissions and its timeout.
 30. Content-pack gate for research batches (`content-pack` ci job, in the gate's needs;
    `tools/content_gate.py`). A content release is checked five ways: `make content` (schema,
    lock, every earlier release reproducing its published digest, the engine's C11 fix
