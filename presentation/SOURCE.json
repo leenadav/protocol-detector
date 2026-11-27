@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "9c553118d8192d4476eb968ed26fd19d6b5e62aa",
-  "branch": "claude/vigilant-maxwell-gub33g",
-  "build_digest": "b3c5a0a3a986493872576c81ae31c38843bc049244ebf58bd6fc668956cfc44f",
+  "commit": "22c843e0f859a1aab73ef87757bed1f8f5b4e93b",
+  "branch": "claude/engine-PRO-512-sec-child-5",
+  "build_digest": "a3ae5498789382e92dc77a971ef65cb3656fc73eee226b85bdb91fb9799759e9",
   "components": {
     "engine": {
       "root": "go",
@@ -160,12 +160,12 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "780d84f4bc25ecda93d6ea12e529b21244528485670e3b6cc96cf0c4c326cf45"
+      "sha256": "ec68313992c44f30553181f3047fa49603ba1e3db0c6c936ba8accc1240e30d5"
     },
     {
       "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "7eb298aedb2db290d7cc98bc6a02af1d6eeffaeecd794fa884c15761610c7e6c"
+      "sha256": "c8b356e4596e4eebed743230d388d96f1774c02ec2bbde86c0bf734ed13320c6"
     },
     {
       "path": "go/internal/clock/clock.go",

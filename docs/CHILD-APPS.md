@@ -68,7 +68,10 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
   to the service's official API reference) is required.
 - **Hosts:** each rule needs `hosts` (exact) or `host_suffixes` (the domain and its subdomains). Every host must be
   claimed in the server-name catalog by the container or by an application in the child's `depends_on` (Gmail's API
-  is on `googleapis.com`, claimed by `google-base`). A web front or unclaimed host is refused. At match time a rule only fires when the request host's catalog owner
+  is on `googleapis.com`, claimed by `google-base`). A web front or unclaimed host is refused. A `host_suffixes` entry is also refused when
+  the catalog gives a more specific domain under it to an application that is neither the container nor a `depends_on`
+  (`anthropic.com`, claimed by `anthropic-claude`, covers `api.anthropic.com`, which is `anthropic-api`'s): name the
+  exact hosts instead, or add that application to `depends_on` (SEC-CHILD-5). At match time a rule only fires when the request host's catalog owner
   is the container or a `depends_on` application: a `host_suffixes` rule never fires on a more specific host the
   catalog gives another application (`maps.googleapis.com` is google-maps', not google-base's).
 - **Function conditions** (at least one; all present ones must hold):
