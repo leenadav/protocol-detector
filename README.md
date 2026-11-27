@@ -404,7 +404,7 @@ seeds × 6 transformations: 0 violations (about 95 % of conflicts were still ret
 
 ## D09 — independent corpus evaluation (infrastructure; acceptance blocked)
 
-`tools/evaluate_corpus.py CORPUS` scores the engine against an externally labelled capture corpus
+`protodetect evaluate-corpus CORPUS` (go/internal/corpus) scores the engine against an externally labelled capture corpus
 (manifest with stated provenance and verified digests; per-flow correct / wrong application / wrong
 family / unidentified / missing; per-family recall and precision; confusions; content pin). It is
 distinct from the synthetic fixture report, which is a regression gate. No independent corpus has been

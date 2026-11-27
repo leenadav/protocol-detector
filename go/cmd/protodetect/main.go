@@ -39,7 +39,7 @@ func main() {
 
 func run(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: protodetect version | analyze CAPTURE [options] | present < CAPTURE | decrypt-capture < REQUEST | live ... | live-decrypt ... | cases --file PATH | replay --cases PATH --out PATH")
+		fmt.Fprintln(os.Stderr, "usage: protodetect version | analyze CAPTURE [options] | present < CAPTURE | decrypt-capture < REQUEST | live ... | live-decrypt ... | cases --file PATH | replay --cases PATH --out PATH | evaluate-corpus CORPUS [options]")
 		return 2
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -62,6 +62,8 @@ func run(args []string) int {
 		return runControlReplay(os.Stdin, os.Stdout)
 	case "serve":
 		return runServe(ctx, args[1:], os.Stdout, os.Stderr)
+	case "evaluate-corpus":
+		return runEvaluateCorpus(args[1:], os.Stdout, os.Stderr)
 	case "serve-worker":
 		return runServeWorker(args[1:], os.Stdin, os.Stdout, os.Stderr)
 	case "cases":

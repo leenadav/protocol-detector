@@ -1,14 +1,14 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "68dcfbe5bdfedf03611694e45e4f5f1de985db47",
+  "commit": "4b9cf5de07daa37c018b990cfbea99204346896a",
   "branch": "claude/pensive-carson-f94p62",
-  "build_digest": "7a23ce1f9be02595fd04e06d15f6f5d4b137d4ca47c299c4aa75b6bd1b3926e4",
+  "build_digest": "b01e54fc58c37a90213ea7894606d4bd587a4e06c5add21d089c12c171553a97",
   "components": {
     "engine": {
       "root": "go",
       "version": "0.66.0",
-      "files": 133
+      "files": 135
     },
     "launchers": {
       "root": ".",
@@ -53,6 +53,11 @@
       "sha256": "bbc26b81dd8d88b1831e4a4865031cbc51fac4a4c53f33603c4d156bab22032d"
     },
     {
+      "path": "go/cmd/protodetect/evaluate.go",
+      "component": "engine",
+      "sha256": "d5e283d748c543279cdd8f94d2fa710f88b24643cd7d5a797264172cf41b6d97"
+    },
+    {
       "path": "go/cmd/protodetect/live.go",
       "component": "engine",
       "sha256": "7051947fb2d0be31f8f6a12f30f3fb7abf826dbc89fc6c7949a2cf95d6bdf09a"
@@ -65,7 +70,7 @@
     {
       "path": "go/cmd/protodetect/main.go",
       "component": "engine",
-      "sha256": "19f35fe3e2b0fa454c1ac6454eb97e31bc783ac26b27a6d7c8aeb0addc3b550b"
+      "sha256": "460d7d5ea6442096a3b8efa56abced15551fffdf3b22abaa5e7524bdceb6dfee"
     },
     {
       "path": "go/cmd/protodetect/present.go",
@@ -171,6 +176,11 @@
       "path": "go/internal/contracts/contracts.go",
       "component": "engine",
       "sha256": "4b5406896a3ddca0158a7fd1664ad6c78e4b268aa6694b40aa0a4c5b70e55d9c"
+    },
+    {
+      "path": "go/internal/corpus/corpus.go",
+      "component": "engine",
+      "sha256": "90728d71d10a603a72a6b9e52ca1e647468095df7f4a255aba15e4c56c66bc55"
     },
     {
       "path": "go/internal/decrypt/connection.go",

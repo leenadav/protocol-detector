@@ -9,7 +9,7 @@ that no independent corpus has been evaluated yet.
 
 ## Harness
 
-`tools/evaluate_corpus.py CORPUS` (`make evaluate CORPUS=dir`) reads `CORPUS/manifest.json`, verifies the
+`protodetect evaluate-corpus CORPUS` (go/internal/corpus; it replaced the Python `tools/evaluate_corpus.py`, PRO-526) reads `CORPUS/manifest.json`, verifies the
 SHA-256 of every capture it names (files must live inside the corpus directory), runs each capture through
 the same recorded-adapter path as `protodetect analyze` (with per-capture Analyzer options: observation
 mode, checksum policy, continuation, hints, fingerprints, certificates) and scores every labelled flow by

@@ -15,7 +15,7 @@ Module: `github.com/leenadav/protocol-detector/go` (see
 Entry point: [`go/cmd/protodetect`](../go/cmd/protodetect/main.go), a CLI with the
 subcommands `version`, `cases`, `replay`, `analyze`, `present`,
 `decrypt-capture`, `live`, `live-decrypt`, `control-replay`, `serve`,
-`serve-worker` and `bench`.
+`serve-worker`, `bench` and `evaluate-corpus`.
 
 ## 1. Package map
 
