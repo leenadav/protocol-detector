@@ -81,6 +81,21 @@ and D, with C for the CPU split, and a hold test of 1,000 open tunnels. The tool
 Headline: no measurable added latency at 200 and 500/s. The cost is +105 to +277 ms of proxy CPU per 1,000
 HTTPS flows, and +3.9 KiB per tunnel retained after the window. vegeta (MIT) is a test tool and is never shipped.
 
+## Endurance run (PRO-540, 2026-11-27)
+
+`ENDURANCE.md` reports working plan phase L6. The setup:
+- one 30-minute run of the `ef94311` lab with both lab patches, CONNECT bypass observed by the real detector
+  and child apps on;
+- 127.5 new tunnels/s of TLS, HTTP/1, SSH, inspected requests, adverse inputs, quiet peers and a blocked direction;
+- a restart, and a restart onto content pack 2026.11.9.
+
+The tools are in `tools/endurance/`: the Go origin and driver `load/`, the lab-only counter hook `culverthook/`
+and the orchestrator `run.py`. The data is in `results-endurance/`.
+
+Verdict: no growth slope, no panic, no leaked reservation, and the new version is used after each switch.
+Recovery to within 10% of the baseline fails: Culvert's bounded request-log ring, the lazily built child-app
+classifier, and a baseline taken before two idle keep-alive connections closed.
+
 ## What was built on the Culvert lab branch
 
 Base: Culvert `52eb9d1e4482adc9773afc4db77109acad617625`, local branch `lab/protocol-detector` (4 commits, push disabled). The patch is `culvert-lab-52eb9d1.patch`; it leaves out `frontend/dist`, which `npm run build` regenerates.

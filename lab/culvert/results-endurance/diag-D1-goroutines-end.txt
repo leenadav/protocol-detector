@@ -1,0 +1,124 @@
+goroutine profile: total 25
+1 @ 0x424469 0x495598 0x100b233 0x49a581
+#	0x495597	os/signal.signal_recv+0x97	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/runtime/sigqueue.go:152
+#	0x100b232	os/signal.loop+0x12		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/os/signal/signal_unix.go:23
+
+1 @ 0x44e1f1 0x49215d 0xae2b11 0xae27e5 0xadf749 0x115fa34 0x7be5cf 0x7dfa6e 0x7bad1c 0x49a581
+#	0xae2b10	runtime/pprof.writeRuntimeProfile+0xb0	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/runtime/pprof/pprof.go:848
+#	0xae27e4	runtime/pprof.writeGoroutine+0x44	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/runtime/pprof/pprof.go:781
+#	0xadf748	runtime/pprof.(*Profile).WriteTo+0x148	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/runtime/pprof/pprof.go:405
+#	0x115fa33	net/http/pprof.handler.ServeHTTP+0x553	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/pprof/pprof.go:272
+#	0x7be5ce	net/http.(*ServeMux).ServeHTTP+0x1ce	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:2927
+#	0x7dfa6d	net/http.serverHandler.ServeHTTP+0x8d	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:3440
+#	0x7bad1b	net/http.(*conn).serve+0x6db		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:2161
+
+1 @ 0x49338a 0x41e90e 0x41e432 0x129df3c 0x12976bd 0x458a27 0x49a581
+#	0x129df3b	main.runProxyUntilShutdown+0x9b	/home/user/kidcarmi/culvert/main.go:1338
+#	0x12976bc	main.main+0x87c			/home/user/kidcarmi/culvert/main.go:316
+#	0x458a26	runtime.main+0x426		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/runtime/proc.go:302
+
+1 @ 0x49338a 0x451977 0x492585 0x504bc7 0x50965d 0x50964b 0x60a649 0x621cfb 0x621010 0x70ad64 0x7bfeb9 0x7c0845 0x13fc3b1 0x13fba65 0x49a581
+#	0x492584	internal/poll.runtime_pollWait+0x84		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/runtime/netpoll.go:351
+#	0x504bc6	internal/poll.(*pollDesc).wait+0x26		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_poll_runtime.go:84
+#	0x50965c	internal/poll.(*pollDesc).waitRead+0x27c	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_poll_runtime.go:89
+#	0x50964a	internal/poll.(*FD).Accept+0x26a		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_unix.go:618
+#	0x60a648	net.(*netFD).accept+0x28			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/fd_unix.go:149
+#	0x621cfa	net.(*TCPListener).accept+0x1a			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/tcpsock_posix.go:159
+#	0x62100f	net.(*TCPListener).Accept+0x2f			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/tcpsock.go:387
+#	0x70ad63	crypto/tls.(*listener).Accept+0x23		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/crypto/tls/tls.go:78
+#	0x7bfeb8	net/http.(*Server).Serve+0x378			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:3578
+#	0x7c0844	net/http.(*Server).ServeTLS+0x1c4		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:3659
+#	0x13fc3b0	main.adminUIServeOnce+0x710			/home/user/kidcarmi/culvert/ui.go:376
+#	0x13fba64	main.serveAdminUIWithRetry+0x144		/home/user/kidcarmi/culvert/ui.go:257
+
+1 @ 0x49338a 0x451977 0x492585 0x504bc7 0x50965d 0x50964b 0x60a649 0x621cfb 0x621010 0x7bfeb9 0x7bfa51 0x149a03b 0x49a581
+#	0x492584	internal/poll.runtime_pollWait+0x84		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/runtime/netpoll.go:351
+#	0x504bc6	internal/poll.(*pollDesc).wait+0x26		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_poll_runtime.go:84
+#	0x50965c	internal/poll.(*pollDesc).waitRead+0x27c	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_poll_runtime.go:89
+#	0x50964a	internal/poll.(*FD).Accept+0x26a		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_unix.go:618
+#	0x60a648	net.(*netFD).accept+0x28			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/fd_unix.go:149
+#	0x621cfa	net.(*TCPListener).accept+0x1a			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/tcpsock_posix.go:159
+#	0x62100f	net.(*TCPListener).Accept+0x2f			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/tcpsock.go:387
+#	0x7bfeb8	net/http.(*Server).Serve+0x378			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:3578
+#	0x7bfa50	net/http.(*Server).ListenAndServe+0x70		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:3489
+#	0x149a03a	main.runProxyUntilShutdown.func1+0x1a		/home/user/kidcarmi/culvert/main.go:1333
+
+1 @ 0x49338a 0x451977 0x492585 0x504bc7 0x50965d 0x50964b 0x60a649 0x621cfb 0x621010 0x7bfeb9 0x7bfa51 0x14b5c77 0x49a581
+#	0x492584	internal/poll.runtime_pollWait+0x84		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/runtime/netpoll.go:351
+#	0x504bc6	internal/poll.(*pollDesc).wait+0x26		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_poll_runtime.go:84
+#	0x50965c	internal/poll.(*pollDesc).waitRead+0x27c	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_poll_runtime.go:89
+#	0x50964a	internal/poll.(*FD).Accept+0x26a		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_unix.go:618
+#	0x60a648	net.(*netFD).accept+0x28			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/fd_unix.go:149
+#	0x621cfa	net.(*TCPListener).accept+0x1a			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/tcpsock_posix.go:159
+#	0x62100f	net.(*TCPListener).Accept+0x2f			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/tcpsock.go:387
+#	0x7bfeb8	net/http.(*Server).Serve+0x378			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:3578
+#	0x7bfa50	net/http.(*Server).ListenAndServe+0x70		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:3489
+#	0x14b5c76	main.init.24.func2+0x16				/home/user/kidcarmi/culvert/zz_endurance_lab.go:84
+
+1 @ 0x49338a 0x46b037 0x100a3c8 0x49a581
+#	0x100a3c7	github.com/KidCarmi/Culvert/internal/logsink.(*Writer).drainLoop+0xe7	/home/user/kidcarmi/culvert/internal/logsink/logsink.go:236
+
+1 @ 0x49338a 0x46b037 0x1206139 0x49a581
+#	0x1206138	main.rateLimitCleanupLoop+0xd8	/home/user/kidcarmi/culvert/connlimit_startup.go:89
+
+1 @ 0x49338a 0x46b037 0x1235a8f 0x49a581
+#	0x1235a8e	main.startDecCoverageSampler+0x10e	/home/user/kidcarmi/culvert/decryption_trend.go:121
+
+1 @ 0x49338a 0x46b037 0x126b2ad 0x49a581
+#	0x126b2ac	main.(*sseBroadcaster).run+0x10c	/home/user/kidcarmi/culvert/events.go:93
+
+1 @ 0x49338a 0x46b037 0x1288d28 0x49a581
+#	0x1288d27	main.runIdPMetadataDegradationWatchdog+0x107	/home/user/kidcarmi/culvert/idp_metadata_health.go:1004
+
+1 @ 0x49338a 0x46b037 0x129db7f 0x49a581
+#	0x129db7e	main.(*sighupReloader).run+0xfe	/home/user/kidcarmi/culvert/main.go:1273
+
+1 @ 0x49338a 0x46b037 0x1371266 0x49a581
+#	0x1371265	main.runCatalogRefreshLoop+0x125	/home/user/kidcarmi/culvert/release_refresh.go:58
+
+1 @ 0x49338a 0x46b037 0x13ac834 0x49a581
+#	0x13ac833	main.(*saasFeedScheduler).run+0x213	/home/user/kidcarmi/culvert/saas_feed_scheduler.go:141
+
+1 @ 0x49338a 0x46b037 0x13b294e 0x49a581
+#	0x13b294d	main.startScanSignatureWatch+0xed	/home/user/kidcarmi/culvert/scan_signature_watch.go:60
+
+1 @ 0x49338a 0x46b037 0x13dcc18 0x49a581
+#	0x13dcc17	main.startDebugLevelWatchdog+0xf7	/home/user/kidcarmi/culvert/support_debug_level.go:176
+
+1 @ 0x49338a 0x46b037 0x13f0148 0x49a581
+#	0x13f0147	main.startSupportUploadWorker+0x107	/home/user/kidcarmi/culvert/support_upload_worker.go:48
+
+1 @ 0x49338a 0x46b037 0x13f41b9 0x49a581
+#	0x13f41b8	main.startSyslogHealthWatchdog+0xd8	/home/user/kidcarmi/culvert/syslog_health.go:977
+
+1 @ 0x49338a 0x46b037 0x13f7dac 0x13f7ab1 0x148cc85 0x49a581
+#	0x13f7dab	main.waitSyslogRetryTurn+0x1cb		/home/user/kidcarmi/culvert/syslog_intent_retry.go:190
+#	0x13f7ab0	main.runSyslogIntentRetry+0x170		/home/user/kidcarmi/culvert/syslog_intent_retry.go:162
+#	0x148cc84	main.startSyslogIntentRetry+0x24	/home/user/kidcarmi/culvert/syslog_intent_retry.go:146
+
+1 @ 0x49338a 0x46b037 0x14711ee 0x49a581
+#	0x14711ed	main.startSupportRetentionJanitor+0xed	/home/user/kidcarmi/culvert/ui_support.go:1001
+
+1 @ 0x49338a 0x46b037 0x148d54c 0x49a581
+#	0x148d54b	main.StartCAAutoRotation.func1+0x1ab	/home/user/kidcarmi/culvert/ca.go:120
+
+1 @ 0x49338a 0x46b037 0x149e7cc 0x49a581
+#	0x149e7cb	main.startHitCounterPersistence.func1+0x14b	/home/user/kidcarmi/culvert/metrics.go:413
+
+1 @ 0x49338a 0x46b037 0x81056e 0x148cd45 0x49a581
+#	0x81056d	github.com/KidCarmi/Culvert/internal/alerts.StartRetryLoop+0x26d	/home/user/kidcarmi/culvert/internal/alerts/store.go:1427
+#	0x148cd44	main.startAlertRetryLoop+0x24						/home/user/kidcarmi/culvert/alerts.go:203
+
+1 @ 0x49338a 0x46b037 0x8fd2fa 0x49a581
+#	0x8fd2f9	github.com/KidCarmi/Culvert/internal/blocklistfeed.(*Syncer).Start.func2+0xb9	/home/user/kidcarmi/culvert/internal/blocklistfeed/blocklistfeed.go:389
+
+1 @ 0x4e4de5 0x4e2d78 0x505bb4 0x505b9f 0x505ae1 0x6089a5 0x618b85 0x7b47d2 0x49a581
+#	0x4e4de4	syscall.Syscall+0x24				/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/syscall/syscall_linux.go:74
+#	0x4e2d77	syscall.read+0x37				/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/syscall/zsyscall_linux_amd64.go:736
+#	0x505bb3	syscall.Read+0x213				/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/syscall/syscall_unix.go:183
+#	0x505b9e	internal/poll.ignoringEINTRIO+0x1fe		/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_unix.go:743
+#	0x505ae0	internal/poll.(*FD).Read+0x140			/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/internal/poll/fd_unix.go:166
+#	0x6089a4	net.(*netFD).Read+0x24				/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/fd_posix.go:68
+#	0x618b84	net.(*conn).Read+0x44				/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/net.go:196
+#	0x7b47d1	net/http.(*connReader).backgroundRead+0x31	/root/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.27.4.linux-amd64/src/net/http/server.go:742
+

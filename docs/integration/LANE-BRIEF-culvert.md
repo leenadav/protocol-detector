@@ -56,6 +56,16 @@ The lane prepares the Go detector for in-process use by the Culvert proxy (KidCa
   1,000/s is the rig's knee on 4 vCPUs (disturbed rounds on every build). Tools are in `lab/culvert/tools/loadsplit/`
   (`loadtest.py`, `loadhold.py`, `loadtest_report.py`, `loadorigin/`), data in `lab/culvert/results-load`,
   `results-load-split/` and `results-load-hold/`.
+- **Endurance, phase L6 (PRO-540, 2026-11-27):** `lab/culvert/ENDURANCE.md`. One 30-minute run of the `ef94311`
+  lab, both lab patches, detector `9944158` (the PRO-516 branch, child apps on); content 2026.11.8, then 2026.11.9
+  after the second restart.
+  - P2 to P5 pass: no growth slope (at most 0.55%/min), 0 panics, 0 active, reserved or retained bytes after
+    load, and the intended content release in every pd block.
+  - P1 fails as defined:
+    - heap +58%: Culvert's request-log ring 2.94 MB, the lazy child-app classifier 0.58 MB, and 0.29 MB not
+      attributed. It is the same after 2 and after 30 minutes.
+    - goroutines −14%: two keep-alive connections close about 85 s after start, with or without load.
+  - Thresholds unchanged. A re-run needs the documented revision in the report first.
 - **Plan:** every approved detector-side item is done (4.1 to 4.3, and #10 completed). The governance policies
   are in force; no tag and no setting exists.
 - **Lab:**
@@ -183,6 +193,8 @@ Culvert's allocation gates need `-tags benchgate`.
   and the brief commit that records it, on `claude/gifted-newton-wmh04g`; PR leenadav/protocol-detector#118.
   The second run, `69434b8` and `1f3e94f` on `claude/vigilant-sagan-i3rlse` (PR leenadav/protocol-detector#120),
   and the merge of `main` that moves its tools to `lab/culvert/tools/loadsplit/` (lab tooling and docs only).
+- **Queued for Codex (PRO-540):** the endurance commit on `claude/culvert-PRO-540-endurance` (lab tools, results
+  and docs only; no detector code). Its SHA is in `migration/notes/PRO-540.md`.
 - **Queued for a later round:** listed in the working plan, under 4.3a "Review queue". The PRO-81 commit
   (`3efda92`) and the PRO-91 commit are added there in the same push as each task.
 
@@ -235,5 +247,11 @@ Culvert's allocation gates need `-tags benchgate`.
   conflicted add/add on `loadtest.py`, `loadorigin/main.go` and `LOAD-TEST.md`. The merge kept main's paths and
   moved the second run to `lab/culvert/tools/loadsplit/` and `LOAD-TEST-SPLIT.md`. Check `origin/main` for the
   task's files before starting a lab tool.
+- **A Culvert restart is a cold start in the lab.** Admin, rules and the inspection CA are in memory, so
+  `tools/endurance/run.py` sets them up again after every start, and a client must reload the new CA. SIGTERM
+  drains tunnels for 15 s before exit, so a restart refuses new tunnels for about 16 s.
+- **An idle baseline needs Culvert at its steady state.** Two internal keep-alive connections close about 85 s
+  after start (29 to 25 goroutines), and the 5,000-entry request-log ring and the lazy child-app classifier fill
+  after the first traffic. Take a baseline only after these, or name them.
 - **Go's `ReadHeaderTimeout` also bounds the TLS handshake.** A silent CONNECT tunnel to a Go HTTPS origin is
   closed by the origin after that timeout, so a hold test needs it longer than the window.

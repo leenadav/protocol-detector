@@ -1,0 +1,223 @@
+[
+{
+"adverse_cases": [
+"random_64",
+"random_4k",
+"random_20k",
+"clienthello_truncated_5",
+"clienthello_truncated_half",
+"clienthello_truncated_last",
+"clienthello_oversized",
+"clienthello_1byte_fragments",
+"fuzz:FuzzDatagramIsDeterministic/01c0db6a",
+"fuzz:FuzzDatagramIsDeterministic/0ba224cf",
+"fuzz:FuzzDatagramIsDeterministic/11b9d9e2",
+"fuzz:FuzzDatagramIsDeterministic/1a81c3d8",
+"fuzz:FuzzDatagramIsDeterministic/2f4b722c",
+"fuzz:FuzzDatagramIsDeterministic/30d905ca",
+"fuzz:FuzzDatagramIsDeterministic/3c6eeb16",
+"fuzz:FuzzDatagramIsDeterministic/417a055e",
+"fuzz:FuzzDatagramIsDeterministic/c2f2c858",
+"fuzz:FuzzEveryParserIsSplitInvariant/225399f2",
+"fuzz:FuzzEveryParserIsSplitInvariant/57bf995f",
+"fuzz:FuzzEveryParserIsSplitInvariant/859c4056",
+"fuzz:FuzzEveryParserIsSplitInvariant/9ae755e7",
+"fuzz:FuzzEveryParserIsSplitInvariant/c3d30cc4",
+"fuzz:FuzzEveryParserIsSplitInvariant/c94946ef",
+"fuzz:FuzzEveryParserIsSplitInvariant/rapid-sm",
+"fuzz:FuzzEveryParserIsSplitInvariant/rapid-sm",
+"fuzz:FuzzEveryParserIsSplitInvariant/rapid-so",
+"fuzz:FuzzFlowIsSplitInvariant/1245a13c",
+"fuzz:FuzzFlowIsSplitInvariant/191f0c86",
+"fuzz:FuzzFlowIsSplitInvariant/1e0868d3",
+"fuzz:FuzzFlowIsSplitInvariant/45fb2359",
+"fuzz:FuzzFlowIsSplitInvariant/518918fb",
+"fuzz:FuzzFlowIsSplitInvariant/59d6b13c",
+"fuzz:FuzzFlowIsSplitInvariant/64827bb3",
+"fuzz:FuzzFlowIsSplitInvariant/67472fdf",
+"fuzz:FuzzInspectorIsSplitInvariant/1763f322",
+"fuzz:FuzzInspectorIsSplitInvariant/4694c144",
+"fuzz:FuzzInspectorIsSplitInvariant/6a1504c1",
+"fuzz:FuzzInspectorIsSplitInvariant/8d3aadca",
+"fuzz:FuzzInspectorIsSplitInvariant/9314bb50",
+"fuzz:FuzzInspectorIsSplitInvariant/94a6838c",
+"fuzz:FuzzInspectorIsSplitInvariant/b70032c2",
+"fuzz:FuzzInspectorIsSplitInvariant/ba08ad1a",
+"fuzz:FuzzInspectorIsSplitInvariant/rapid-mq",
+"fuzz:FuzzInspectorNeverPanics/8088a95f"
+],
+"kinds": [
+{
+"Max": 600,
+"Name": "tls",
+"Rate": 60
+},
+{
+"Max": 300,
+"Name": "http1",
+"Rate": 25
+},
+{
+"Max": 300,
+"Name": "ssh",
+"Rate": 20
+},
+{
+"Max": 200,
+"Name": "inspect",
+"Rate": 10
+},
+{
+"Max": 300,
+"Name": "adverse",
+"Rate": 10
+},
+{
+"Max": 100,
+"Name": "quiet",
+"Rate": 2
+},
+{
+"Max": 40,
+"Name": "blocked",
+"Rate": 0.5
+}
+],
+"start_unix": 1795764579
+},
+{
+"counts": {
+"adverse": {
+"ok": 299
+},
+"blocked": {
+"ok": 4
+},
+"http1": {
+"ok": 748
+},
+"inspect": {
+"ok": 299
+},
+"quiet": {
+"ok": 29
+},
+"ssh": {
+"ok": 598
+},
+"tls": {
+"ok": 1795
+}
+},
+"final": false,
+"t_unix": 1795764609
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795764639
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1800
+}
+},
+"final": false,
+"t_unix": 1795764669
+},
+{
+"counts": {
+"adverse": {
+"ok": 300
+},
+"blocked": {
+"ok": 15
+},
+"http1": {
+"ok": 750
+},
+"inspect": {
+"ok": 300
+},
+"quiet": {
+"ok": 60
+},
+"ssh": {
+"ok": 600
+},
+"tls": {
+"ok": 1799
+}
+},
+"final": false,
+"t_unix": 1795764699
+},
+{
+"counts": {
+"adverse": {
+"ok": 1
+},
+"blocked": {
+"ok": 11
+},
+"http1": {
+"ok": 1
+},
+"inspect": {
+"ok": 1
+},
+"quiet": {
+"ok": 31
+},
+"ssh": {
+"ok": 1
+},
+"tls": {
+"ok": 1
+}
+},
+"final": true,
+"t_unix": 1795764719
+}
+]

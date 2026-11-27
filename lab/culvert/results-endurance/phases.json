@@ -1,0 +1,315 @@
+{
+ "events": [
+  {
+   "binary": "culvert-lab-v8",
+   "name": "proc_start",
+   "proc": "p1",
+   "setup": {
+    "auth_rule": 200,
+    "lab-bypass-rest": 200,
+    "lab-inspect-googleapis": 200,
+    "login": 200,
+    "setup": 200
+   },
+   "t_unix": 1795761785.109
+  },
+  {
+   "goroutines": [
+    29,
+    29,
+    29
+   ],
+   "heap_live": [
+    6515328,
+    6513928,
+    6483928
+   ],
+   "name": "baseline",
+   "t_unix": 1795761860.156
+  },
+  {
+   "name": "load_start",
+   "t_unix": 1795761860.156
+  },
+  {
+   "action": "restart",
+   "name": "proc_stop",
+   "proc": "p1",
+   "rc": 0,
+   "t_unix": 1795762476.519
+  },
+  {
+   "binary": "culvert-lab-v8",
+   "downtime_s": 1.74,
+   "name": "proc_start",
+   "proc": "p2",
+   "setup": {
+    "auth_rule": 200,
+    "lab-bypass-rest": 200,
+    "lab-inspect-googleapis": 200,
+    "login": 200,
+    "setup": 200
+   },
+   "t_unix": 1795762477.031
+  },
+  {
+   "action": "content_change",
+   "name": "proc_stop",
+   "proc": "p2",
+   "rc": 0,
+   "t_unix": 1795763076.79
+  },
+  {
+   "binary": "culvert-lab-v9",
+   "downtime_s": 1.98,
+   "name": "proc_start",
+   "proc": "p3",
+   "setup": {
+    "auth_rule": 200,
+    "lab-bypass-rest": 200,
+    "lab-inspect-googleapis": 200,
+    "login": 200,
+    "setup": 200
+   },
+   "t_unix": 1795763077.302
+  },
+  {
+   "driver_rc": 0,
+   "load_s": 1820.7,
+   "name": "load_stop",
+   "t_unix": 1795763680.814
+  }
+ ],
+ "manifest": {
+  "actions": [
+   {
+    "at_s": 600,
+    "binary": "culvert-lab-v8",
+    "name": "restart",
+    "proc": "p2"
+   },
+   {
+    "at_s": 1200,
+    "binary": "culvert-lab-v9",
+    "name": "content_change",
+    "proc": "p3"
+   }
+  ],
+  "binary_after": "culvert-lab-v9",
+  "binary_before": "culvert-lab-v8",
+  "corpus_dirs": [
+   "/home/user/protocol-detector/go/detector/testdata/fuzz",
+   "/home/user/protocol-detector/go/internal/engine/testdata/fuzz"
+  ],
+  "expected_release": {
+   "culvert-lab-v8": "content=2026.11.8 child=2026.11.1",
+   "culvert-lab-v9": "content=2026.11.9 child=2026.11.1"
+  },
+  "holds_s": {
+   "blocked": 20,
+   "observation_window": 10,
+   "quiet": 15
+  },
+  "idle_s": 60,
+  "load_s": 1800,
+  "mix_new_tunnels_per_s": {
+   "adverse": 10,
+   "blocked": 0.5,
+   "http1": 25,
+   "inspect": 10,
+   "quiet": 2,
+   "ssh": 20,
+   "tls": 60,
+   "total": 127.5
+  },
+  "post_s": 180,
+  "sample_s": 30,
+  "task": "PRO-540",
+  "thresholds": {
+   "recovery_pct": 10,
+   "recovery_within_s": 60,
+   "steady_skip_s": 120,
+   "steady_slope_pct_per_min": 1.0
+  },
+  "written_before_the_run": "2026-11-27"
+ },
+ "procs": {
+  "p1": {
+   "binary": "culvert-lab-v8",
+   "log": {
+    "last_engine_stats": {
+     "active": 0,
+     "admitted": 70483,
+     "disabled": false,
+     "panics": 0,
+     "refused": 0
+    },
+    "outcomes": {
+     "client:budget_exhausted//engine": 574,
+     "client:identified/http/engine": 15133,
+     "client:identified/ssh/engine": 12270,
+     "client:identified/tls/engine": 35989,
+     "client:incomplete//closed": 294,
+     "client:incomplete//ended": 1640,
+     "client:incomplete//expired": 906,
+     "client:malformed//engine": 273,
+     "client:outside_profile/diameter/outside_profile": 136,
+     "client:outside_profile/git/outside_profile": 272,
+     "client:outside_profile/kerberos/outside_profile": 408,
+     "client:outside_profile/ldap/outside_profile": 272,
+     "client:outside_profile/memcached/outside_profile": 137,
+     "client:outside_profile/mqtt/outside_profile": 272,
+     "client:outside_profile/onc-rpc/outside_profile": 136,
+     "client:outside_profile/postgresql/outside_profile": 136,
+     "client:outside_profile/sip/outside_profile": 272,
+     "client:outside_profile/smb1/outside_profile": 136,
+     "client:outside_profile/smb2/outside_profile": 680,
+     "client:outside_profile/stun/outside_profile": 137,
+     "client:unknown//engine": 410,
+     "server:identified/http/engine": 14997,
+     "server:identified/ssh/engine": 11998,
+     "server:identified/tls/engine": 35989,
+     "server:incomplete//closed": 447,
+     "server:incomplete//ended": 5999,
+     "server:incomplete//expired": 1053
+    },
+    "panic_lines": 0,
+    "records": 70483,
+    "refused": 0,
+    "signals": {
+     "host_mismatch": 136
+    }
+   },
+   "rc": 0,
+   "t_ready": 1795761785.108624,
+   "t_start": 1795761784.5986009,
+   "t_stop": 1795762475.2953966
+  },
+  "p2": {
+   "binary": "culvert-lab-v8",
+   "log": {
+    "last_engine_stats": {
+     "active": 0,
+     "admitted": 68572,
+     "disabled": false,
+     "panics": 0,
+     "refused": 0
+    },
+    "outcomes": {
+     "client:budget_exhausted//engine": 557,
+     "client:identified/http/engine": 14723,
+     "client:identified/ssh/engine": 11937,
+     "client:identified/tls/engine": 35014,
+     "client:incomplete//closed": 279,
+     "client:incomplete//ended": 1594,
+     "client:incomplete//expired": 889,
+     "client:malformed//engine": 265,
+     "client:outside_profile/diameter/outside_profile": 133,
+     "client:outside_profile/git/outside_profile": 266,
+     "client:outside_profile/kerberos/outside_profile": 397,
+     "client:outside_profile/ldap/outside_profile": 264,
+     "client:outside_profile/memcached/outside_profile": 133,
+     "client:outside_profile/mqtt/outside_profile": 265,
+     "client:outside_profile/onc-rpc/outside_profile": 133,
+     "client:outside_profile/postgresql/outside_profile": 132,
+     "client:outside_profile/sip/outside_profile": 266,
+     "client:outside_profile/smb1/outside_profile": 133,
+     "client:outside_profile/smb2/outside_profile": 662,
+     "client:outside_profile/stun/outside_profile": 133,
+     "client:unknown//engine": 397,
+     "server:identified/http/engine": 14590,
+     "server:identified/ssh/engine": 11672,
+     "server:identified/tls/engine": 35014,
+     "server:incomplete//closed": 432,
+     "server:incomplete//ended": 5836,
+     "server:incomplete//expired": 1028
+    },
+    "panic_lines": 0,
+    "records": 68572,
+    "refused": 0,
+    "signals": {
+     "host_mismatch": 133
+    }
+   },
+   "rc": 0,
+   "t_ready": 1795762477.0310154,
+   "t_start": 1795762476.519169,
+   "t_stop": 1795763075.3231552
+  },
+  "p3": {
+   "binary": "culvert-lab-v9",
+   "log": {
+    "last_engine_stats": {
+     "active": 0,
+     "admitted": 68524,
+     "disabled": false,
+     "panics": 0,
+     "refused": 0
+    },
+    "outcomes": {
+     "client:budget_exhausted//engine": 556,
+     "client:identified/http/engine": 14713,
+     "client:identified/ssh/engine": 11928,
+     "client:identified/tls/engine": 34990,
+     "client:incomplete//closed": 303,
+     "client:incomplete//ended": 1588,
+     "client:incomplete//expired": 864,
+     "client:malformed//engine": 266,
+     "client:outside_profile/diameter/outside_profile": 133,
+     "client:outside_profile/git/outside_profile": 264,
+     "client:outside_profile/kerberos/outside_profile": 399,
+     "client:outside_profile/ldap/outside_profile": 266,
+     "client:outside_profile/memcached/outside_profile": 132,
+     "client:outside_profile/mqtt/outside_profile": 265,
+     "client:outside_profile/onc-rpc/outside_profile": 132,
+     "client:outside_profile/postgresql/outside_profile": 133,
+     "client:outside_profile/sip/outside_profile": 264,
+     "client:outside_profile/smb1/outside_profile": 133,
+     "client:outside_profile/smb2/outside_profile": 664,
+     "client:outside_profile/stun/outside_profile": 132,
+     "client:unknown//engine": 399,
+     "server:identified/http/engine": 14580,
+     "server:identified/ssh/engine": 11663,
+     "server:identified/tls/engine": 34990,
+     "server:incomplete//closed": 445,
+     "server:incomplete//ended": 5832,
+     "server:incomplete//expired": 1014
+    },
+    "panic_lines": 0,
+    "records": 68524,
+    "refused": 0,
+    "signals": {
+     "host_mismatch": 133
+    }
+   },
+   "rc": 0,
+   "t_ready": 1795763077.301578,
+   "t_start": 1795763076.790036,
+   "t_stop": 1795763862.4530072
+  },
+  "ref-v8": {
+   "binary": "culvert-lab-v8",
+   "log": {
+    "last_engine_stats": null,
+    "outcomes": {},
+    "panic_lines": 0,
+    "records": 0,
+    "refused": 0,
+    "signals": {}
+   },
+   "rc": 0
+  },
+  "ref-v9": {
+   "binary": "culvert-lab-v9",
+   "log": {
+    "last_engine_stats": null,
+    "outcomes": {},
+    "panic_lines": 0,
+    "records": 0,
+    "refused": 0,
+    "signals": {}
+   },
+   "rc": 0
+  }
+ }
+}
