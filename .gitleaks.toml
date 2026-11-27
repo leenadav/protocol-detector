@@ -18,6 +18,10 @@ regexes = [
   # The SSH post-quantum key exchange name in the PROTOCOLS.md v0.58 table ("key exchange names:
   # sntrup761x25519") matches generic-api-key; exact token only, so a real key next to it still flags.
   '''^sntrup761x25519$''',
+  # PRO-403: the SR-8 Go test (go/internal/engine/security_a_test.go, commit 43f37e2) builds an LDAP simple bind
+  # with this synthetic password to prove it never reaches an observation; generic-api-key reads `secret := ...`
+  # as a key. Exact token only, so a real key or password beside it still flags.
+  '''^s3cr3t-placeholder$''',
 ]
 
 # Go table tests carry synthetic HTTP/1 messages as hex (go/internal/protocols/textroute/boundary_test.go on
