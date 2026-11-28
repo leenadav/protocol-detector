@@ -215,9 +215,7 @@ func normalizeHost(h string) (string, bool) {
 			break
 		}
 	}
-	if strings.HasSuffix(h, ".") {
-		h = h[:len(h)-1]
-	}
+	h = strings.TrimSuffix(h, ".")
 	if h == "" || len(h) > maxHostBytes || strings.IndexByte(h, '.') < 0 {
 		return "", false
 	}
@@ -752,7 +750,7 @@ func (s *Set) Evaluate(req *Request) Result {
 	var listBuf [candidateStack][]int
 	lists := s.candidates(host, listBuf[:0])
 	var headBuf [candidateStack]int
-	heads := headBuf[:0]
+	var heads []int
 	if len(lists) <= len(headBuf) {
 		heads = headBuf[:len(lists)]
 	} else {
