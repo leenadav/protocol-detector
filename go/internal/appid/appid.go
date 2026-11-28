@@ -36,6 +36,24 @@ type Verdict struct {
 	// internal/childapp, PRO-492) refined it; nil on every reference path and never serialized. Policy
 	// "containers" matches it so a child never moves a request out from under its host's owner (SEC-CHILD-2).
 	HostOwner *string
+	// ChildStatus is set only by the child-app classifier (internal/childapp, Go only): whether the request's
+	// function was decided. "" on every other verdict, so the reference paths never carry it.
+	ChildStatus string
+}
+
+// Child-app statuses (internal/childapp, Go only). ChildUndetermined is the fail-closed status: a child rule
+// could apply to the request but it was refused, capped or ambiguous, so the function is unknown. A policy that
+// denies a child denies ChildUndetermined for its container too (policy key child_status).
+const (
+	ChildMatched       = "matched"        // a child rule decided the function
+	ChildNone          = "none"           // every candidate rule was evaluated on a normalized request; none applies
+	ChildUndetermined  = "undetermined"   // refused, capped or ambiguous: a child may apply; fail closed
+	ChildNotApplicable = "not_applicable" // no catalog application, so no child can be named
+)
+
+// ChildStatuses lists the child-app status vocabulary.
+func ChildStatuses() []string {
+	return []string{ChildMatched, ChildNone, ChildUndetermined, ChildNotApplicable}
 }
 
 // Identified reports whether the verdict names an application rather than an outcome.

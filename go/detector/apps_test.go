@@ -87,6 +87,9 @@ func TestAppVerdictMatchesItsSchema(t *testing.T) {
 	if got := enumOf(t, props["reasons"].(map[string]interface{})["items"]); !reflect.DeepEqual(got, sorted(AppReasons())) {
 		t.Errorf("reasons %v vs %v", got, AppReasons())
 	}
+	if got := enumOf(t, props["child_status"]); !reflect.DeepEqual(got, sorted(AppChildStatuses())) {
+		t.Errorf("child statuses %v vs %v", got, AppChildStatuses())
+	}
 	if got := enumOf(t, props["limit"]); !reflect.DeepEqual(got, sorted(append(AppLimits(), ""))) {
 		t.Errorf("limits %v vs %v", got, AppLimits())
 	}
@@ -108,4 +111,44 @@ func TestAppClassifierIsSafeForConcurrentUse(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+// TestMayBeFailsClosedOnUndetermined (SEC-CHILD-1): a deny entry for a child also holds when the request on one of
+// the child's hosts was refused, capped or ambiguous; Matches alone does not.
+func TestMayBeFailsClosedOnUndetermined(t *testing.T) {
+	c, err := NewAppClassifier(AppLimitsConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	upload := HTTPRequest{Host: "gmail.googleapis.com", Method: "POST", Path: "/upload/gmail/v1/users/me/messages?uploadType=media", ContentType: "message/rfc822"}
+	if v := c.Classify(upload); v.App != "gmail-uploading" || v.ChildStatus != "matched" || !c.MayBe(v, "gmail-uploading") {
+		t.Fatalf("canonical upload: %+v", v)
+	}
+	// SEC-CHILD-3: the upload rule no longer reads uploadType, so repeating it is still the upload.
+	for _, path := range []string{"/upl%6fad/gmail/v1/users/me/messages?uploadType=media", "/upload/gmail/v1/users/me/messages?uploadType=media&uploadType=media"} {
+		bypass := upload
+		bypass.Path = path
+		if v := c.Classify(bypass); v.App != "gmail-uploading" {
+			t.Fatalf("%s: %+v", path, v)
+		}
+	}
+	for _, path := range []string{"/upload//gmail/v1/users/me/messages?uploadType=media"} {
+		bypass := upload
+		bypass.Path = path
+		v := c.Classify(bypass)
+		if v.ChildStatus != "undetermined" || v.Matches("gmail-uploading") || !c.MayBe(v, "gmail-uploading") {
+			t.Fatalf("%s: %+v (MayBe %v)", path, v, c.MayBe(v, "gmail-uploading"))
+		}
+		if c.MayBe(v, "dropbox-uploading") || c.MayBe(v, "no-such-child") {
+			t.Fatalf("%s: MayBe holds for a child of another owner", path)
+		}
+	}
+	// An ambiguous request: Drive downloads read alt=media, and a repeated alt is undetermined.
+	drive := HTTPRequest{Host: "www.googleapis.com", Method: "GET", Path: "/drive/v3/files/f1?alt=media&alt=media"}
+	if v := c.Classify(drive); v.ChildStatus != "undetermined" || v.Matches("google-drive-downloading") || !c.MayBe(v, "google-drive-downloading") || c.MayBe(v, "dropbox-uploading") {
+		t.Fatalf("repeated alt: %+v (MayBe %v)", v, c.MayBe(v, "google-drive-downloading"))
+	}
+	if v := c.Classify(HTTPRequest{Host: "gmail.googleapis.com", Method: "GET", Path: "/gmail/v1/users/me/profile"}); v.ChildStatus != "none" || c.MayBe(v, "gmail-uploading") {
+		t.Fatalf("decided request: %+v", v)
+	}
 }
