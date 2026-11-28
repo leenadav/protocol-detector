@@ -1,0 +1,33 @@
+goos: linux
+goarch: amd64
+pkg: github.com/leenadav/protocol-detector/go/detector
+cpu: Intel(R) Xeon(R) Processor @ 2.30GHz
+                             │     main     │               PRO-596               │
+                             │    sec/op    │    sec/op     vs base               │
+Flow/tls-classical-4           11.40µ ±  5%   11.58µ ± 10%        ~ (p=0.505 n=8)
+FlowBytewise/tls-classical-4   43.09µ ±  6%   50.10µ ±  8%  +16.28% (p=0.002 n=8)
+Flow/tls-hybrid-4              14.28µ ±  8%   12.29µ ± 11%  -13.90% (p=0.007 n=8)
+FlowBytewise/tls-hybrid-4      167.4µ ± 10%   218.1µ ± 14%  +30.33% (p=0.000 n=8)
+geomean                        32.92µ         35.32µ         +7.28%
+
+                     │     main     │               PRO-596                │
+                     │     B/s      │      B/s       vs base               │
+Flow/tls-classical-4   83.73Mi ± 6%   82.70Mi ± 10%        ~ (p=0.645 n=8)
+Flow/tls-hybrid-4      222.0Mi ± 8%   257.0Mi ± 13%  +15.79% (p=0.007 n=8)
+geomean                136.3Mi        145.8Mi         +6.94%
+
+                             │     main     │              PRO-596               │
+                             │     B/op     │     B/op      vs base              │
+Flow/tls-classical-4           11.81Ki ± 0%   11.74Ki ± 0%  -0.59% (p=0.000 n=8)
+FlowBytewise/tls-classical-4   12.43Ki ± 0%   12.36Ki ± 0%  -0.59% (p=0.000 n=8)
+Flow/tls-hybrid-4              14.17Ki ± 0%   14.09Ki ± 0%  -0.52% (p=0.000 n=8)
+FlowBytewise/tls-hybrid-4      22.89Ki ± 0%   22.85Ki ± 0%  -0.16% (p=0.050 n=8)
+geomean                        14.77Ki        14.70Ki       -0.46%
+
+                             │    main     │             PRO-596              │
+                             │  allocs/op  │ allocs/op   vs base              │
+Flow/tls-classical-4            92.00 ± 0%   89.00 ± 0%  -3.26% (p=0.000 n=8)
+FlowBytewise/tls-classical-4   100.00 ± 0%   97.00 ± 0%  -3.00% (p=0.000 n=8)
+Flow/tls-hybrid-4               93.00 ± 0%   90.00 ± 0%  -3.23% (p=0.000 n=8)
+FlowBytewise/tls-hybrid-4       114.0 ± 0%   111.0 ± 0%  -2.63% (p=0.000 n=8)
+geomean                         99.38        96.37       -3.03%

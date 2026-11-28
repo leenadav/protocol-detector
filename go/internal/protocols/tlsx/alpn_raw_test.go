@@ -65,3 +65,50 @@ func TestALPNCodeReadsRawBytes(t *testing.T) {
 		}
 	}
 }
+
+// clientHelloOffers is a ClientHello body (no record or handshake header) offering each value, in order.
+func clientHelloOffers(offers ...string) []byte {
+	var list []byte
+	for _, o := range offers {
+		list = append(append(list, byte(len(o))), o...)
+	}
+	exts := ext(16, append([]byte{byte(len(list) >> 8), byte(len(list))}, list...)...)
+	body := append([]byte{3, 3}, make([]byte, 32)...)
+	body = append(body, 0, 0, 2, 0x13, 0x01, 1, 0, byte(len(exts)>>8), byte(len(exts)))
+	return append(body, exts...)
+}
+
+// PRO-596: JA4 reads only the first offer, so only the first offer's wire bytes are kept, as one owned copy (the
+// info outlives the caller's buffer), and a further offer costs no wire-byte copy. PRO-394 copied every offer
+// into a growing [][]byte, which cost three allocations more per TLS flow.
+func TestALPNFirstOfferIsTheOnlyWireCopy(t *testing.T) {
+	body := clientHelloOffers("h2", "http/1.1")
+	offer, err := tlsx.ParseClientHello(body, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(offer.Info.ALPNFirst) != "h2" || strings.Join(offer.Info.ALPN, ",") != "h2,http/1.1" {
+		t.Fatalf("ALPN %q, first offer %q", offer.Info.ALPN, offer.Info.ALPNFirst)
+	}
+	for i := range body {
+		body[i] = 'x' // the caller reuses its buffer: the kept bytes must not change with it
+	}
+	if string(offer.Info.ALPNFirst) != "h2" {
+		t.Fatalf("ALPNFirst aliases the caller's buffer: %q", offer.Info.ALPNFirst)
+	}
+	if got := fingerprint.JA4(offer.Info, "t"); !strings.HasPrefix(got, "t12i0101h2_") {
+		t.Fatalf("JA4 %s", got)
+	}
+	one, two := clientHelloOffers("h2"), clientHelloOffers("h2", "http/1.1")
+	parse := func(b []byte) func() {
+		return func() {
+			if _, err := tlsx.ParseClientHello(b, true); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	// A second offer adds its display string and the growth of the string slice, and nothing else.
+	if extra := testing.AllocsPerRun(100, parse(two)) - testing.AllocsPerRun(100, parse(one)); extra > 2 {
+		t.Fatalf("a second ALPN offer costs %.0f allocations, want at most 2", extra)
+	}
+}

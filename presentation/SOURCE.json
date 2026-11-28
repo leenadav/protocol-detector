@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "a8113304fa83d3b1717bd20031a2ab50ffc19fe0",
-  "branch": "claude/engine-PRO-533-sec-child-8",
-  "build_digest": "820d0a21fd2ad341782d3ec2c036ad227ecc88a1103d3667c66047373d88f2db",
+  "commit": "4499adf6fd627dcf4aa04d55a9233887c8781d2f",
+  "branch": "claude/engine-PRO-596-tls-bench-baseline",
+  "build_digest": "d3611e8e6be552781820a005e3062c1bcd9aab280315719e5d891d80e805bcd8",
   "components": {
     "engine": {
       "root": "go",
@@ -380,7 +380,7 @@
     {
       "path": "go/internal/protocols/fingerprint/fingerprint.go",
       "component": "engine",
-      "sha256": "cedbc024080acfe3d7b4753252b1b2fa132bb03e876bfe5249390d27da3be568"
+      "sha256": "eb36c3eeb2472f2393924f3dcc2d8b2e9d99d6e13ad8fef90ed859e10375b730"
     },
     {
       "path": "go/internal/protocols/framed/bson.go",
@@ -585,7 +585,7 @@
     {
       "path": "go/internal/protocols/tlsx/tls.go",
       "component": "engine",
-      "sha256": "d06949e2484670b2e5c8ead8d8ec4c24c3a755166c9b1632b1fee8a8f9a038e5"
+      "sha256": "610704c676fc063425c7c7fe1f3b4796a2b53d375bca07c234bdc23743dc936c"
     },
     {
       "path": "go/internal/protocols/x509x/x509.go",

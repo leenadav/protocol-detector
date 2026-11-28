@@ -1,6 +1,7 @@
 package detector
 
 import (
+	"crypto/tls"
 	"testing"
 )
 
@@ -17,13 +18,22 @@ type flowCase struct {
 	ceiling        float64 // allocations per flow that the gate allows
 }
 
+// PRO-596: the TLS flow is measured twice, with the key exchange pinned, because the two cost different amounts and
+// a library default must not silently move the benchmark from one to the other. tls-classical offers and selects
+// X25519 only (a 32-byte share each way). tls-hybrid offers X25519MLKEM768 and X25519 and selects the hybrid group,
+// as Go's crypto/tls and current browsers do by default: the ClientHello carries a 1,216-byte share and the
+// ServerHello a 1,120-byte one, and since PRO-260 the engine parses that ServerHello fully instead of refusing the
+// group. The single "tls" case before PRO-596 was the library default, so it became hybrid when PRO-260 landed.
 func flowCases(t testing.TB) []flowCase {
-	hello, reply := tlsFlights(t, "bench.example.test", []string{"h2", "http/1.1"}, nil)
+	alpn := []string{"h2", "http/1.1"}
+	classicHello, classicReply := tlsFlights(t, "bench.example.test", alpn, []tls.CurveID{tls.X25519})
+	hybridHello, hybridReply := tlsFlights(t, "bench.example.test", alpn, []tls.CurveID{tls.X25519MLKEM768, tls.X25519})
 	return []flowCase{
-		{"tls", hello, reply, 110},              // 89 measured (96 under -race), 191 before PRO-148
-		{"http", httpRequest, httpResponse, 95}, // 76 (84), 128 before
-		{"ssh", sshBanner, sshBanner, 65},       // 53 (55), 89 before
-		{"unknown", junk, junk, 15},             // 11 (11), 15 before
+		{"tls-classical", classicHello, classicReply, 105}, // 89 measured (96 under -race), 191 before PRO-148
+		{"tls-hybrid", hybridHello, hybridReply, 105},      // 90 measured (97 under -race)
+		{"http", httpRequest, httpResponse, 95},            // 76 (84), 128 before
+		{"ssh", sshBanner, sshBanner, 65},                  // 53 (55), 89 before
+		{"unknown", junk, junk, 15},                        // 11 (11), 15 before
 	}
 }
 
@@ -75,7 +85,13 @@ func BenchmarkFlowBytewise(b *testing.B) {
 
 func TestFlowAllocationBudget(t *testing.T) {
 	e := mustEngine(t, allFamilies())
-	for _, c := range flowCases(t) {
+	cases := flowCases(t)
+	// The two TLS cases must stay what their names say: the hybrid flights carry the ML-KEM shares (over 2 KB
+	// more than the classical flights), so a library change of defaults cannot merge them again unnoticed.
+	if grow := len(cases[1].client) + len(cases[1].server) - len(cases[0].client) - len(cases[0].server); grow < 2048 {
+		t.Fatalf("tls-hybrid flights are only %d bytes larger than tls-classical: the hybrid group was not negotiated", grow)
+	}
+	for _, c := range cases {
 		if s := runFlow(e, c); c.name != "unknown" && s.Direction(ClientToServer).Outcome != OutcomeIdentified {
 			t.Fatalf("%s: the benchmark flow is not identified: %+v", c.name, s.Direction(ClientToServer))
 		}

@@ -119,7 +119,7 @@ type helloFields struct {
 	hostname      string
 	hasHost       bool
 	alpn          []string
-	alpnRaw       [][]byte // the offered wire bytes, for the fingerprint only (SEC-FP-1)
+	alpnFirst     []byte // an owned copy of the first offer's wire bytes, for the fingerprint only (SEC-FP-1)
 	legacyVersion int
 	supported     []int
 	ech           string
@@ -308,7 +308,6 @@ func parseHello(body []byte, collect bool) (*helloFields, error) {
 			}
 			offers := &reader{data: list}
 			var protocols []string
-			var raw [][]byte
 			for offers.pos < len(offers.data) {
 				p, err := offers.vector(1)
 				if err != nil {
@@ -317,14 +316,18 @@ func parseHello(body []byte, collect bool) (*helloFields, error) {
 				if len(p) == 0 || len(protocols) >= 64 {
 					return nil, parsing.Malformed("Invalid ALPN offer or offer-count limit")
 				}
+				if collect && len(protocols) == 0 {
+					// JA4 reads only the first offer. It is copied, not aliased, because the ClientHello info can
+					// outlive the handshake buffer (ClientHelloOffer.Info); PRO-596: one copy, not one per offer.
+					out.alpnFirst = append([]byte(nil), p...)
+				}
 				protocols = append(protocols, alpnText(p))
-				raw = append(raw, append([]byte(nil), p...))
 			}
-			out.alpn, out.alpnRaw = protocols, raw
+			out.alpn = protocols
 		}
 	}
 	if collect {
-		out.info.ALPN, out.info.ALPNRaw = out.alpn, out.alpnRaw
+		out.info.ALPN, out.info.ALPNFirst = out.alpn, out.alpnFirst
 	}
 	return out, nil
 }
@@ -703,7 +706,7 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 		return parsing.Row{Field: field, Value: value, Provenance: source, Strength: strength}
 	}
 	rows := []parsing.Row{rowsOf("tls_handshake", source, "structural")}
-	var selectedRaw [][]byte // TLS 1.2 selected ALPN wire bytes; a TLS 1.3 ServerHello carries none
+	var selectedRaw []byte // TLS 1.2 selected ALPN wire bytes (a TLS 1.3 ServerHello carries none); aliases body
 	version := "1.2"
 	if tls13 {
 		if !bytes.Equal(index[43], []byte{3, 4}) {
@@ -855,7 +858,9 @@ func parseServerHello(body []byte, opts Options, recordVersions, recordRemaining
 					return nil, "", "", parsing.Malformed("Empty server ALPN selection")
 				}
 				rows = append(rows, rowsOf("selected_alpn", alpnText(name), "asserted"))
-				selectedRaw = [][]byte{append([]byte(nil), name...)} // the fingerprint reads wire bytes (SEC-FP-1)
+				// The fingerprint reads wire bytes (SEC-FP-1). JA4S reads them below, before this call returns, so the
+				// slice aliases body instead of being copied (PRO-596).
+				selectedRaw = name
 			default:
 				return nil, "", "", parsing.Unsupported("TLS 1.2 ServerHello extension outside supported profile")
 			}

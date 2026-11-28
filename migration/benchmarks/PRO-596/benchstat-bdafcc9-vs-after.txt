@@ -1,0 +1,20 @@
+goos: linux
+goarch: amd64
+pkg: github.com/leenadav/protocol-detector/go/detector
+cpu: Intel(R) Xeon(R) Processor @ 2.30GHz
+                             │   bdafcc9    │               PRO-596                │
+                             │     B/op     │     B/op       vs base               │
+Flow/tls-classical-4           11.59Ki ± 0%    11.74Ki ± 0%   +1.31% (p=0.000 n=8)
+FlowBytewise/tls-classical-4   12.23Ki ± 0%    12.36Ki ± 0%   +1.09% (p=0.000 n=8)
+Flow/tls-hybrid-4              9.801Ki ± 0%   14.093Ki ± 0%  +43.79% (p=0.000 n=8)
+FlowBytewise/tls-hybrid-4      18.53Ki ± 0%    22.85Ki ± 0%  +23.32% (p=0.000 n=8)
+geomean                        12.67Ki         14.70Ki       +16.09%
+
+                             │  bdafcc9   │               PRO-596                │
+                             │ allocs/op  │  allocs/op   vs base                 │
+Flow/tls-classical-4           89.00 ± 0%    89.00 ± 0%        ~ (p=1.000 n=8) ¹
+FlowBytewise/tls-classical-4   97.00 ± 0%    97.00 ± 0%        ~ (p=1.000 n=8) ¹
+Flow/tls-hybrid-4              67.00 ± 0%    90.00 ± 0%  +34.33% (p=0.000 n=8)
+FlowBytewise/tls-hybrid-4      88.00 ± 0%   111.00 ± 0%  +26.14% (p=0.000 n=8)
+geomean                        84.47         96.37       +14.09%
+¹ all samples are equal
