@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "a8113304fa83d3b1717bd20031a2ab50ffc19fe0",
-  "branch": "claude/engine-PRO-533-sec-child-8",
-  "build_digest": "820d0a21fd2ad341782d3ec2c036ad227ecc88a1103d3667c66047373d88f2db",
+  "commit": "96105114dab6359741cb59ec70c81eceab261121",
+  "branch": "claude/engine-PRO-521-mutation-fixtures",
+  "build_digest": "c490879a9c87407f0ad05e136c82fc590c6b0fb0f4da40d6ad53f52fc927b155",
   "components": {
     "engine": {
       "root": "go",
@@ -355,7 +355,7 @@
     {
       "path": "go/internal/parsertest/parsertest.go",
       "component": "engine",
-      "sha256": "69436e18eb92005cbdacada4260541de9c91576eb11b30c2af1fa27c6871b065"
+      "sha256": "85aad28abbbab3dd3a84fb92d8ce87a563fb2c705f621f80a8ddd5e7be7a55a1"
     },
     {
       "path": "go/internal/parsing/credit.go",

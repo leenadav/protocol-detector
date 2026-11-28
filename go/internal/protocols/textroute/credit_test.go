@@ -12,7 +12,7 @@ import (
 // the flow's Credit. Over every fixture stream and several splits, nothing they retain grows uncharged, and
 // with tight allowances a refused growth ends the run explicitly and never exceeds the allowance.
 func TestRetainedBuffersGrowOnlyFromTheCredit(t *testing.T) {
-	streams, err := parsertest.Streams(fixtures)
+	streams, err := parsertest.Streams(parsertest.Cases(fixtures))
 	if err != nil {
 		t.Fatal(err)
 	}

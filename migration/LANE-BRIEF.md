@@ -253,8 +253,13 @@ PRO-590 on #181 (PRO-546): `81180398ef14c04031639ddf9261e31cbce0c068` merges #17
 
 The commits after it are documentation only: `1437060` (the packet), `a88d679`, `b8a3ee1`, `fa5cb2c` and this brief.
 
+PRO-521 (mutation fixtures path, against `main` `8296a26`): `7202d94db096c6e8d0602d512e42c6e4b98ae4cf` (parsertest.Cases, PROTODETECT_CASES in mutation.py) and the baseline and documentation commit after it.
+
 ## 7. Pitfalls learned
 
+- **A package test must not read outside `go/` by a relative path alone (PRO-521).** gremlins tests each mutant in
+  a copy of `go/`, so a missing `../../../../migration/...` file fails every mutant and reads as "killed" (a false
+  100%). Read the parity cases through `parsertest.Cases(rel)`; `mutation.py` sets `PROTODETECT_CASES`.
 - **An SR row's id is not its Go test's name (PRO-590).** `TestSR58RDPSecurityPosture`..`TestSR63ServerNameCatalog`
   verify SR-70..SR-75 since PRO-545 renumbered the duplicates; the names key `requirements.json.gz`, so renaming a
   test means re-recording its cases at `python-final`. Change the row id (and the lock), not the test name.

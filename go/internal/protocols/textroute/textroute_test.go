@@ -55,7 +55,7 @@ func TestRoutesAndHeaderRules(t *testing.T) {
 
 // Every stream fixture gives the same answer whole, byte by byte and in 7-byte pieces.
 func TestFixturesAreSplitInvariant(t *testing.T) {
-	streams, err := parsertest.Streams(fixtures)
+	streams, err := parsertest.Streams(parsertest.Cases(fixtures))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func TestFixturesAreSplitInvariant(t *testing.T) {
 
 // FuzzSplitInvariance: arbitrary bytes never panic, never over-consume, and give one answer however they are split.
 func FuzzSplitInvariance(f *testing.F) {
-	streams, err := parsertest.Streams(fixtures, "http", "ssh", "smtp", "sip", "rtsp", "imap", "pop3", "ftp", "nats")
+	streams, err := parsertest.Streams(parsertest.Cases(fixtures), "http", "ssh", "smtp", "sip", "rtsp", "imap", "pop3", "ftp", "nats")
 	if err != nil {
 		f.Fatal(err)
 	}

@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/leenadav/protocol-detector/go/internal/parity"
@@ -93,6 +94,21 @@ func Pieces(data []byte, cuts []int) [][]byte {
 		out = append(out, data[prev:])
 	}
 	return out
+}
+
+// CasesEnv names the environment variable that, when set, gives the path of the frozen parity cases
+// (migration/fixtures/cases.json) in place of a test's relative path. The nightly mutation run
+// (migration/mutation/mutation.py) sets it to the absolute path: gremlins tests each mutant in a temporary copy of
+// go/ alone, where a relative path up to migration/ does not exist, so every covered mutant failed to load the
+// fixtures and counted as killed (PRO-521).
+const CasesEnv = "PROTODETECT_CASES"
+
+// Cases returns the path a test reads the frozen parity cases from: the CasesEnv override when set, else rel.
+func Cases(rel string) string {
+	if p := os.Getenv(CasesEnv); p != "" {
+		return p
+	}
+	return rel
 }
 
 // Streams returns the whole byte stream of every unhinted stream case of the shared fixtures whose label is in
