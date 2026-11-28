@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "22c843e0f859a1aab73ef87757bed1f8f5b4e93b",
-  "branch": "claude/engine-PRO-512-sec-child-5",
-  "build_digest": "a3ae5498789382e92dc77a971ef65cb3656fc73eee226b85bdb91fb9799759e9",
+  "commit": "666bb64d28dfe11b8009728e8a1e53fec1f2dd3b",
+  "branch": "claude/engine-PRO-522-classify-allocs",
+  "build_digest": "58780839f91c131c848edc2af80db18ee2106ba67d9d3d33d5b05797f4dc7c23",
   "components": {
     "engine": {
       "root": "go",
@@ -80,7 +80,7 @@
     {
       "path": "go/detector/apps.go",
       "component": "engine",
-      "sha256": "9b17f991aabff16bb0135e43f61a311b42301e5981738f7b93a230f039b28fae"
+      "sha256": "fb0026aa19f71c96147c6fb2c517bd42786ad3ef0262710c0b4d1dfdf1bff2a6"
     },
     {
       "path": "go/detector/detector.go",
@@ -160,12 +160,12 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "ec68313992c44f30553181f3047fa49603ba1e3db0c6c936ba8accc1240e30d5"
+      "sha256": "0955526205d109b6235b38325b602642d4c4a92657cda9a4a2a753eba6549101"
     },
     {
       "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "c8b356e4596e4eebed743230d388d96f1774c02ec2bbde86c0bf734ed13320c6"
+      "sha256": "24b689f7a161f71cdc5defedfa5c67fd704e5190258f4547e61d56dbb7a65afc"
     },
     {
       "path": "go/internal/clock/clock.go",
