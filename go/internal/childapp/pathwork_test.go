@@ -195,7 +195,8 @@ func BenchmarkClassifyPatternCapLongPath(b *testing.B) {
 	}
 }
 
-// TestDotSegmentScanMatchesSplit pins canonicalPath's allocation-free dot-segment check to the split it replaced.
+// TestDotSegmentScanMatchesSplit pins normalizePath's allocation-free dot-segment check (canonicalPath before
+// SEC-CHILD-1) to the split it replaced.
 func TestDotSegmentScanMatchesSplit(t *testing.T) {
 	rng := rand.New(rand.NewSource(44))
 	parts := []string{"", "a", ".", "..", "...", ".a", "a.", "b..", "x"}
@@ -213,7 +214,7 @@ func TestDotSegmentScanMatchesSplit(t *testing.T) {
 				}
 			}
 		}
-		if _, got := canonicalPath(p); got != want {
+		if _, got := normalizePath(p); got != want {
 			t.Fatalf("%q: got %v, want %v", p, got, want)
 		}
 	}

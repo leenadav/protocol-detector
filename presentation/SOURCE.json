@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "937dc55283fb407e4b944ef932ccffa4a654b02b",
+  "commit": "96105114dab6359741cb59ec70c81eceab261121",
   "branch": "claude/engine-PRO-521-mutation-fixtures",
-  "build_digest": "a39080be455ecca60789833b65e54891c0c144b3dcba9780ba106e1738190fe0",
+  "build_digest": "c490879a9c87407f0ad05e136c82fc590c6b0fb0f4da40d6ad53f52fc927b155",
   "components": {
     "engine": {
       "root": "go",
@@ -80,7 +80,7 @@
     {
       "path": "go/detector/apps.go",
       "component": "engine",
-      "sha256": "9b17f991aabff16bb0135e43f61a311b42301e5981738f7b93a230f039b28fae"
+      "sha256": "e4d71670b5c9fdd1dbb1b291458392d3e7b37476c6a7a37f2033710b275f7087"
     },
     {
       "path": "go/detector/detector.go",
@@ -120,7 +120,7 @@
     {
       "path": "go/internal/appid/appid.go",
       "component": "engine",
-      "sha256": "d172e73768cc75bf23d02ac1b094622aee5be57f031ce10c418c74a8664b3661"
+      "sha256": "e42e82ab7f4c42d27000d6db2428b81559f9d17034d748f6f5193aebf6b3ccb7"
     },
     {
       "path": "go/internal/appid/layers.go",
@@ -160,12 +160,12 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "6b7a2e2f5b94198f89d04839c2e15829cfffe85b15341f60fa3401d8d3f3a790"
+      "sha256": "cd0902cc3fe14cb936a34d5fa64874b97616624ef42d5c39efad3e48c54cdb35"
     },
     {
       "path": "go/internal/childapp/load.go",
       "component": "engine",
-      "sha256": "6cd8c373c16ea7419bf33afa33e741144d2796b2b3338c0d605994db6de1a572"
+      "sha256": "0e5e68868136e7d0d3832b8b0efc79d8fb52d2665f4f210757ccbeb1720c6cf0"
     },
     {
       "path": "go/internal/clock/clock.go",
@@ -370,7 +370,7 @@
     {
       "path": "go/internal/policy/policy.go",
       "component": "engine",
-      "sha256": "2c074e3b7b359d4ebadca34e72469bb79b2db6c5a2d211601991414b9363ed74"
+      "sha256": "59b411b7a91ac156c6de400b075d45950eb455b27ba9c00509c45045325879e7"
     },
     {
       "path": "go/internal/protocols/dnsx/dns.go",
