@@ -166,7 +166,8 @@ An ordinary request costs `AppClassifier.Classify` one allocation, the verdict's
 matcher (`childapp.Set.Evaluate`) keeps one reason string, rule ids are built at load, header names and the query
 are scanned in place (no map), host and path checks do not split, and the candidate lists and the path segments sit
 in fixed stack arrays. Only an upper-case host, or an upper-case path that reaches a `path_case_insensitive` rule,
-pays for its lower-cased copy. `BenchmarkAppClassifierClassify` (the Culvert lab's three requests) went from 14, 7
+pays for its lower-cased copy, and only a percent escape in the path or in a query parameter a rule reads pays for
+its normalized copy (SEC-CHILD-1). `BenchmarkAppClassifierClassify` (the Culvert lab's three requests) went from 14, 7
 and 4 allocations (child, parent, unowned) to 1 each, and from about 2.2, 1.4 and 0.35 µs to 0.8, 0.7 and 0.17 µs;
 `TestAppClassifierAllocationCeilings` holds the library floor for Culvert's per-request benchgate (child ≤ 8,
 parent ≤ 4, unowned ≤ 2).
