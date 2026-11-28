@@ -354,7 +354,7 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 	if err != nil {
 		return err
 	}
-	r := &rule{child: c, index: j, order: len(s.rules)}
+	r := &rule{child: c, index: j, id: fmt.Sprintf("%s#%d", c.Name, j), order: len(s.rules)}
 	hosts, err := strs(doc["hosts"], MaxListEntries)
 	if err != nil {
 		return fmt.Errorf("hosts: %v", err)
@@ -458,7 +458,6 @@ func (s *Set) addRule(c *Child, j int, raw json.RawMessage, owners map[string]bo
 				}
 			}
 		}
-		s.foldCase = true
 	}
 	if raw, ok := doc["content_types"]; ok {
 		if r.contentTypes, err = strs(raw, MaxListEntries); err != nil {

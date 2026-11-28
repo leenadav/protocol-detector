@@ -18,7 +18,6 @@ package childapp
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -96,7 +95,8 @@ type Result struct {
 	HostOwner   string   // the catalog application owning the host (the server-name identity), "" when none
 	Rule        string   // the matched rule, "<child>#<index>" ("" when none)
 	Basis       string   // BasisNone, BasisServerName or BasisRequestRule
-	Reasons     []string // closed vocabulary, in evaluation order
+	Reason      string   // the reason of the verdict, one of the closed vocabulary
+	Reasons     []string // []string{Reason} from Classify; nil from Evaluate
 	Limit       string   // the ceiling hit, "" when none
 	Evaluated   int      // rules evaluated for this request
 	Release     string   // the child-app release
@@ -121,8 +121,9 @@ type Child struct {
 
 type rule struct {
 	child        *Child
-	index        int // position of the rule inside its child
-	order        int // global evaluation order
+	index        int    // position of the rule inside its child
+	id           string // "<child>#<index>", built once at load (PRO-522)
+	order        int    // global evaluation order
 	methods      map[string]bool
 	pathPrefixes []string
 	pathPatterns [][]segment
@@ -148,7 +149,6 @@ type Set struct {
 	suffix   map[string][]int          // domain -> rule orders, ascending
 	nested   map[string][]nestedDomain // while loading: parent domain -> catalog domains under it (SEC-CHILD-5)
 	opts     Options
-	foldCase bool // some rule matches its path case-insensitively
 }
 
 // Release identifies the child-app component.
@@ -194,7 +194,7 @@ func normalize(o Options) Options {
 }
 
 // normalizeHost lower-cases a host, drops a port and one trailing dot, and checks it is a DNS name of at least
-// two labels; ok is false otherwise.
+// two labels; ok is false otherwise. It allocates only when the host has upper case (PRO-522).
 func normalizeHost(h string) (string, bool) {
 	if len(h) > maxHostBytes+7 {
 		return "", false
@@ -206,20 +206,43 @@ func normalizeHost(h string) (string, bool) {
 		}
 		h = h[:i]
 	}
-	h = strings.TrimSuffix(strings.ToLower(h), ".")
-	if h == "" || len(h) > maxHostBytes || !strings.Contains(h, ".") {
+	// strings.ToLower maps a few non-ASCII runes to ASCII letters (U+212A KELVIN SIGN to 'k', U+0130 to 'i'): a host
+	// with any non-ASCII byte is lower-cased first, exactly as before. An ASCII host is checked first and
+	// lower-cased only when it has upper case, which maps nothing but A-Z.
+	for i := 0; i < len(h); i++ {
+		if h[i] >= 0x80 {
+			h = strings.ToLower(h)
+			break
+		}
+	}
+	if strings.HasSuffix(h, ".") {
+		h = h[:len(h)-1]
+	}
+	if h == "" || len(h) > maxHostBytes || strings.IndexByte(h, '.') < 0 {
 		return "", false
 	}
-	for _, label := range strings.Split(h, ".") {
-		if label == "" || len(label) > 63 || label[0] == '-' || label[len(label)-1] == '-' {
-			return "", false
-		}
-		for i := 0; i < len(label); i++ {
-			c := label[i]
-			if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-') {
+	upper := false
+	start := 0
+	for i := 0; i <= len(h); i++ {
+		if i == len(h) || h[i] == '.' {
+			n := i - start
+			if n == 0 || n > 63 || h[start] == '-' || h[i-1] == '-' {
 				return "", false
 			}
+			start = i + 1
+			continue
 		}
+		c := h[i]
+		switch {
+		case c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-':
+		case c >= 'A' && c <= 'Z':
+			upper = true
+		default:
+			return "", false
+		}
+	}
+	if upper {
+		h = strings.ToLower(h)
 	}
 	return h, true
 }
@@ -242,9 +265,19 @@ func canonicalPath(p string) (string, bool) {
 			if i+2 >= len(p) {
 				return "", false
 			}
-			switch strings.ToLower(p[i+1 : i+3]) {
-			case "2f", "5c", "2e", "00", "25":
-				return "", false
+			switch p[i+1] {
+			case '2':
+				if c := p[i+2] | 0x20; c == 'f' || c == 'e' || p[i+2] == '5' {
+					return "", false // %2F, %2E, %25
+				}
+			case '5':
+				if p[i+2]|0x20 == 'c' {
+					return "", false // %5C
+				}
+			case '0':
+				if p[i+2] == '0' {
+					return "", false // %00
+				}
 			}
 		}
 	}
@@ -368,15 +401,27 @@ func matchTemplate(lits []string, seg string) bool {
 }
 
 // pathSegments is a request path split once per request (SEC-CHILD-4): n counts every segment, and segs holds at
-// most MaxPatternSegment+1 of them (the last one keeps the unsplit rest), which is all a pattern can read.
+// most MaxPatternSegment+1 of them (the last one keeps the unsplit rest), which is all a pattern can read. The
+// segments live in a fixed array, so a split allocates nothing (PRO-522).
 type pathSegments struct {
 	n    int
-	segs []string
+	segs [MaxPatternSegment + 1]string
 }
 
-func splitPath(path string) pathSegments {
+func splitPath(path string) (ps pathSegments) {
 	t := strings.TrimPrefix(path, "/")
-	return pathSegments{n: strings.Count(t, "/") + 1, segs: strings.SplitN(t, "/", MaxPatternSegment+1)}
+	ps.n = strings.Count(t, "/") + 1
+	k := 0
+	for k < MaxPatternSegment {
+		i := strings.IndexByte(t, '/')
+		if i < 0 {
+			break
+		}
+		ps.segs[k], t = t[:i], t[i+1:]
+		k++
+	}
+	ps.segs[k] = t
+	return ps
 }
 
 // pathView splits the path on the first pattern condition only, so a request that meets no pattern never splits.
@@ -431,35 +476,117 @@ type queryCond struct {
 	values map[string]bool
 }
 
-// parseQuery splits the raw query (no percent-decoding) into its parameters; ok is false past maxQueryPairs.
-func parseQuery(target string) (map[string][]string, bool) {
+// rawQuery is the query of a request target: after the first '?', up to the first '#' after it ("" when none).
+func rawQuery(target string) string {
 	i := strings.IndexByte(target, '?')
 	if i < 0 {
-		return nil, true
+		return ""
 	}
 	q := target[i+1:]
 	if j := strings.IndexByte(q, '#'); j >= 0 {
 		q = q[:j]
 	}
-	out := map[string][]string{}
+	return q
+}
+
+// queryWithinLimit reports whether the query has at most maxQueryPairs non-empty '&'-separated parameters.
+func queryWithinLimit(q string) bool {
 	pairs := 0
-	for _, pair := range strings.Split(q, "&") {
+	for q != "" {
+		var pair string
+		pair, q, _ = strings.Cut(q, "&")
+		if pair != "" {
+			if pairs++; pairs > maxQueryPairs {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// queryValue scans the raw query (no percent-decoding) for key: its value when the key appears exactly once
+// (a parameter without '=' has the value ""), and how often it appears, stopping at two. No map, no copy (PRO-522).
+func queryValue(q, key string) (string, int) {
+	value, seen := "", 0
+	for q != "" {
+		var pair string
+		pair, q, _ = strings.Cut(q, "&")
 		if pair == "" {
 			continue
 		}
-		if pairs++; pairs > maxQueryPairs {
-			return nil, false
-		}
 		k, v, _ := strings.Cut(pair, "=")
-		out[k] = append(out[k], v)
+		if k == key {
+			if seen++; seen > 1 {
+				return "", seen
+			}
+			value = v
+		}
 	}
-	return out, true
+	return value, seen
+}
+
+// hasHeader reports whether a request header name equals the lower-case rule header h after strings.ToLower,
+// comparing ASCII names byte by byte and lower-casing only a non-ASCII name, so the usual request allocates
+// nothing (PRO-522).
+func hasHeader(names []string, h string) bool {
+	for _, name := range names {
+		if headerIs(name, h) {
+			return true
+		}
+	}
+	return false
+}
+
+func headerIs(name, h string) bool {
+	for i := 0; i < len(name); i++ {
+		if name[i] >= 0x80 {
+			return strings.ToLower(name) == h // a non-ASCII rune can lower-case to an ASCII letter
+		}
+	}
+	if len(name) != len(h) {
+		return false
+	}
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if c >= 'A' && c <= 'Z' {
+			c += 'a' - 'A'
+		}
+		if c != h[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// requestPaths holds the canonical path of a request, split on first use, and its lower-cased form for
+// path_case_insensitive rules, made only when such a rule is evaluated and the path has upper case (PRO-522).
+type requestPaths struct {
+	path      string
+	view      pathView
+	lowered   bool
+	lower     pathView
+	lowerSame bool // the path has no upper case: the folded form is the path itself
+}
+
+func (p *requestPaths) folded() (string, *pathView) {
+	if !p.lowered {
+		p.lowered = true
+		lower := strings.ToLower(p.path) // no copy when the path has no upper case
+		if lower == p.path {
+			p.lowerSame = true
+		} else {
+			p.lower.path = lower // split at most once more, and only when it differs
+		}
+	}
+	if p.lowerSame {
+		return p.path, &p.view
+	}
+	return p.lower.path, &p.lower
 }
 
 // matches reports whether every condition holds and, if so, the rule's precedence score for this request: the
 // literal bytes of the path condition that hit, then the number of condition kinds.
-func (r *rule) matches(req *Request, path, lower string, view, lowerView *pathView, ct string, query map[string][]string,
-	headers map[string]bool) (bool, int) {
+func (r *rule) matches(req *Request, paths *requestPaths, ct, query string) (bool, int) {
 	if r.methods != nil && !r.methods[req.Method] {
 		return false, 0
 	}
@@ -467,9 +594,10 @@ func (r *rule) matches(req *Request, path, lower string, view, lowerView *pathVi
 		return false, 0
 	}
 	pathScore := 0
+	path, view := paths.path, &paths.view
 	if r.pathPrefixes != nil || r.pathPatterns != nil {
 		if r.foldCase {
-			path, view = lower, lowerView
+			path, view = paths.folded()
 		}
 		hit := false
 		for _, prefix := range r.pathPrefixes {
@@ -502,13 +630,13 @@ func (r *rule) matches(req *Request, path, lower string, view, lowerView *pathVi
 		}
 	}
 	for _, q := range r.query {
-		values := query[q.key]
-		if len(values) != 1 || values[0] == "" || (q.values != nil && !q.values[values[0]]) {
+		value, n := queryValue(query, q.key)
+		if n != 1 || value == "" || (q.values != nil && !q.values[value]) {
 			return false, 0
 		}
 	}
 	for _, h := range r.headers {
-		if !headers[h] {
+		if !hasHeader(req.HeaderNames, h) {
 			return false, 0
 		}
 	}
@@ -527,9 +655,13 @@ func (r *rule) matches(req *Request, path, lower string, view, lowerView *pathVi
 	return true, pathScore*16 + r.conditions
 }
 
-// candidates are the rule orders indexed under host and its parent domains, merged ascending without repeats.
-func (s *Set) candidates(host string) [][]int {
-	var lists [][]int
+// candidateStack is the number of candidate lists kept on the stack: the exact host plus three parent domains
+// covers ordinary names; a deeper name falls back to the heap.
+const candidateStack = 8
+
+// candidates appends the rule orders indexed under host and its parent domains to lists (merged by the caller
+// ascending without repeats).
+func (s *Set) candidates(host string, lists [][]int) [][]int {
 	if l := s.exact[host]; len(l) > 0 {
 		lists = append(lists, l)
 	}
@@ -545,83 +677,87 @@ func (s *Set) candidates(host string) [][]int {
 	}
 }
 
-// Classify returns the verdict for one request. It never panics on any input and does at most
-// MaxRuleEvaluations rule evaluations.
+// Classify returns the verdict for one request with Reasons set to []string{Reason}. It never panics on any input
+// and does at most MaxRuleEvaluations rule evaluations.
 func (s *Set) Classify(req Request) Result {
+	res := s.Evaluate(&req)
+	res.Reasons = []string{res.Reason}
+	return res
+}
+
+// Evaluate is Classify without the Reasons slice: the verdict's single reason is in Result.Reason and Reasons is
+// nil. It allocates nothing for an ordinary request (PRO-522); req is only read.
+func (s *Set) Evaluate(req *Request) Result {
 	res := Result{Basis: BasisNone, Release: s.Release.Version, PackRelease: s.pack.Release.Version}
 	raw := req.Host
 	if raw == "" {
 		raw = req.SNI
 	}
 	if raw == "" {
-		res.Reasons = []string{ReasonNoHost}
+		res.Reason = ReasonNoHost
 		return res
 	}
 	host, ok := normalizeHost(raw)
 	if !ok {
-		res.Reasons = []string{ReasonHostInvalid}
+		res.Reason = ReasonHostInvalid
 		return res
 	}
 	owner, kind, attributed := s.pack.AttributionForHost(host)
 	if req.SNI != "" && req.Host != "" {
-		sni, valid := normalizeHost(req.SNI)
+		sni, valid := host, true
+		if req.SNI != req.Host { // the same text normalizes the same way
+			sni, valid = normalizeHost(req.SNI)
+		}
 		if !valid {
-			res.Reasons = []string{ReasonHostInvalid}
+			res.Reason = ReasonHostInvalid
 			return res
 		}
 		if sni != host {
 			sniOwner, sniKind, _ := s.pack.AttributionForHost(sni)
 			if sniOwner != owner || sniKind != kind || owner == "" {
-				res.Reasons = []string{ReasonSNIHostMismatch}
+				res.Reason = ReasonSNIHostMismatch
 				return res
 			}
 		}
 	}
 	if !attributed {
-		res.Reasons = []string{ReasonHostUnowned}
+		res.Reason = ReasonHostUnowned
 		return res
 	}
 	if kind != "service" {
-		res.Reasons = []string{ReasonHostWebFront}
+		res.Reason = ReasonHostWebFront
 		return res
 	}
 	res.App, res.HostOwner, res.Basis = owner, owner, BasisServerName
 	if len(req.Method) > maxMethodBytes || len(req.ContentType) > maxContentTypeBytes {
-		res.Reasons, res.Limit = []string{ReasonFieldTooLong}, LimitFieldBytes
+		res.Reason, res.Limit = ReasonFieldTooLong, LimitFieldBytes
 		return res
 	}
 	if len(req.Path) > s.opts.MaxPathBytes {
-		res.Reasons, res.Limit = []string{ReasonWorkLimit}, LimitPathBytes
+		res.Reason, res.Limit = ReasonWorkLimit, LimitPathBytes
 		return res
 	}
 	path, canonical := canonicalPath(req.Path)
 	if !canonical && req.Path != "" {
-		res.Reasons = []string{ReasonPathNotCanonical}
+		res.Reason = ReasonPathNotCanonical
 		return res
 	}
 	ct := mediaType(req.ContentType)
-	query, ok := parseQuery(req.Path)
-	if !ok || len(req.HeaderNames) > maxHeaderNames {
-		res.Reasons, res.Limit = []string{ReasonFieldTooLong}, LimitFieldBytes
+	query := rawQuery(req.Path)
+	if !queryWithinLimit(query) || len(req.HeaderNames) > maxHeaderNames {
+		res.Reason, res.Limit = ReasonFieldTooLong, LimitFieldBytes
 		return res
 	}
-	var headers map[string]bool
-	if len(req.HeaderNames) > 0 {
-		headers = make(map[string]bool, len(req.HeaderNames))
-		for _, h := range req.HeaderNames {
-			headers[strings.ToLower(h)] = true
-		}
+	paths := requestPaths{path: path, view: pathView{path: path}}
+	var listBuf [candidateStack][]int
+	lists := s.candidates(host, listBuf[:0])
+	var headBuf [candidateStack]int
+	heads := headBuf[:0]
+	if len(lists) <= len(headBuf) {
+		heads = headBuf[:len(lists)]
+	} else {
+		heads = make([]int, len(lists))
 	}
-	view := pathView{path: path}
-	lower, lowerView := path, &view
-	if s.foldCase {
-		lower = strings.ToLower(path) // no copy when the path has no upper case
-		if lower != path {
-			lowerView = &pathView{path: lower} // split at most once more, and only when it differs
-		}
-	}
-	lists := s.candidates(host)
-	heads := make([]int, len(lists))
 	last := -1
 	var winner *rule
 	winnerScore := 0
@@ -640,7 +776,7 @@ func (s *Set) Classify(req Request) Result {
 		}
 		if res.Evaluated >= s.opts.MaxRuleEvaluations {
 			// An unevaluated rule could be more specific than any match so far: the ceiling never picks a child.
-			res.Reasons, res.Limit = []string{ReasonWorkLimit}, LimitRuleEvaluations
+			res.Reason, res.Limit = ReasonWorkLimit, LimitRuleEvaluations
 			return res
 		}
 		last = lists[best][heads[best]]
@@ -652,17 +788,17 @@ func (s *Set) Classify(req Request) Result {
 			continue
 		}
 		// Precedence: the highest score wins; on a tie the earlier rule (file order) keeps it.
-		if hit, score := r.matches(&req, path, lower, &view, lowerView, ct, query, headers); hit && (winner == nil || score > winnerScore) {
+		if hit, score := r.matches(req, &paths, ct, query); hit && (winner == nil || score > winnerScore) {
 			winner, winnerScore = r, score
 		}
 	}
 	if winner == nil {
-		res.Reasons = []string{ReasonNoChildMatched}
+		res.Reason = ReasonNoChildMatched
 		return res
 	}
 	res.App, res.Container, res.Basis = winner.child.Name, winner.child.Container, BasisRequestRule
-	res.Rule = fmt.Sprintf("%s#%d", winner.child.Name, winner.index)
-	res.Reasons = []string{ReasonChildMatched}
+	res.Rule = winner.id
+	res.Reason = ReasonChildMatched
 	return res
 }
 
@@ -689,6 +825,9 @@ func (s *Set) Verdict(res Result) *appid.Verdict {
 		return nil
 	}
 	reasons := append([]string{}, res.Reasons...)
+	if res.Reasons == nil && res.Reason != "" { // a Result from Evaluate
+		reasons = []string{res.Reason}
+	}
 	v := &appid.Verdict{App: app.Name, Category: app.Category, Subcategory: app.Subcategory, Technology: app.Technology,
 		Risk: app.Risk, Characteristics: append([]string{}, app.Characteristics...),
 		ImplicitlyUses: append([]string{}, app.ImplicitlyUses...), PortUsage: "unknown", Status: "identified",

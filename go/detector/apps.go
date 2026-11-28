@@ -100,11 +100,13 @@ func (c *AppClassifier) Classify(r HTTPRequest) (v AppVerdict) {
 				ChildRelease: c.set.Release.Version}
 		}
 	}()
-	res := c.set.Classify(childapp.Request{SNI: r.SNI, Host: r.Host, Method: r.Method, Path: r.Path, ContentType: r.ContentType,
+	req := childapp.Request{SNI: r.SNI, Host: r.Host, Method: r.Method, Path: r.Path, ContentType: r.ContentType,
 		RequestBodyBytes: r.RequestBodyBytes, ResponseBodyBytes: r.ResponseBodyBytes, WebSocket: r.WebSocket,
-		HeaderNames: r.HeaderNames})
+		HeaderNames: r.HeaderNames}
+	res := c.set.Evaluate(&req)
+	// The verdict's one allocation for an ordinary request: its own Reasons slice, never shared (PRO-522).
 	return AppVerdict{App: res.App, Container: res.Container, HostOwner: res.HostOwner, Rule: res.Rule, Basis: res.Basis,
-		Reasons: append([]string{}, res.Reasons...), Limit: res.Limit, Evaluated: res.Evaluated, ChildRelease: res.Release,
+		Reasons: []string{res.Reason}, Limit: res.Limit, Evaluated: res.Evaluated, ChildRelease: res.Release,
 		PackRelease: res.PackRelease, Schema: AppSchemaVersion}
 }
 

@@ -174,6 +174,7 @@ GO_FUZZ_SMOKE := \
 	./internal/signatures:FuzzPatternNeverPanics:10 \
 	./internal/childapp:FuzzClassifyNeverPanics:10 \
 	./internal/childapp:FuzzLoadNeverPanics:10 \
+	./internal/childapp:FuzzRequestHelpersMatchReference:10 \
 	./internal/decrypt:FuzzConnectionNeverPanics:10 \
 	./internal/capture:FuzzDecoderNeverPanics:10 \
 	./internal/keylogcap:FuzzAnalyzeNeverPanics:10 \
