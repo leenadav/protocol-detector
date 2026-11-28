@@ -162,6 +162,16 @@ parts (a case-folded rule on a path with upper case splits the lower-cased path 
 the segment count first, so a 4 KiB path of 2,048 segments against the 256 patterns a host may hold costs about
 10 µs and under 1 KB (`BenchmarkClassifyPatternCapLongPath`; it was 8.9 ms and 8.5 MB).
 
+An ordinary request costs `AppClassifier.Classify` one allocation, the verdict's own `reasons` slice (PRO-522): the
+matcher (`childapp.Set.Evaluate`) keeps one reason string, rule ids are built at load, header names and the query
+are scanned in place (no map), host and path checks do not split, and the candidate lists and the path segments sit
+in fixed stack arrays. Only an upper-case host, or an upper-case path that reaches a `path_case_insensitive` rule,
+pays for its lower-cased copy, and only a percent escape in the path or in a query parameter a rule reads pays for
+its normalized copy (SEC-CHILD-1). `BenchmarkAppClassifierClassify` (the Culvert lab's three requests) went from 14, 7
+and 4 allocations (child, parent, unowned) to 1 each, and from about 2.2, 1.4 and 0.35 µs to 0.8, 0.7 and 0.17 µs;
+`TestAppClassifierAllocationCeilings` holds the library floor for Culvert's per-request benchgate (child ≤ 8,
+parent ≤ 4, unowned ≤ 2).
+
 ## Where the rules come from
 
 `childapps.json` is generated, never hand-edited: `tools/child_apps_wave.py` converts App Research's cited wave file
