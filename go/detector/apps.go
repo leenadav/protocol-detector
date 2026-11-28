@@ -1,6 +1,7 @@
 package detector
 
 import (
+	"github.com/leenadav/protocol-detector/go/internal/appid"
 	"github.com/leenadav/protocol-detector/go/internal/childapp"
 )
 
@@ -36,6 +37,13 @@ type HTTPRequest struct {
 // App, Container and Rule come from the content data. ChildRelease and ChildDigest name the child-app component the
 // verdict came from: its release and the SHA-256 of its exact bytes, which the built-in lock pins (SEC-CHILD-6). A Limit other than "" means a work ceiling was hit: the
 // verdict then names at most the parent, never a child. Nothing here is a permission.
+//
+// ChildStatus (AppChildStatuses) says whether the function was decided: "matched" (a child rule decided it), "none"
+// (every candidate rule was evaluated on the normalized request and none applies), "not_applicable" (no catalog
+// application) or "undetermined". "undetermined" is fail closed: a child rule of the host could apply but the
+// request was refused, capped or ambiguous, so App is the parent and the child is unknown. A caller that denies a
+// child must also deny "undetermined" for its container (AppClassifier.MayBe does both); Matches alone would fail
+// open. A policy of internal/policy.FromJSONWithChildren does this for every deny that names a child (SEC-CHILD-8).
 type AppVerdict struct {
 	App          string   `json:"app"`
 	Container    string   `json:"container"`
@@ -44,6 +52,7 @@ type AppVerdict struct {
 	Basis        string   `json:"basis"`
 	Reasons      []string `json:"reasons"`
 	Limit        string   `json:"limit"`
+	ChildStatus  string   `json:"child_status"`
 	Evaluated    int      `json:"rules_evaluated"`
 	ChildRelease string   `json:"child_release"`
 	ChildDigest  string   `json:"child_digest"`
@@ -57,6 +66,9 @@ type AppVerdict struct {
 func (v AppVerdict) Matches(name string) bool {
 	return name != "" && (v.App == name || v.Container == name || v.HostOwner == name)
 }
+
+// AppChildStatuses lists AppVerdict.ChildStatus values.
+func AppChildStatuses() []string { return appid.ChildStatuses() }
 
 // AppBases, AppReasons and AppLimits list the closed vocabularies of AppVerdict.
 func AppBases() []string {
@@ -99,6 +111,7 @@ func (c *AppClassifier) Classify(r HTTPRequest) (v AppVerdict) {
 	defer func() {
 		if recover() != nil {
 			v = AppVerdict{Basis: childapp.BasisNone, Reasons: []string{childapp.ReasonPanic}, Schema: AppSchemaVersion,
+				ChildStatus:  appid.ChildUndetermined,
 				ChildRelease: c.set.Release.Version, ChildDigest: c.set.Digest}
 		}
 	}()
@@ -106,8 +119,35 @@ func (c *AppClassifier) Classify(r HTTPRequest) (v AppVerdict) {
 		RequestBodyBytes: r.RequestBodyBytes, ResponseBodyBytes: r.ResponseBodyBytes, WebSocket: r.WebSocket,
 		HeaderNames: r.HeaderNames})
 	return AppVerdict{App: res.App, Container: res.Container, HostOwner: res.HostOwner, Rule: res.Rule, Basis: res.Basis,
-		Reasons: append([]string{}, res.Reasons...), Limit: res.Limit, Evaluated: res.Evaluated, ChildRelease: res.Release,
+		Reasons: append([]string{}, res.Reasons...), Limit: res.Limit, ChildStatus: res.ChildStatus, Evaluated: res.Evaluated, ChildRelease: res.Release,
 		ChildDigest: res.Digest, PackRelease: res.PackRelease, Schema: AppSchemaVersion}
+}
+
+// MayBe is the fail-closed test for a deny entry: true when v.Matches(name), and also when name is a child
+// application of this classifier, v's child is undetermined (refused, capped or ambiguous) and v names an
+// application that may own the child's hosts (its container or one it depends on), so the request may be that
+// child. Use Matches for allow entries and MayBe for deny entries.
+func (c *AppClassifier) MayBe(v AppVerdict, name string) bool {
+	if v.Matches(name) {
+		return true
+	}
+	if v.ChildStatus != appid.ChildUndetermined || v.App == "" {
+		return false
+	}
+	child := c.set.Child(name)
+	if child == nil {
+		return false
+	}
+	// A child's rule hosts are owned by its container or by an application it depends on.
+	if child.Container == v.App {
+		return true
+	}
+	for _, owner := range child.DependsOn {
+		if owner == v.App {
+			return true
+		}
+	}
+	return false
 }
 
 // ChildApp describes one child application of the built-in data.

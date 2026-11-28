@@ -1,9 +1,6 @@
 package childapp
 
-import (
-	"strings"
-	"testing"
-)
+import "testing"
 
 // TestSecChild3Forms pins the request forms SEC-CHILD-3 (PRO-510) found missing from wave 0, each against App
 // Research's vendor evidence (research/child-apps/wave-1.json, sec_child_3): every one names its child now.
@@ -126,21 +123,28 @@ func TestPathCaseInsensitiveLoad(t *testing.T) {
 	}
 }
 
+// TestDecodeSafe pins the SEC-CHILD-3 decoding inside the SEC-CHILD-1 path normalization: what a server reads as
+// the plain character is decoded, other escapes stay encoded (upper-cased), and a malformed escape is refused.
 func TestDecodeSafe(t *testing.T) {
 	for in, want := range map[string]string{
 		"/a":                "/a",
 		"/%24batch":         "/$batch",
 		"/%41%7e%5F":        "/A~_",
-		"/r%C3%A9sum%C3%A9": "/r%C3%A9sum%C3%A9", // UTF-8 stays encoded
+		"/%3a%40%3B%2b":     "/:@;+",
+		"/r%C3%A9sum%c3%a9": "/r%C3%A9sum%C3%A9", // UTF-8 stays encoded
 		"/a%3Fb%23c":        "/a%3Fb%23c",        // '?' and '#' stay encoded
-		"/a%2":              "/a%2",
-		"/a%zz":             "/a%zz",
 	} {
-		if got := decodeSafe(in); got != want {
-			t.Errorf("decodeSafe(%q) = %q, want %q", in, got, want)
+		if got, ok := normalizePath(in); !ok || got != want {
+			t.Errorf("normalizePath(%q) = %q, %v, want %q", in, got, ok, want)
 		}
 	}
-	if strings.Contains(decodeSafe("/%2F"), "//") {
-		t.Fatal("an encoded slash must never decode")
+	for _, in := range []string{"/a%2", "/a%zz", "/%2F", "/a%2fb", "/%2e%2e/x", "/%25", "/%00"} {
+		if got, ok := normalizePath(in); ok {
+			t.Errorf("normalizePath(%q) = %q, want refused", in, got)
+		}
+	}
+	// In a query only unreserved bytes decode: an encoded '+' is a plus, a plain one a space.
+	if got, ok := normalizePercent("a%2Bb%41", false); !ok || got != "a%2BbA" {
+		t.Errorf("query normalizePercent = %q, %v", got, ok)
 	}
 }
