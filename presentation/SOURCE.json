@@ -1,9 +1,9 @@
 {
   "repository": "leenadav/protocol-detector",
   "version": "0.66.0",
-  "commit": "666bb64d28dfe11b8009728e8a1e53fec1f2dd3b",
+  "commit": "fa9ade02671305a9070fce3319885a66bdb1d227",
   "branch": "claude/engine-PRO-522-classify-allocs",
-  "build_digest": "58780839f91c131c848edc2af80db18ee2106ba67d9d3d33d5b05797f4dc7c23",
+  "build_digest": "bdb824b36e1bd2fdc0781d93a0d5a385bcf74f867d81cc363311fc5a098f114e",
   "components": {
     "engine": {
       "root": "go",
@@ -160,7 +160,7 @@
     {
       "path": "go/internal/childapp/childapp.go",
       "component": "engine",
-      "sha256": "0955526205d109b6235b38325b602642d4c4a92657cda9a4a2a753eba6549101"
+      "sha256": "55ca0df522f6e2ffe113237eae9d5211fee899563216925034a284dc75409ddb"
     },
     {
       "path": "go/internal/childapp/load.go",
