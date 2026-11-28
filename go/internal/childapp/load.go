@@ -31,8 +31,11 @@ const (
 //go:embed childapps.json
 var embedded []byte
 
-// Embedded loads the child-app component built into the binary over pack.
-func Embedded(pack *content.Pack) (*Set, error) { return Load(embedded, pack, Options{}) }
+// Embedded loads the child-app component built into the binary over pack. It refuses a component that is not
+// the in-force release of the built-in lock byte for byte (SEC-CHILD-6).
+func Embedded(pack *content.Pack) (*Set, error) {
+	return loadPinned(embedded, embeddedLock, Options{}, func(d []byte, o Options) (*Set, error) { return Load(d, pack, o) })
+}
 
 // Builtin loads the built-in content pack and component with opts. It is what the public facade uses, so the
 // facade never holds the pack itself (the pin's immutability boundary, internal/content/immutable_test.go).
@@ -41,7 +44,7 @@ func Builtin(opts Options) (*Set, error) {
 	if err != nil {
 		return nil, err
 	}
-	return Load(embedded, pack, opts)
+	return loadPinned(embedded, embeddedLock, opts, func(d []byte, o Options) (*Set, error) { return Load(d, pack, o) })
 }
 
 // EmbeddedBytes is a copy of the built-in component file.
@@ -215,15 +218,20 @@ func Load(data []byte, pack *content.Pack, opts Options) (*Set, error) {
 	return s, nil
 }
 
+// validVersion accepts YYYY.MM.N: a four-digit year, a month 01..12 and a release number N of 1 to 6 digits
+// without a leading zero (0, 9, 10, 123; SEC-CHILD-6). Versions order numerically (compareVersions).
 func validVersion(v string) bool {
 	parts := strings.Split(v, ".")
-	if len(parts) != 3 || len(parts[0]) != 4 || len(parts[1]) != 2 || len(parts[2]) != 1 {
+	if len(parts) != 3 || len(parts[0]) != 4 || len(parts[1]) != 2 || len(parts[2]) < 1 || len(parts[2]) > 6 {
 		return false
 	}
 	for _, p := range parts {
 		if strings.Trim(p, "0123456789") != "" {
 			return false
 		}
+	}
+	if len(parts[2]) > 1 && parts[2][0] == '0' {
+		return false
 	}
 	return parts[1] >= "01" && parts[1] <= "12"
 }

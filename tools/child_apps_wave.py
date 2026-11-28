@@ -8,6 +8,13 @@ Usage:
         `make check` runs it on migration/fixtures/child-apps/wave-0.json, a byte copy of App Research's file
     python3 -B tools/child_apps_wave.py --self-test
 
+SEC-CHILD-6 (PRO-513): go/internal/childapp/lock.json is the component's release history, oldest first, each
+release with the SHA-256 of the exact childapps.json bytes. --write pins the written release (appending it, or
+refusing when that release was already published with other bytes, or when the release does not follow the last
+one); --check fails unless the lock is canonical and its last entry is the committed file's release and digest.
+Releases are YYYY.MM.N with N of 1 to 6 digits, no leading zero, ordered numerically. The Go loader refuses a
+built-in component that is not the lock's last entry, so the gate and the binary agree.
+
 Only cited function children become rules. The conversion is literal and conservative; whatever it cannot carry
 over exactly is either dropped as a broader condition (recorded in the report) or skipped (recorded with the reason):
 
@@ -40,6 +47,7 @@ evidence and a line to the report. All of them widen what a child matches, never
 Python 3.9, standard library only.
 """
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -49,6 +57,9 @@ ROOT = Path(__file__).resolve().parent.parent
 PACK = ROOT / "go" / "internal" / "content" / "pack.json"
 OUT = ROOT / "go" / "internal" / "childapp" / "childapps.json"
 DOCS = ROOT / "docs" / "child-apps"
+LOCK = OUT.parent / "lock.json"
+VERSION = re.compile(r"^([0-9]{4})\.(0[1-9]|1[0-2])\.(0|[1-9][0-9]{0,5})$")
+DIGEST = re.compile(r"^[0-9a-f]{64}$")
 HOST = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$")
 MEDIA = re.compile(r"^[a-z0-9][a-z0-9.+-]*/([a-z0-9][a-z0-9.+-]*|\*)$")
 METHOD = re.compile(r"^[A-Z][A-Z_-]{0,31}$")
@@ -347,6 +358,79 @@ def render_report(wave, report, used=()):
     return "\n".join(out) + "\n"
 
 
+def version_key(version):
+    match = VERSION.match(version or "")
+    if not match:
+        raise ValueError("release {!r} is not YYYY.MM.N (N: 1 to 6 digits, no leading zero)".format(version))
+    return tuple(int(g) for g in match.groups())
+
+
+def digest_of(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def parse_lock(text):
+    """The lock's releases as (version, sha256) pairs, validated as go/internal/childapp/pin.go does."""
+    doc = json.loads(text)
+    if not isinstance(doc, dict) or sorted(doc) != ["releases", "schema"] or doc["schema"] != 1:
+        raise ValueError("lock: expected exactly {schema: 1, releases: [...]}")
+    releases = doc["releases"]
+    if not isinstance(releases, list) or not releases:
+        raise ValueError("lock: releases must be a non-empty list")
+    out, seen = [], set()
+    for entry in releases:
+        if not isinstance(entry, dict) or sorted(entry) != ["sha256", "version"]:
+            raise ValueError("lock: each release is exactly {version, sha256}")
+        version, digest = entry["version"], entry["sha256"]
+        key = version_key(version)
+        if not isinstance(digest, str) or not DIGEST.match(digest):
+            raise ValueError("lock: release {} sha256 must be 64 lower-case hex characters".format(version))
+        if out and version_key(out[-1][0]) >= key:
+            raise ValueError("lock: release {} does not follow {}".format(version, out[-1][0]))
+        if digest in seen:
+            raise ValueError("lock: release {} repeats a published digest".format(version))
+        seen.add(digest)
+        out.append((version, digest))
+    return out
+
+
+def render_lock(releases):
+    rows = ["  " + json.dumps({"version": v, "sha256": d}) for v, d in releases]
+    return '{\n "schema": 1,\n "releases": [\n' + ",\n".join(rows) + "\n ]\n}\n"
+
+
+def pin(releases, version, digest):
+    """releases with (version, digest) in force: unchanged when already its last entry, else appended."""
+    version_key(version)
+    for v, d in releases:
+        if v == version:
+            if d != digest:
+                raise ValueError("release {} was published with digest {}; an edit needs a new release".format(v, d))
+            if (v, d) != releases[-1]:
+                raise ValueError("release {} is older than the locked release {}".format(v, releases[-1][0]))
+            return list(releases)
+    if releases and version_key(version) <= version_key(releases[-1][0]):
+        raise ValueError("release {} does not follow the locked release {}".format(version, releases[-1][0]))
+    if any(d == digest for _, d in releases):
+        raise ValueError("digest {} is already published".format(digest))
+    return list(releases) + [(version, digest)]
+
+
+def lock_problem(lock_text, component_text):
+    """Why the committed lock does not pin the committed component, or None."""
+    try:
+        releases = parse_lock(lock_text)
+    except (ValueError, KeyError, TypeError) as err:
+        return str(err)
+    version = json.loads(component_text)["release"]["version"]
+    if render_lock(releases) != lock_text:
+        return "lock is not canonical (rewrite it with --write)"
+    if releases[-1] != (version, digest_of(component_text)):
+        return "locked release is {} {}, the component is {} {} (bump the release and run --write)".format(
+            releases[-1][0], releases[-1][1], version, digest_of(component_text))
+    return None
+
+
 def self_test():
     pack = {"applications": [{"name": "dropbox"}, {"name": "google-base"}, {"name": "gmail"}],
             "host_catalog": {"entries": [{"name": "dropbox", "domains": ["dropboxapi.com"], "web_fronts": ["www.db.example"]},
@@ -400,8 +484,45 @@ def self_test():
     assert "path_case_insensitive" not in outlook["rules"][0], "an unverified item must not apply"
     assert [c["name"] for c in hard["children"][3:]] == ["ms-base-graph-batch"] and "SEC-CHILD-3" in hard["release"]["note"]
     assert [r[0] for r in rows][-1] == "ms-base-graph-batch" and harden({"children": []}, [], None) == []
+    lock_self_test()
     print("child_apps_wave self-test: ok")
     return 0
+
+
+def lock_self_test():
+    d1, d2, d3 = "a" * 64, "b" * 64, "c" * 64
+    assert version_key("2026.11.10") > version_key("2026.11.9") and version_key("2026.11.123456")
+    for bad in ("2026.11.01", "2026.11.1234567", "2026.13.1", "2026.1.1", "2026.11.", "x"):
+        try:
+            version_key(bad)
+            raise AssertionError("accepted " + bad)
+        except ValueError:
+            pass
+    one = pin([], "2026.11.9", d1)
+    two = pin(one, "2026.11.10", d2)
+    assert two == [("2026.11.9", d1), ("2026.11.10", d2)] and pin(two, "2026.11.10", d2) == two
+    assert parse_lock(render_lock(two)) == two
+    for releases, version, digest in ((two, "2026.11.10", d3), (two, "2026.11.9", d1), (two, "2026.11.2", d3),
+                                      (two, "2026.11.11", d1)):
+        try:
+            pin(releases, version, digest)
+            raise AssertionError("pinned {} {}".format(version, digest))
+        except ValueError:
+            pass
+    for text in ('{"schema": 1, "releases": []}', '{"schema": 2, "releases": [{"version": "2026.11.0", "sha256": "%s"}]}' % d1,
+                 render_lock([("2026.11.10", d1), ("2026.11.9", d2)]), render_lock([("2026.11.1", d1), ("2026.11.2", d1)]),
+                 render_lock([("2026.11.1", d1.upper())]), '{"schema": 1, "releases": [{"version": "2026.11.0", "sha256": "%s", "x": 1}]}' % d1):
+        try:
+            parse_lock(text)
+            raise AssertionError("parsed " + text)
+        except ValueError:
+            pass
+    comp = render_component({"release": {"version": "2026.11.10"}, "children": []})
+    good = render_lock([("2026.11.9", d1), ("2026.11.10", digest_of(comp))])
+    assert lock_problem(good, comp) is None
+    assert "bump" in lock_problem(render_lock([("2026.11.9", d1)]), comp)
+    assert "canonical" in lock_problem(good.replace("\n ]", "]"), comp)
+    assert "bump" in lock_problem(good, comp.replace("[", "[ ", 1))
 
 
 def main(argv):
@@ -426,14 +547,26 @@ def main(argv):
     used = harden(component, report, evidence)
     outputs = {OUT: render_component(component),
                DOCS / "wave-{}-rules.md".format(wave.get("wave", "")): render_report(wave, report, used)}
+    component_text = outputs[OUT]
     if args.write:
+        try:
+            releases = pin(parse_lock(LOCK.read_text(encoding="utf-8")) if LOCK.exists() else [], args.version,
+                           digest_of(component_text))
+        except ValueError as err:
+            print("child apps: refused: {}".format(err))
+            return 1
+        outputs[LOCK] = render_lock(releases)
         DOCS.mkdir(parents=True, exist_ok=True)
         for path, text in outputs.items():
             path.write_text(text, encoding="utf-8")
         print("child apps: {} children written to {}".format(len(component["children"]), OUT.relative_to(ROOT)))
         return 0
     stale = [str(p.relative_to(ROOT)) for p, text in outputs.items() if not p.exists() or p.read_text(encoding="utf-8") != text]
-    print("child apps: " + ("stale: " + ", ".join(stale) if stale else "ok ({} children)".format(len(component["children"]))))
+    problem = lock_problem(LOCK.read_text(encoding="utf-8"), component_text) if LOCK.exists() else "lock.json is missing"
+    if problem:
+        stale.append("{} ({})".format(LOCK.relative_to(ROOT), problem))
+    print("child apps: " + ("stale: " + ", ".join(stale) if stale else "ok ({} children, release {} pinned)".format(
+        len(component["children"]), args.version)))
     return 1 if stale else 0
 
 

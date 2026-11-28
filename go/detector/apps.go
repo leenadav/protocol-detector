@@ -34,7 +34,8 @@ type HTTPRequest struct {
 // refines the catalog's.
 //
 // Basis, Reasons and Limit are closed vocabularies (AppBases, AppReasons, AppLimits) and may be metric labels;
-// App, Container and Rule come from the content data. A Limit other than "" means a work ceiling was hit: the
+// App, Container and Rule come from the content data. ChildRelease and ChildDigest name the child-app component the
+// verdict came from: its release and the SHA-256 of its exact bytes, which the built-in lock pins (SEC-CHILD-6). A Limit other than "" means a work ceiling was hit: the
 // verdict then names at most the parent, never a child. Nothing here is a permission.
 //
 // ChildStatus (AppChildStatuses) says whether the function was decided: "matched" (a child rule decided it), "none"
@@ -54,6 +55,7 @@ type AppVerdict struct {
 	ChildStatus  string   `json:"child_status"`
 	Evaluated    int      `json:"rules_evaluated"`
 	ChildRelease string   `json:"child_release"`
+	ChildDigest  string   `json:"child_digest"`
 	PackRelease  string   `json:"content_release"`
 	Schema       int      `json:"schema_version"`
 }
@@ -110,7 +112,7 @@ func (c *AppClassifier) Classify(r HTTPRequest) (v AppVerdict) {
 		if recover() != nil {
 			v = AppVerdict{Basis: childapp.BasisNone, Reasons: []string{childapp.ReasonPanic}, Schema: AppSchemaVersion,
 				ChildStatus:  appid.ChildUndetermined,
-				ChildRelease: c.set.Release.Version}
+				ChildRelease: c.set.Release.Version, ChildDigest: c.set.Digest}
 		}
 	}()
 	res := c.set.Classify(childapp.Request{SNI: r.SNI, Host: r.Host, Method: r.Method, Path: r.Path, ContentType: r.ContentType,
@@ -118,7 +120,7 @@ func (c *AppClassifier) Classify(r HTTPRequest) (v AppVerdict) {
 		HeaderNames: r.HeaderNames})
 	return AppVerdict{App: res.App, Container: res.Container, HostOwner: res.HostOwner, Rule: res.Rule, Basis: res.Basis,
 		Reasons: append([]string{}, res.Reasons...), Limit: res.Limit, ChildStatus: res.ChildStatus, Evaluated: res.Evaluated, ChildRelease: res.Release,
-		PackRelease: res.PackRelease, Schema: AppSchemaVersion}
+		ChildDigest: res.Digest, PackRelease: res.PackRelease, Schema: AppSchemaVersion}
 }
 
 // MayBe is the fail-closed test for a deny entry: true when v.Matches(name), and also when name is a child

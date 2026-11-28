@@ -1,12 +1,16 @@
 package detector
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"reflect"
 	"sort"
 	"sync"
 	"testing"
+
+	"github.com/leenadav/protocol-detector/go/internal/childapp"
 )
 
 func TestAppClassifierParentAndChild(t *testing.T) {
@@ -111,6 +115,30 @@ func TestAppClassifierIsSafeForConcurrentUse(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+// TestVerdictNamesThePinnedComponentDigest: every verdict names the SHA-256
+// of the component bytes it came from, and the lock pins that digest to its release (SEC-CHILD-6).
+func TestVerdictNamesThePinnedComponentDigest(t *testing.T) {
+	c, err := NewAppClassifier(AppLimitsConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(childapp.EmbeddedBytes())
+	want := hex.EncodeToString(sum[:])
+	lock, err := childapp.ParseLock(childapp.EmbeddedLockBytes())
+	if err != nil || !lock.Pinned(c.set.Release.Version, want) {
+		t.Fatalf("release %s digest %s is not pinned: %v", c.set.Release.Version, want, err)
+	}
+	for _, r := range []HTTPRequest{
+		{Host: "content.dropboxapi.com", Method: "POST", Path: "/2/files/upload", ContentType: "application/octet-stream", HeaderNames: []string{"Dropbox-API-Arg"}},
+		{Host: "example.invalid", Method: "GET", Path: "/"},
+		{},
+	} {
+		if v := c.Classify(r); v.ChildDigest != want || v.ChildRelease != c.set.Release.Version {
+			t.Errorf("%+v: verdict names %s %s", r, v.ChildRelease, v.ChildDigest)
+		}
+	}
 }
 
 // TestMayBeFailsClosedOnUndetermined (SEC-CHILD-1): a deny entry for a child also holds when the request on one of

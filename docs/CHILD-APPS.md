@@ -79,7 +79,8 @@ is SEC-CHILD-2.
 
 ## The data: `go/internal/childapp/childapps.json`
 
-A component of the content data with its own release (`YYYY.MM.N`) and SHA-256 digest (`AppVerdict.child_release`).
+A component of the content data with its own release (`YYYY.MM.N`, `AppVerdict.child_release`) and SHA-256 digest
+(`AppVerdict.child_digest`), pinned per release in `go/internal/childapp/lock.json` (SEC-CHILD-6, below).
 It is kept beside the pack, not inside `pack.json`, because the frozen parity answers pin content release 2026.11.9
 (docs/CONTENT-BATCHES.md, "Before the first real batch merges"); it moves into the pack when that follow-up lands.
 
@@ -209,12 +210,29 @@ children map to their parents; 3 children are skipped:
 whose parent is not yet in the pack). Most rules describe vendor APIs (`client_scope: api`): the vendors do not
 publish their own web clients' request paths, so a browser session of Gmail is `gmail`, not a child.
 
+### SEC-CHILD-6: release-to-digest lock (PRO-513)
+
+`go/internal/childapp/lock.json` is the component's release history, oldest first: every published release with
+the SHA-256 of the exact `childapps.json` bytes (2026.11.0, 2026.11.1 and 2026.11.2 are the files of `e75e4a8`,
+`dadc6bd` and `bce8743`). It is append-only: releases strictly increase, numerically, and no digest appears twice.
+The release number N has 1 to 6 digits without a leading zero, so `2026.11.10` follows `2026.11.9`.
+
+- **Load:** the built-in component (`childapp.Builtin`, `childapp.Embedded`, hence `detector.NewAppClassifier`)
+  refuses to load unless its release and digest are the lock's last entry. An edit without a new release, or a
+  release bump without a pin, fails closed (`TestBuiltinRefusesAnUnpinnedComponent`).
+- **Verdict:** every `AppVerdict` carries `child_digest` beside `child_release`, so a logged decision names the
+  exact rule bytes it came from (`TestVerdictNamesThePinnedComponentDigest`).
+- **Gate:** `tools/child_apps_wave.py --write` pins the release it writes (refusing a published release with other
+  bytes, or a release that does not follow the last), and `--check` (`make child-apps`, part of `make check`)
+  fails unless the lock is canonical and pins the committed file. `TestLockHistoryKeepsPublishedReleases` holds
+  the published entries fixed.
+
 ## Adding a wave
 
 1. App Research (wave 0, PRO-495) or Research Lab (later waves, PRO-491) delivers `research/child-apps/wave-N.json`
    with official citations.
 2. Copy it to `migration/fixtures/child-apps/`, run `python3 -B tools/child_apps_wave.py <file> --evidence
-   migration/fixtures/child-apps/wave-1.json --version <next> --write`, review `docs/child-apps/wave-N-rules.md`, add example requests for the new children to
+   migration/fixtures/child-apps/wave-1.json --version <next> --write` (it also appends `<next>` and its digest to `lock.json`), review `docs/child-apps/wave-N-rules.md`, add example requests for the new children to
    `childapp_test.go`, and add the file to `make child-apps`.
 3. `cd go && go test ./internal/childapp/ ./detector/`, `make check`, then one PR per wave of about 30 services from a
    fresh branch off `main`.
