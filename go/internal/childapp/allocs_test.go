@@ -8,8 +8,10 @@ import (
 	"testing"
 )
 
-// The references below are the request-side helpers as they were before PRO-522 (origin/main 8296a26), kept
-// verbatim so the allocation-free rewrites are pinned to the same answers on every input.
+// The references below are the request-side helpers as they were before PRO-522, kept verbatim so the
+// allocation-free rewrites are pinned to the same answers on every input: normalizeHost and splitPath as of
+// origin/main 8296a26, parseQuery as of origin/main 352b00c (SEC-CHILD-1 decodes unreserved escapes). The path
+// check itself (normalizePath, SEC-CHILD-1) is main's code, not rewritten by PRO-522, so it has no reference here.
 
 func refNormalizeHost(h string) (string, bool) {
 	if len(h) > maxHostBytes+7 {
@@ -40,40 +42,6 @@ func refNormalizeHost(h string) (string, bool) {
 	return h, true
 }
 
-func refCanonicalPath(p string) (string, bool) {
-	if i := strings.IndexAny(p, "?#"); i >= 0 {
-		p = p[:i]
-	}
-	if p == "" || p[0] != '/' {
-		return "", false
-	}
-	for i := 0; i < len(p); i++ {
-		c := p[i]
-		if c <= ' ' || c >= 0x7f || c == '\\' {
-			return "", false
-		}
-		if c == '%' {
-			if i+2 >= len(p) {
-				return "", false
-			}
-			switch strings.ToLower(p[i+1 : i+3]) {
-			case "2f", "5c", "2e", "00", "25":
-				return "", false
-			}
-		}
-	}
-	if p == "/" {
-		return p, true
-	}
-	if strings.Contains(p, "/./") || strings.Contains(p, "/../") || strings.HasSuffix(p, "/.") || strings.HasSuffix(p, "/..") {
-		return "", false
-	}
-	if strings.Contains(p, "//") {
-		return "", false
-	}
-	return decodeSafe(p), true
-}
-
 func refParseQuery(target string) (map[string][]string, bool) {
 	i := strings.IndexByte(target, '?')
 	if i < 0 {
@@ -93,6 +61,12 @@ func refParseQuery(target string) (map[string][]string, bool) {
 			return nil, false
 		}
 		k, v, _ := strings.Cut(pair, "=")
+		if n, valid := normalizePercent(k, false); valid {
+			k = n
+		}
+		if n, valid := normalizePercent(v, false); valid {
+			v = n
+		}
 		out[k] = append(out[k], v)
 	}
 	return out, true
@@ -123,12 +97,6 @@ func checkHelpersMatchReference(t *testing.T, s string) {
 		want, wantOK := refNormalizeHost(s)
 		if got != want || ok != wantOK {
 			t.Fatalf("normalizeHost(%q) = %q, %v; reference %q, %v", s, got, ok, want, wantOK)
-		}
-	}
-	if got, ok := canonicalPath(s); true {
-		want, wantOK := refCanonicalPath(s)
-		if got != want || ok != wantOK {
-			t.Fatalf("canonicalPath(%q) = %q, %v; reference %q, %v", s, got, ok, want, wantOK)
 		}
 	}
 	m, within := refParseQuery(s)

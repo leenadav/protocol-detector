@@ -13,6 +13,14 @@
 // Work is bounded. Rules are indexed by host, the number of rules evaluated for one request is capped
 // (Options.MaxRuleEvaluations), and paths longer than Options.MaxPathBytes are not matched. A request that hits a
 // ceiling reports it in Result.Limit and gets no child: a limit is never silent (PRO-477) and never a match.
+//
+// Refusals fail closed (SEC-CHILD-1). Result.ChildStatus is appid.ChildUndetermined whenever a child rule of the
+// host could apply but the request was refused (a path that is not canonical), capped (a field or work ceiling) or
+// ambiguous (a repeated query parameter or a malformed content type a rule reads, a trailing slash a pattern only
+// matches without): the verdict then names the parent and no child, and a policy denies the status with
+// child_status. Before matching, percent-encoded unreserved bytes (RFC 3986 section 2.3) in the path and the query,
+// and sub-delimiters, ':' and '@' in the path (SEC-CHILD-3), are decoded and every other escape is upper-cased, so
+// %6f and o match alike.
 package childapp
 
 import (
@@ -55,7 +63,8 @@ const (
 	ReasonNoChildMatched   = "no_child_rule_matched"
 	ReasonChildMatched     = "child_rule_matched"
 	ReasonWorkLimit        = "work_limit"
-	ReasonPanic            = "panic" // set by a caller that recovered a panic around Classify
+	ReasonAmbiguous        = "request_ambiguous" // the most specific candidate rule depends on an ambiguous field
+	ReasonPanic            = "panic"             // set by a caller that recovered a panic around Classify
 )
 
 // Limit values: the ceiling a request hit ("" when none).
@@ -68,7 +77,7 @@ const (
 // Reasons lists the reason vocabulary.
 func Reasons() []string {
 	return []string{ReasonNoHost, ReasonHostInvalid, ReasonHostUnowned, ReasonHostWebFront, ReasonSNIHostMismatch,
-		ReasonPathNotCanonical, ReasonFieldTooLong, ReasonNoChildMatched, ReasonChildMatched, ReasonWorkLimit, ReasonPanic}
+		ReasonPathNotCanonical, ReasonFieldTooLong, ReasonNoChildMatched, ReasonChildMatched, ReasonWorkLimit, ReasonAmbiguous, ReasonPanic}
 }
 
 // Limits lists the limit vocabulary.
@@ -98,6 +107,7 @@ type Result struct {
 	Reason      string   // the reason of the verdict, one of the closed vocabulary
 	Reasons     []string // []string{Reason} from Classify; nil from Evaluate
 	Limit       string   // the ceiling hit, "" when none
+	ChildStatus string   // appid.ChildMatched, ChildNone, ChildUndetermined (fail closed) or ChildNotApplicable
 	Evaluated   int      // rules evaluated for this request
 	Release     string   // the child-app release
 	PackRelease string   // the content release the catalog identity came from
@@ -176,6 +186,20 @@ func (s *Set) Has(name string) bool {
 	return ok
 }
 
+// Owners lists the applications the named child's hosts may belong to: its container, then its depends_on in
+// file order; nil when name is not a child. A policy deny on the child also holds for an undetermined verdict of
+// one of them (SEC-CHILD-8), the same test as AppClassifier.MayBe.
+func (s *Set) Owners(name string) []string {
+	if s == nil {
+		return nil
+	}
+	c := s.byName[name]
+	if c == nil {
+		return nil
+	}
+	return append([]string{c.Container}, c.DependsOn...)
+}
+
 // WithOptions returns a copy of the set with other work bounds; the rule data is shared and immutable.
 func (s *Set) WithOptions(o Options) *Set {
 	c := *s
@@ -245,9 +269,74 @@ func normalizeHost(h string) (string, bool) {
 	return h, true
 }
 
-// canonicalPath strips the query and fragment and refuses forms a filter and a server could read differently:
-// no leading slash, dot segments, empty segments, backslashes, encoded slashes, dots or backslashes, controls.
-func canonicalPath(p string) (string, bool) {
+// unhex is the value of a hex digit; ok is false for any other byte.
+func unhex(c byte) (byte, bool) {
+	switch {
+	case c >= '0' && c <= '9':
+		return c - '0', true
+	case c >= 'a' && c <= 'f':
+		return c - 'a' + 10, true
+	case c >= 'A' && c <= 'F':
+		return c - 'A' + 10, true
+	}
+	return 0, false
+}
+
+// unreserved reports an RFC 3986 unreserved byte other than '.': decoding it never changes how a server splits
+// or resolves a path ('.' stays encoded and is refused in a path, so %2e can never form a dot segment).
+func unreserved(c byte) bool {
+	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '_' || c == '~'
+}
+
+// pathDecodable reports a byte a server reads the same encoded or plain in a path: an unreserved byte, a
+// sub-delimiter, ':' or '@' (RFC 3986 section 3.3), so /v1.0/%24batch is /v1.0/$batch (SEC-CHILD-3). In a query
+// only unreserved bytes are decoded: '+', '&' and '=' mean something else there plain than encoded.
+func pathDecodable(c byte) bool {
+	return unreserved(c) || strings.IndexByte("!$&'()*+,;=:@", c) >= 0
+}
+
+// normalizePercent decodes escapes of unreserved bytes (and, when path is true, of the other pathDecodable bytes)
+// and upper-cases every other escape (RFC 3986 sections 6.2.2.1 and 6.2.2.2), so a UTF-8 name stays encoded and a
+// placeholder still matches it. ok is false on a malformed escape and, when path is true, on an escape of '/',
+// '\', '.', '%' or a control byte. The output is never longer than the input.
+func normalizePercent(in string, path bool) (string, bool) {
+	if strings.IndexByte(in, '%') < 0 {
+		return in, true
+	}
+	const hexdigits = "0123456789ABCDEF"
+	out := make([]byte, 0, len(in))
+	for i := 0; i < len(in); i++ {
+		c := in[i]
+		if c != '%' {
+			out = append(out, c)
+			continue
+		}
+		if i+2 >= len(in) {
+			return "", false
+		}
+		hi, okHi := unhex(in[i+1])
+		lo, okLo := unhex(in[i+2])
+		if !okHi || !okLo {
+			return "", false
+		}
+		d := hi<<4 | lo
+		if path && (d == '/' || d == '\\' || d == '.' || d == '%' || d < 0x20 || d == 0x7f) {
+			return "", false
+		}
+		if unreserved(d) || (path && pathDecodable(d)) {
+			out = append(out, d)
+		} else {
+			out = append(out, '%', hexdigits[hi], hexdigits[lo])
+		}
+		i += 2
+	}
+	return string(out), true
+}
+
+// normalizePath strips the query and fragment, normalizes percent escapes, and refuses forms a filter and a
+// server could read differently: no leading slash, dot segments, empty segments, backslashes, encoded slashes,
+// dots, backslashes or percent signs, controls, malformed escapes.
+func normalizePath(p string) (string, bool) {
 	if i := strings.IndexAny(p, "?#"); i >= 0 {
 		p = p[:i]
 	}
@@ -255,29 +344,13 @@ func canonicalPath(p string) (string, bool) {
 		return "", false
 	}
 	for i := 0; i < len(p); i++ {
-		c := p[i]
-		if c <= ' ' || c >= 0x7f || c == '\\' {
+		if c := p[i]; c <= ' ' || c >= 0x7f || c == '\\' {
 			return "", false
 		}
-		if c == '%' {
-			if i+2 >= len(p) {
-				return "", false
-			}
-			switch p[i+1] {
-			case '2':
-				if c := p[i+2] | 0x20; c == 'f' || c == 'e' || p[i+2] == '5' {
-					return "", false // %2F, %2E, %25
-				}
-			case '5':
-				if p[i+2]|0x20 == 'c' {
-					return "", false // %5C
-				}
-			case '0':
-				if p[i+2] == '0' {
-					return "", false // %00
-				}
-			}
-		}
+	}
+	p, ok := normalizePercent(p, true)
+	if !ok {
+		return "", false
 	}
 	if p == "/" {
 		return p, true
@@ -289,53 +362,7 @@ func canonicalPath(p string) (string, bool) {
 	if strings.Contains(p, "//") {
 		return "", false
 	}
-	return decodeSafe(p), true
-}
-
-// decodeSafe decodes the percent-encoded bytes a server reads as the plain character: RFC 3986 unreserved
-// characters other than '.', and the sub-delimiters, ':' and '@'. So /v1.0/%24batch is /v1.0/$batch and
-// /2/files/%75pload is /2/files/upload (SEC-CHILD-3). '/', '\', '.', '%' and NUL encodings were refused before;
-// any other encoding (UTF-8 names, '?', '#') stays as written, where a placeholder still matches it.
-func decodeSafe(p string) string {
-	i := strings.IndexByte(p, '%')
-	if i < 0 {
-		return p
-	}
-	var b strings.Builder
-	b.Grow(len(p))
-	b.WriteString(p[:i])
-	for ; i < len(p); i++ {
-		if p[i] == '%' && i+2 < len(p) {
-			if c, ok := unhex(p[i+1], p[i+2]); ok && decodable(c) {
-				b.WriteByte(c)
-				i += 2
-				continue
-			}
-		}
-		b.WriteByte(p[i])
-	}
-	return b.String()
-}
-
-func unhex(h, l byte) (byte, bool) {
-	v := func(c byte) (byte, bool) {
-		switch {
-		case c >= '0' && c <= '9':
-			return c - '0', true
-		case c >= 'a' && c <= 'f':
-			return c - 'a' + 10, true
-		case c >= 'A' && c <= 'F':
-			return c - 'A' + 10, true
-		}
-		return 0, false
-	}
-	a, ok1 := v(h)
-	z, ok2 := v(l)
-	return a<<4 | z, ok1 && ok2
-}
-
-func decodable(c byte) bool {
-	return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || strings.IndexByte("-_~!$&'()*+,;=:@", c) >= 0
+	return p, true
 }
 
 // mediaType is the lower-cased type/subtype without parameters ("" when absent or malformed).
@@ -513,9 +540,15 @@ func queryValue(q, key string) (string, int) {
 			continue
 		}
 		k, v, _ := strings.Cut(pair, "=")
+		if n, valid := normalizePercent(k, false); valid {
+			k = n
+		}
 		if k == key {
 			if seen++; seen > 1 {
 				return "", seen
+			}
+			if n, valid := normalizePercent(v, false); valid {
+				v = n
 			}
 			value = v
 		}
@@ -583,13 +616,16 @@ func (p *requestPaths) folded() (string, *pathView) {
 }
 
 // matches reports whether every condition holds and, if so, the rule's precedence score for this request: the
-// literal bytes of the path condition that hit, then the number of condition kinds.
-func (r *rule) matches(req *Request, paths *requestPaths, ct, query string) (bool, int) {
+// literal bytes of the path condition that hit, then the number of condition kinds. ambiguous is true when the
+// rule holds only if an ambiguous field is read its way: a query parameter it reads is repeated, the content type
+// it reads is malformed, or a path pattern holds only without a trailing slash. Servers disagree on those
+// readings, so such a rule never picks a child and, if it would be the most specific, the child is undetermined.
+func (r *rule) matches(req *Request, paths *requestPaths, ct, query string) (hit bool, score int, ambiguous bool) {
 	if r.methods != nil && !r.methods[req.Method] {
-		return false, 0
+		return false, 0, false
 	}
 	if r.websocket && !req.WebSocket {
-		return false, 0
+		return false, 0, false
 	}
 	pathScore := 0
 	path, view := paths.path, &paths.view
@@ -611,8 +647,19 @@ func (r *rule) matches(req *Request, paths *requestPaths, ct, query string) (boo
 				}
 			}
 		}
+		if !hit && len(path) > 1 && path[len(path)-1] == '/' && r.pathPatterns != nil {
+			trimmed := pathView{path: path[:len(path)-1]} // split only on this rare fallback
+			for _, pattern := range r.pathPatterns {
+				if matchPattern(pattern, trimmed.segments()) {
+					hit, ambiguous = true, true
+					if n := literalBytes(pattern); n > pathScore {
+						pathScore = n
+					}
+				}
+			}
+		}
 		if !hit {
-			return false, 0
+			return false, 0, false
 		}
 	}
 	if r.contentTypes != nil {
@@ -624,33 +671,40 @@ func (r *rule) matches(req *Request, paths *requestPaths, ct, query string) (boo
 			}
 		}
 		if !hit {
-			return false, 0
+			if req.ContentType == "" || ct != "" {
+				return false, 0, false
+			}
+			ambiguous = true // a content type was sent but does not parse: the rule may hold for the server
 		}
 	}
 	for _, q := range r.query {
 		value, n := queryValue(query, q.key)
+		if n > 1 {
+			ambiguous = true // a repeated parameter: servers disagree on which one wins
+			continue
+		}
 		if n != 1 || value == "" || (q.values != nil && !q.values[value]) {
-			return false, 0
+			return false, 0, false
 		}
 	}
 	for _, h := range r.headers {
 		if !hasHeader(req.HeaderNames, h) {
-			return false, 0
+			return false, 0, false
 		}
 	}
 	switch r.direction {
 	case "upload":
 		up, down := req.RequestBodyBytes, req.ResponseBodyBytes
 		if up < 0 || up < r.minBytes || (down >= 0 && up <= down) {
-			return false, 0
+			return false, 0, false
 		}
 	case "download":
 		up, down := req.RequestBodyBytes, req.ResponseBodyBytes
 		if down < 0 || down < r.minBytes || (up >= 0 && down <= up) {
-			return false, 0
+			return false, 0, false
 		}
 	}
-	return true, pathScore*16 + r.conditions
+	return true, pathScore*16 + r.conditions, ambiguous
 }
 
 // candidateStack is the number of candidate lists kept on the stack: the exact host plus three parent domains
@@ -686,7 +740,7 @@ func (s *Set) Classify(req Request) Result {
 // Evaluate is Classify without the Reasons slice: the verdict's single reason is in Result.Reason and Reasons is
 // nil. It allocates nothing for an ordinary request (PRO-522); req is only read.
 func (s *Set) Evaluate(req *Request) Result {
-	res := Result{Basis: BasisNone, Release: s.Release.Version, PackRelease: s.pack.Release.Version}
+	res := Result{Basis: BasisNone, ChildStatus: appid.ChildNotApplicable, Release: s.Release.Version, PackRelease: s.pack.Release.Version}
 	raw := req.Host
 	if raw == "" {
 		raw = req.SNI
@@ -727,6 +781,15 @@ func (s *Set) Evaluate(req *Request) Result {
 		return res
 	}
 	res.App, res.HostOwner, res.Basis = owner, owner, BasisServerName
+	var listBuf [candidateStack][]int
+	lists := s.candidates(host, listBuf[:0])
+	// A refusal below is fail closed when a child rule of this host could apply: the function is undetermined.
+	// With no rule on the host no child can apply whatever the request says, so it is none.
+	refused := appid.ChildUndetermined
+	if len(lists) == 0 {
+		refused = appid.ChildNone
+	}
+	res.ChildStatus = refused
 	if len(req.Method) > maxMethodBytes || len(req.ContentType) > maxContentTypeBytes {
 		res.Reason, res.Limit = ReasonFieldTooLong, LimitFieldBytes
 		return res
@@ -735,7 +798,7 @@ func (s *Set) Evaluate(req *Request) Result {
 		res.Reason, res.Limit = ReasonWorkLimit, LimitPathBytes
 		return res
 	}
-	path, canonical := canonicalPath(req.Path)
+	path, canonical := normalizePath(req.Path)
 	if !canonical && req.Path != "" {
 		res.Reason = ReasonPathNotCanonical
 		return res
@@ -747,8 +810,6 @@ func (s *Set) Evaluate(req *Request) Result {
 		return res
 	}
 	paths := requestPaths{path: path, view: pathView{path: path}}
-	var listBuf [candidateStack][]int
-	lists := s.candidates(host, listBuf[:0])
 	var headBuf [candidateStack]int
 	var heads []int
 	if len(lists) <= len(headBuf) {
@@ -758,7 +819,7 @@ func (s *Set) Evaluate(req *Request) Result {
 	}
 	last := -1
 	var winner *rule
-	winnerScore := 0
+	winnerScore, winnerAmbiguous := 0, false
 	for {
 		best := -1
 		for i, l := range lists {
@@ -785,18 +846,24 @@ func (s *Set) Evaluate(req *Request) Result {
 		if !r.child.owners[owner] {
 			continue
 		}
-		// Precedence: the highest score wins; on a tie the earlier rule (file order) keeps it.
-		if hit, score := r.matches(req, &paths, ct, query); hit && (winner == nil || score > winnerScore) {
-			winner, winnerScore = r, score
+		// Precedence: the highest score wins; on a tie the earlier rule (file order) keeps it. An ambiguous rule
+		// competes too: if it would win, no reading of the request decides the child.
+		hit, score, ambiguous := r.matches(req, &paths, ct, query)
+		if hit && (winner == nil || score > winnerScore) {
+			winner, winnerScore, winnerAmbiguous = r, score, ambiguous
 		}
 	}
 	if winner == nil {
-		res.Reason = ReasonNoChildMatched
+		res.Reason, res.ChildStatus = ReasonNoChildMatched, appid.ChildNone
+		return res
+	}
+	if winnerAmbiguous {
+		res.Reason = ReasonAmbiguous
 		return res
 	}
 	res.App, res.Container, res.Basis = winner.child.Name, winner.child.Container, BasisRequestRule
 	res.Rule = winner.id
-	res.Reason = ReasonChildMatched
+	res.Reason, res.ChildStatus = ReasonChildMatched, appid.ChildMatched
 	return res
 }
 
@@ -829,7 +896,7 @@ func (s *Set) Verdict(res Result) *appid.Verdict {
 	v := &appid.Verdict{App: app.Name, Category: app.Category, Subcategory: app.Subcategory, Technology: app.Technology,
 		Risk: app.Risk, Characteristics: append([]string{}, app.Characteristics...),
 		ImplicitlyUses: append([]string{}, app.ImplicitlyUses...), PortUsage: "unknown", Status: "identified",
-		Reasons: reasons, Risks: []string{}}
+		Reasons: reasons, Risks: []string{}, ChildStatus: res.ChildStatus}
 	if res.Container != "" {
 		container := res.Container
 		v.BaseApp = &container

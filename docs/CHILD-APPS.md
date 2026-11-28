@@ -45,7 +45,37 @@ existed. The first matching rule decides, so a child-specific rule goes before a
   {"name": "watch-dropbox", "action": "alert", "match": {"containers": ["dropbox"]}}]}
 ```
 
-`FromJSON` (the reference's vocabulary, used by every parity path) still refuses `containers` and child names.
+`FromJSON` (the reference's vocabulary, used by every parity path) still refuses `containers`, `child_status` and
+child names.
+
+### Fail closed: `child_status` (SEC-CHILD-1)
+
+Every verdict carries `child_status`:
+
+| Value | Meaning |
+|---|---|
+| `matched` | a child rule decided the function |
+| `none` | every candidate rule was evaluated on the normalized request and none applies (also: no child rule names the host, so no refusal can hide a child) |
+| `undetermined` | a child rule of the host could apply, but the request was refused (`path_not_canonical`), capped (any `limit`) or ambiguous (`request_ambiguous`): the verdict names the host's catalog owner and no child |
+| `not_applicable` | no catalog application, so no child can be named |
+
+A `deny` entry that names a child in `apps` or `containers` also holds for an `undetermined` verdict of an
+application the child's hosts may belong to, its container or one of its `depends_on` (Gmail's API hosts belong to
+`google-base`; SEC-CHILD-8). So the plain `no-uploads` rule above denies a Gmail or Dropbox upload sent with a
+`//` or `./` segment or a path over 4,096 bytes, with no extra rule (a repeated `uploadType` is simply an upload: the
+rule no longer reads it, SEC-CHILD-3). The widening is for
+`deny` only: an `allow` or `alert` entry naming a child matches that child alone, so an undetermined request never
+gains an allow. Every other condition of the rule still applies, so an explicit `child_status` narrows it:
+`{"apps": ["gmail-uploading"], "child_status": ["matched"]}` denies only the decided upload. A rule for the owners'
+other undetermined requests is still written the same way:
+
+```json
+{"name": "no-unknown-gmail-function", "action": "deny", "match": {"apps": ["gmail", "google-base"], "child_status": ["undetermined"]}}
+```
+
+Culvert's `go/detector` facade has `AppClassifier.MayBe(verdict, child)`, which is `Matches` plus exactly that
+undetermined case; use it for deny entries and `Matches` for allow entries. Matching `containers` on the host owner
+is SEC-CHILD-2.
 
 ## The data: `go/internal/childapp/childapps.json`
 
@@ -101,12 +131,21 @@ It is kept beside the pack, not inside `pack.json`, because the frozen parity an
 
 ## Paths are matched only in canonical form
 
-The fragment is ignored and the query is read only by `query` conditions. A path with a dot segment, an empty segment, a backslash, a control byte or an
-encoded `/`, `\`, `.`, `%` or NUL is not matched (reason `path_not_canonical`; the parent is still reported), so a
-filter and a server can never read one path two ways. A percent-encoded letter, digit, `-`, `_`, `~`, sub-delimiter
-(`$`, `!`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `;`, `=`), `:` or `@` is decoded before matching, as the server reads it
-(`/v1.0/%24batch` is `/v1.0/$batch`, `/2/files/%75pload` is `/2/files/upload`; SEC-CHILD-3); any other encoding,
-such as a UTF-8 file name, stays as written and a placeholder still matches it. SNI and Host of different catalog owners give no application
+The fragment is ignored and the query is read only by `query` conditions. Before matching, percent escapes of
+unreserved bytes (`A-Z a-z 0-9 - _ ~`, RFC 3986 section 2.3) are decoded in the path and in query names and values;
+in the path the sub-delimiters (`$`, `!`, `&`, `'`, `(`, `)`, `*`, `+`, `,`, `;`, `=`), `:` and `@` are decoded too,
+as the server reads them (SEC-CHILD-3); every other escape is upper-cased (sections 6.2.2.1 and 6.2.2.2). So
+`/upl%6fad` matches `/upload`, `/v1.0/%24batch` is `/v1.0/$batch`, `/2/files/%75pload` is `/2/files/upload` and
+`upload%54ype=media` matches `uploadType=media`; any other encoding, such as a UTF-8 file name, stays encoded and a
+placeholder still matches it. A path with a dot segment, an empty segment, a backslash, a control byte, a malformed
+escape or an encoded `/`, `\`, `.`, `%` or control byte is not matched (reason `path_not_canonical`, `child_status`
+`undetermined`; the parent is still reported), so a filter and a server can never read one path two ways.
+
+A rule is ambiguous, and never picks a child, when it holds only for one server reading of the request: a query
+parameter it reads is repeated (also through an encoded name), the content type it reads does not parse, or a path
+pattern holds only without a trailing slash. A field the rule does not read never makes it ambiguous. If an
+ambiguous rule would be the most specific, the verdict is `request_ambiguous` and `undetermined`; if a definite
+rule outranks it, that rule's child stands. SNI and Host of different catalog owners give no application
 (`sni_host_owner_mismatch`, domain fronting); a coalesced HTTP/2 connection of one owner is classified on the Host.
 
 ## Work ceiling (never silent)
@@ -115,7 +154,7 @@ Rules are indexed by host, so a request only meets the rules of its own host and
 `MaxRuleEvaluations` (default 64) rules are evaluated per request, and a path longer than `MaxPathBytes`
 (default 4,096) or a method or content type over 32 or 256 bytes is not matched. Hitting any of these is reported in
 `limit` (`child_rule_evaluations`, `child_path_bytes`, `child_field_bytes`) with reason `work_limit` or
-`field_too_long`, and the verdict then names the parent only, never a child.
+`field_too_long`, and the verdict then names the parent only, never a child, with `child_status` `undetermined`.
 
 Path work is linear in the path once per request, never per pattern (SEC-CHILD-4): the path is checked for dot
 segments without splitting and split at most once, only when a rule with a pattern is reached and into at most 33
